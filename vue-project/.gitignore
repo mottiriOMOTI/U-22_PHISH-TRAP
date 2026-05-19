@@ -1,0 +1,70 @@
+# --- logs ---
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# --- deps / caches ---
+node_modules
+.vite/
+.eslintcache
+.turbo/
+*.tsbuildinfo
+
+# --- builds ---
+dist
+dist-ssr
+server/dist
+
+# --- tests ---
+coverage
+# Cypress（既存）
+/cypress/videos/
+/cypress/screenshots/
+# Playwright
+/test-results/
+/playwright-report/
+/playwright/.cache/
+
+# --- env files（重要）---
+# すべての環境変数ファイルは無視
+.env
+.env.*
+.env.*.local
+.env.local
+# ただし、サンプルは追跡する
+!.env.example
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# --- package artifacts ---
+*.local
+*.tgz
+
+# --- optional: DB（SQLite/Prisma を使う場合）---
+*.db
+*.db-journal
+*.sqlite
+*.sqlite-journal
+prisma/*.db
+prisma/*.db-journal
+
+
+components.d.ts
+env.d.ts
+.vscode/
+.vercel
+.env*.local
