@@ -1,61 +1,11 @@
 # vue-project
 
-This template should help get you started developing with Vue 3 in Vite.
+Vue 3 + Vite フロント / Express API / Supabase Cloud（Tokyo）の構成です。
 
-## Recommended IDE Setup
+> 🚀 **新しくクローンしたら、まず [セットアップ（Supabase Cloud）](#セットアップsupabase-cloud) を読んでください**。
+> その下の「リファレンス」「付録」は必要になったときに見れば OK です。
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
-
-## Recommended Browser Setup
-
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd) 
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
-
-## Type Support for `.vue` Imports in TS
-
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
-
-## Customize configuration
-
-See [Vite Configuration Reference](https://vite.dev/config/).
-
-## Project Setup
-
-```sh
-npm install
-```
-
-### Compile and Hot-Reload for Development
-
-```sh
-npm run dev
-```
-
-### Type-Check, Compile and Minify for Production
-
-```sh
-npm run build
-```
-
-### Run Unit Tests with [Vitest](https://vitest.dev/)
-
-```sh
-npm run test:unit
-```
-
-### Lint with [ESLint](https://eslint.org/)
-
-```sh
-npm run lint
-```
-
----
-
-## Database セットアップ（Supabase Cloud）
+## セットアップ（Supabase Cloud）
 
 開発用 DB は **チームで共有する Supabase Cloud プロジェクト** を使います。
 **各メンバーの PC に Docker や Supabase CLI を入れる必要はありません**（Node.js だけで OK）。
@@ -206,6 +156,31 @@ migration を `supabase db push` で管理する人だけ必要です。**v2.101
   → `.env` に `API_PORT=3010` を追記し、`VITE_API_URL=http://localhost:3010` も合わせる
 - **チーム共有 DB を汚したくない**
   → 各自で Free プロジェクトを別途作って、`.env` だけ差し替えれば OK
+
+---
+
+## リファレンス
+
+### よく使うコマンド
+
+| 目的 | コマンド |
+|---|---|
+| フロント開発サーバー（Vite, port 5173） | `npm run dev` |
+| API 開発サーバー（Express, port 3000 / `API_PORT`） | `npm run server:dev` |
+| プロダクションビルド | `npm run build` |
+| 型チェック + ビルド（厳密） | `npm run build:strict` |
+| ユニットテスト | `npm run test:unit` |
+| Lint（自動修正あり） | `npm run lint` |
+| フォーマット | `npm run format` |
+
+### 開発環境の推奨（任意）
+
+- **VS Code**: [Vue (Official) 拡張](https://marketplace.visualstudio.com/items?itemName=Vue.volar) を入れて Vetur は無効化
+- **ブラウザ拡張**:
+  - Chromium 系: [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd) + [Custom Object Formatter を ON](http://bit.ly/object-formatters)
+  - Firefox: [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/) + [Custom Object Formatter を ON](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
+- **TypeScript で `.vue` を型解決する**: `tsc` の代わりに `vue-tsc` を使う。エディタでは Volar が必要。
+- **Vite の設定**: [Vite Configuration Reference](https://vite.dev/config/)
 
 ---
 
