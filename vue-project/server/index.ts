@@ -1,12 +1,11 @@
+import 'dotenv/config';
+
 import express from 'express';
-import dotenv from 'dotenv';
 
 import apiroutes from './routes/apiRoutes'
 
-dotenv.config();
-
 const app = express();
-const port = 3000;
+const port = Number(process.env.API_PORT) || 3000;
 
 // CORSヘッダー設定
 app.use((req, res, next) => {
