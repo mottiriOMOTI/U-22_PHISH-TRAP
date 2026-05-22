@@ -1,9 +1,6 @@
 <template>
   <v-navigation-drawer :permanent="true" width="260">
     <v-list nav>
-      <v-list-item title="ホーム" to="/" prepend-icon="mdi-home" />
-      <v-list-item title="アバウト" to="/about" prepend-icon="mdi-information-outline" />
-      <!-- 一般ユーザー用メニュー -->
       <v-list-item title="メールボックス" to="/mailbox" prepend-icon="mdi-email" />
       <v-list-item title="アカウント" to="/account" prepend-icon="mdi-account" />
       <v-list-item title="スコア" to="/score" prepend-icon="mdi-star" />
@@ -14,3 +11,4 @@
 </template>
 
 <script setup lang="ts"></script>
+<style lang="scss" scoped></style>
