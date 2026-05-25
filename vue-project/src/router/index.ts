@@ -39,7 +39,7 @@ const router = createRouter({
   //ここにページを配置
   routes: [
     {
-      path: '/',
+      path: '/home',
       name: 'Home',
       component: Home,
     },
@@ -49,148 +49,196 @@ const router = createRouter({
       component: About,
     },
     {
-      path: '/login',
+      path: '/',
       name: 'Login',
       component: Login,
-      meta: { layout: 'none' }
+      meta: {
+        sidebar: null,
+      }
     },
     {
       path: '/makeaccount',
       name: 'MakeAccount',
       component: MakeAccount,
-      meta: { layout: 'none' }
+      meta: {
+        sidebar: null,
+      }
     },
     {
       path: '/forgotaccount',
       name: 'ForgotAccount',
       component: ForgotAccount,
-      meta: { layout: 'none' }
+      meta: {
+        sidebar: null,
+      }
     },
     {
       path: '/privacypolicy',
       name: 'Privacypolicy',
       component: Privacypolicy,
-      meta: { layout: 'none' }
+      meta: {
+        sidebar: null,
+      }
     },
     {
       path: '/termsofservice',
       name: 'TermsOfService',
       component: TermsOfService,
-      meta: { layout: 'none' }
+      meta: {
+        sidebar: null,
+      }
     },
     {
       path: '/situation',
       name: 'Situation',
       component: Situation,
-      meta: { layout: 'user' }
+      meta: {
+        sidebar: 'user',
+      }
     },
     {
       path: '/account',
       name: 'Account',
       component: Account,
-      meta: { layout: 'user' }
+      meta: {
+        sidebar: 'user',
+      }
     },
     {
       path: '/accountsetting',
       name: 'AccountSetting',
       component: AccountSetting,
-      meta: { layout: 'user' }
+      meta: {
+        sidebar: 'user',
+      }
     },
     {
       path: '/score',
       name: 'Score',
       component: Score,
-      meta: { layout: 'user' }
+      meta: {
+        sidebar: 'user',
+      }
     },
     {
       path: '/setting',
       name: 'Setting',
       component: Setting,
-      meta: { layout: 'user' }
+      meta: {
+        sidebar: 'user',
+      }
     },
     {
       path: '/mailbox',
       name: 'MailboxList',
       component: MailboxList,
-      meta: { layout: 'user' }
+      meta: {
+        sidebar: 'user',
+      }
     },
     {
       path: '/mailopen',
       name: 'MailOpen',
       component: MailOpen,
-      meta: { layout: 'user' }
+      meta: {
+        sidebar: 'user',
+      }
     },
     {
       path: '/feareffect_death',
       name: 'FearEffect_Death',
       component: FearEffect_Death,
-      meta: { layout: 'none' }
+      meta: {
+        sidebar: null,
+      }
     },
     {
       path: '/feareffect_false',
       name: 'FearEffect_False',
       component: FearEffect_False,
-      meta: { layout: 'none' }
+      meta: {
+        sidebar: null,
+      }
     },
     {
       path: '/explanation',
       name: 'Explanation',
       component: Explanation,
-      meta: { layout: 'none' }
+      meta: {
+        sidebar: null,
+      }
     },
     {
       path: '/admin_login',
       name: 'Admin_Login',
       component: Admin_Login,
-      meta: { layout: 'none' }
+      meta: {
+        sidebar: null,
+      }
     },
     {
       path: '/admin_overview',
       name: 'Admin_Overview',
       component: Admin_Overview,
-      meta: { layout: 'admin' }
+      meta: {
+        sidebar: 'admin',
+      }
     },
     {
       path: '/admin_makequestion',
       name: 'Admin_Makequestion',
       component: Admin_Makequestion,
-      meta: { layout: 'admin' }
+      meta: {
+        sidebar: 'admin',
+      }
     },
     {
       path: '/admin_setting',
       name: 'Admin_Setting',
       component: Admin_Setting,
-      meta: { layout: 'admin' }
+      meta: {
+        sidebar: 'admin',
+      }
     },
     {
       path: '/admin_userlist',
       name: 'Admin_UserList',
       component: Admin_UserList,
-      meta: { layout: 'admin' }
+      meta: {
+        sidebar: 'admin',
+      }
     },
     {
       path: '/admin_userdetail',
       name: 'Admin_Userdetail',
       component: Admin_Userdetail,
-      meta: { layout: 'admin' }
+      meta: {
+        sidebar: 'admin',
+      }
     },
     {
       path: '/admin_questionlist',
       name: 'Admin_QuestionList',
       component: Admin_QuestionList,
-      meta: { layout: 'admin' }
+      meta: {
+        sidebar: 'admin',
+      }
     },
     {
       path: '/admin_questiondetail',
       name: 'Admin_QuestionDetail',
       component: Admin_QuestionDetail,
-      meta: { layout: 'admin' }
+      meta: {
+        sidebar: 'admin',
+      }
     },
     {
       path: '/admin_questionview',
       name: 'Admin_QuestionView',
       component: Admin_QuestionView,
-      meta: { layout: 'admin' }
+      meta: {
+        sidebar: 'admin',
+      }
     }
   ],
 })
