@@ -1,9 +1,10 @@
+import 'dotenv/config';
 import express from 'express';
-import dotenv from 'dotenv';
 import apiroutes from './routes/apiRoutes';
-dotenv.config();
+import supabaseroutes from './routes/supabase';
 const app = express();
-const port = 3000;
+const port = Number(process.env.API_PORT) || 3000;
+app.use(express.json());
 // CORSヘッダー設定
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
@@ -13,6 +14,7 @@ app.use((req, res, next) => {
 });
 // '/api/*'のurlを受け取る
 app.use('/api', apiroutes);
+app.use('/api/supabasetest', supabaseroutes);
 // サーバー起動
 app.listen(port, () => {
     console.log('Server started on port', port);

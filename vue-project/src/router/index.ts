@@ -54,6 +54,7 @@ const router = createRouter({
       component: Login,
       meta: {
         sidebar: null,
+        header: null,
       }
     },
     {
@@ -62,6 +63,7 @@ const router = createRouter({
       component: MakeAccount,
       meta: {
         sidebar: null,
+        header: null,
       }
     },
     {
@@ -70,6 +72,7 @@ const router = createRouter({
       component: ForgotAccount,
       meta: {
         sidebar: null,
+        header: null,
       }
     },
     {
@@ -78,6 +81,7 @@ const router = createRouter({
       component: Privacypolicy,
       meta: {
         sidebar: null,
+        header: null,
       }
     },
     {
@@ -86,6 +90,7 @@ const router = createRouter({
       component: TermsOfService,
       meta: {
         sidebar: null,
+        header: null,
       }
     },
     {
@@ -94,6 +99,7 @@ const router = createRouter({
       component: Situation,
       meta: {
         sidebar: 'user',
+        header: 'situation'
       }
     },
     {
@@ -102,6 +108,7 @@ const router = createRouter({
       component: Account,
       meta: {
         sidebar: 'user',
+        header: 'account'
       }
     },
     {
@@ -110,6 +117,7 @@ const router = createRouter({
       component: AccountSetting,
       meta: {
         sidebar: 'user',
+        header: 'account',
       }
     },
     {
@@ -118,6 +126,7 @@ const router = createRouter({
       component: Score,
       meta: {
         sidebar: 'user',
+        header: 'score',
       }
     },
     {
@@ -126,6 +135,7 @@ const router = createRouter({
       component: Setting,
       meta: {
         sidebar: 'user',
+        header: 'setting',
       }
     },
     {
@@ -134,6 +144,7 @@ const router = createRouter({
       component: MailboxList,
       meta: {
         sidebar: 'user',
+        header: 'mailboxList',
       }
     },
     {
@@ -141,7 +152,8 @@ const router = createRouter({
       name: 'MailOpen',
       component: MailOpen,
       meta: {
-        sidebar: 'user',
+        sidebar: null,
+        header: null,
       }
     },
     {
@@ -150,6 +162,7 @@ const router = createRouter({
       component: FearEffect_Death,
       meta: {
         sidebar: null,
+        header: null,
       }
     },
     {
@@ -158,6 +171,7 @@ const router = createRouter({
       component: FearEffect_False,
       meta: {
         sidebar: null,
+        header: null,
       }
     },
     {
@@ -166,6 +180,7 @@ const router = createRouter({
       component: Explanation,
       meta: {
         sidebar: null,
+        header: null,
       }
     },
     {
@@ -174,6 +189,7 @@ const router = createRouter({
       component: Admin_Login,
       meta: {
         sidebar: null,
+        header: null,
       }
     },
     {
@@ -182,6 +198,7 @@ const router = createRouter({
       component: Admin_Overview,
       meta: {
         sidebar: 'admin',
+        header: 'admin_overview',
       }
     },
     {
@@ -190,6 +207,7 @@ const router = createRouter({
       component: Admin_Makequestion,
       meta: {
         sidebar: 'admin',
+        header: 'admin_makequestion',
       }
     },
     {
@@ -198,6 +216,7 @@ const router = createRouter({
       component: Admin_Setting,
       meta: {
         sidebar: 'admin',
+        header: 'admin_setting',
       }
     },
     {
@@ -206,6 +225,7 @@ const router = createRouter({
       component: Admin_UserList,
       meta: {
         sidebar: 'admin',
+        header: 'admin_userList',
       }
     },
     {
@@ -214,6 +234,7 @@ const router = createRouter({
       component: Admin_Userdetail,
       meta: {
         sidebar: 'admin',
+        header: null,
       }
     },
     {
@@ -222,6 +243,7 @@ const router = createRouter({
       component: Admin_QuestionList,
       meta: {
         sidebar: 'admin',
+        header: 'admin_questionList',
       }
     },
     {
@@ -230,6 +252,7 @@ const router = createRouter({
       component: Admin_QuestionDetail,
       meta: {
         sidebar: 'admin',
+        header: null,
       }
     },
     {
@@ -238,6 +261,7 @@ const router = createRouter({
       component: Admin_QuestionView,
       meta: {
         sidebar: 'admin',
+        header: null,
       }
     }
   ],

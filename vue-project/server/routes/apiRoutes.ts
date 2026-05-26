@@ -1,6 +1,5 @@
 import { Router } from "express";
 
-import { jsonget } from "../services/jsonget";
 import { supabaseAdmin } from "../lib/supabase";
 
 const router = Router()
@@ -8,10 +7,14 @@ const router = Router()
 // '/api/jsonget'のurlを処理する
 router.get('/jsonget', async (req, res) => {
     try {
-        const data = await jsonget();
-        res.json(data);
-    } catch (e) {
-        console.log("jsonget Routes error:" + e)
+            const response = await fetch('https://jsonplaceholder.typicode.com/users', {
+            method: 'GET',
+            headers: { Accept: 'application/json' }, // 期待する返り値を伝える
+        });
+        const data = await response.json();
+        return res.json(data);
+    } catch (error) {
+        console.log("jsonget server error: "+ error)
     }
 })
 
