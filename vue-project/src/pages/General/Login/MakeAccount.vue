@@ -1,8 +1,8 @@
 <template>
 <div class="register-container">
-    <h2>新規アカウント作成</h2>
+    <h1>新規アカウント作成</h1>
     
-    <form @submit.prevent="handleRegister">
+    <form class="profile-form" @submit.prevent="handleRegister">
     <!-- 【新規】名前の入力欄 -->
     <div class="input-group">
         <label>お名前（ニックネーム可）</label>
@@ -75,7 +75,7 @@ try {
 </script>
 
 <style lang="css" scoped>
-    .login-container {
+    .profile-container {
         max-width: 400px;
         margin: 50px auto;
         padding: 20px;
@@ -95,7 +95,7 @@ try {
   /* 略 */
 }
 
-.login-form {
+.profile-form {
   border: 1px solid #ccc; /* 枠線を */
   border-radius: 8px;     /* 角を丸く */
   padding: 20px;          /* 内側に余白を */
@@ -109,7 +109,9 @@ try {
 }
 
     button {
-        width: 100%;
+        width: 20%;
+        margin: 10px;
+        margin-left: 40%;
         background-color: #7b7b7b; /* 緑色 */
         color: white; /* 文字は白色 */
         cursor: pointer;

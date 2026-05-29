@@ -55,7 +55,7 @@ const handleLogin = async () => {
 
     .input-group input {
         width: 100%;
-        padding: 8px;
+        padding: 20px;
         background-color: #000000;
   /* 略 */
 }
@@ -74,7 +74,9 @@ const handleLogin = async () => {
 }
 
     button {
-        width: 100%;
+        width: 20%;
+        margin: 10px;
+        margin-left: 40%;
         background-color: #7b7b7b; /* 緑色 */
         color: white; /* 文字は白色 */
         cursor: pointer;
