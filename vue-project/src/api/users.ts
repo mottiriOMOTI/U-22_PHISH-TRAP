@@ -84,7 +84,6 @@ export async function deleteItem(id: string): Promise<void> {
 
 // ログインをお願いする関数
 export async function loginUser(email: string, password_hash: string): Promise<User> {
-  // ※お友達が作ったログイン用のURL（例: /login）にPOST送信します
   const res = await fetch(`https://ijluptjauhyhdswzrojk.supabase.co/rest/v1/users/login`, {
     method: 'POST',
     headers: {
@@ -99,5 +98,24 @@ export async function loginUser(email: string, password_hash: string): Promise<U
   }
 
   // 成功したら、ユーザー情報が返ってくる
+  return await res.json()
+}
+
+// 新規アカウントを作成する関数
+export async function registerUser(name: string, email: string, password: string): Promise<User> {
+  // 新規登録用のURL（ /register や /users）
+  const res = await fetch(`https://ijluptjauhyhdswzrojk.supabase.co/rest/v1/users/register`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    // 名前、メール、パスワードをバックエンド（ウェイター）に渡す
+    body: JSON.stringify({ name, email, password }),
+  })
+
+  if (!res.ok) {
+    return throwApiError(res, 'アカウントの作成に失敗しました')
+  }
+
   return await res.json()
 }
