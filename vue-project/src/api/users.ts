@@ -81,3 +81,23 @@ export async function deleteItem(id: string): Promise<void> {
     return throwApiError(res, 'Failed to delete profile')
   }
 }
+
+// ログインをお願いする関数
+export async function loginUser(email: string, password_hash: string): Promise<User> {
+  // ※お友達が作ったログイン用のURL（例: /login）にPOST送信します
+  const res = await fetch(`https://ijluptjauhyhdswzrojk.supabase.co/rest/v1/users/login`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    // メールアドレスとパスワードをウェイターに渡す
+    body: JSON.stringify({ email, password_hash }),
+  })
+
+  if (!res.ok) {
+    return throwApiError(res, 'ログインに失敗しました')
+  }
+
+  // 成功したら、ユーザー情報が返ってくる
+  return await res.json()
+}
