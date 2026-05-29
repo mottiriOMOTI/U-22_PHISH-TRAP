@@ -4,6 +4,7 @@ import express from 'express';
 
 import apiroutes from './routes/apiRoutes'
 import supabaseroutes from './routes/supabase'
+import usersroutes from './routes/usersList'
 
 const app = express();
 const port = Number(process.env.API_PORT) || 3000;
@@ -24,7 +25,7 @@ app.use((req, res, next) => {
 app.use('/api', apiroutes);
 
 app.use('/api/supabasetest', supabaseroutes);
-
+app.use('/api/usersList', usersroutes);
 // サーバー起動
 app.listen(port, () => {
     console.log('Server started on port', port);
