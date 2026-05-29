@@ -49,7 +49,7 @@ const router = createRouter({
       component: About,
     },
     {
-      path: '/',
+      path: '/Login',
       name: 'Login',
       component: Login,
       meta: {
@@ -175,7 +175,8 @@ const router = createRouter({
       }
     },
     {
-      path: '/explanation',
+      //path: '/explanation',
+      path: '/',
       name: 'Explanation',
       component: Explanation,
       meta: {
@@ -263,7 +264,14 @@ const router = createRouter({
         sidebar: 'admin',
         header: null,
       }
-    }
+    },{
+    path: '/mailbox/feareffect/virus-alert',
+    name: 'VirusAlertPage',
+    component: () => import('@/pages/General/Mailbox/FearEffect/FearEffect_Death_Attack/VirusAlertPage.vue'),
+  }
+
+
+    
   ],
 })
 
