@@ -1,14 +1,18 @@
 const API_BASE_URL = '/api/supabasetest'
 
 export type user_role = 'admin' | 'learner'
+export type scenario = 'student' | 'adult' | 'general'
 
 export type User = {
-  id: string
-  user_name: string | null
-  email: string 
-  passwordhash: string 
-  role: user_role
-  created_at: string
+  id: string                      //ユーザーID
+  user_name: string               //名前
+  email: string                   //メールアドレス
+  password_hash: string           //パスワードのハッシュ値
+  role: user_role                 //管理者判定
+  current_scenario: scenario      //シチュエーション設定
+  created_at: string              //アカウント作成日時  
+  last_active_at: string | null   //最後のアクティブ日時
+  is_active: boolean              //アカウント有効性確認
 }
 
 async function throwApiError(res: Response, fallbackMessage: string): Promise<never> {
