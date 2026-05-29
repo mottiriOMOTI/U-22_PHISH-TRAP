@@ -4,6 +4,7 @@ import express from 'express';
 
 import apiroutes from './routes/apiRoutes'
 import supabaseroutes from './routes/supabase'
+import mailroutes from './routes/mail'
 
 const app = express();
 const port = Number(process.env.API_PORT) || 3000;
@@ -24,6 +25,8 @@ app.use((req, res, next) => {
 app.use('/api', apiroutes);
 
 app.use('/api/supabasetest', supabaseroutes);
+
+app.use('/api/mail', mailroutes);
 
 // サーバー起動
 app.listen(port, () => {
