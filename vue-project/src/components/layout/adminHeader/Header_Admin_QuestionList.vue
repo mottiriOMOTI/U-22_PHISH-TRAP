@@ -8,13 +8,8 @@
             </div>
         </template>
         <template v-slot:append>
-            <v-select
-                v-model="selectedScenario"
-                :items="scenarioSelectItems"
-                variant="outlined"
-                density="compact"
-                hide-details
-            />
+            <v-select v-model="selectedScenario" :items="scenarioSelectItems" variant="outlined" density="compact"
+                hide-details />
         </template>
     </v-app-bar>
 </template>
@@ -25,7 +20,7 @@ import {
     question_scenario,
     scenarioSelectItems,
     type Scenario,
-} from '@/stores/admin_auestionList'
+} from '@/stores/admin_questionList'
 
 const scenarioStore = question_scenario()
 
