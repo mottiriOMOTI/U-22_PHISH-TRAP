@@ -52,21 +52,6 @@ const passwordConfirm = ref('')
 const errorMessage = ref('')
 const successMessage = ref('')
 
-const hashPassword = async (rawPassword: string): Promise<string> => {
-    // 文字列をバイト配列に変換
-    const encoder = new TextEncoder()
-    const data = encoder.encode(rawPassword)
-    
-    // Web Crypto API を使ってハッシュ化 (SHA-256)
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data)
-    
-    // バッファを16進数の文字列に変換
-    const hashArray = Array.from(new Uint8Array(hashBuffer))
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
-    
-    return hashHex
-}
-
 const handleRegister = async () => {
 errorMessage.value = ''
 
@@ -79,23 +64,23 @@ if (password.value !== passwordConfirm.value) {
 }
 
 try {
-     // 【追加】パスワードをハッシュ化する
-        const hashedPassword = await hashPassword(password.value)
-        
     console.log('3. API(registerUser)を呼び出します', { name: name.value, email: email.value })
     // 注文係（API）に新規登録をお願いする
-    const newUser = await registerUser(name.value, email.value, hashedPassword) // パスワードはハッシュ化して渡す
+    const newUser = await registerUser(name.value, email.value, password.value)
 
     console.log('4. APIからの返り値:', newUser) 
     
     console.log('登録成功！', newUser)
-    alert(`登録が完了しました！ようこそ、${newUser.user_name}さん！`)
+    alert(`登録が完了しました！ようこそ、${newUser.name}さん！`)
     
     // 【ここにログイン画面やホーム画面へ移動する処理を追加します】
 
 } catch (error: any) {
     console.error(error)
-    errorMessage.value = 'アカウントの作成に失敗しました。別のメールアドレスをお試しください。'
+    errorMessage.value =
+        error instanceof Error
+            ? error.message
+            : 'アカウントの作成に失敗しました。別のメールアドレスをお試しください。'
 }
 }
 </script>
@@ -157,4 +142,3 @@ input{
     background-color: #ffffff; 
 }
 </style>
-
