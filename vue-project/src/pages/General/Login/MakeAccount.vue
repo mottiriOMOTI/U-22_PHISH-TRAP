@@ -42,7 +42,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { registerUser } from '@/api/users.ts'
+import { registerUser } from '@/api/users'
 
 
 const name = ref('')
@@ -68,7 +68,7 @@ errorMessage.value = ''
   // 【安全装置】パスワードと確認用パスワードが同じかチェック！
 if (password.value !== passwordConfirm.value) {
     errorMessage.value = 'パスワードが一致しません。'
-
+ 
     return // ここで処理をストップする
 }
 
