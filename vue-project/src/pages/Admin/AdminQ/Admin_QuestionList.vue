@@ -5,7 +5,6 @@
             <p class="subtitle">{{ questionStore.questionListSubtitle }}</p>
         </div>
 
-
         <div v-if="questionStore.loading" class="pa-4">
             <v-skeleton-loader v-for="n in 3" :key="n" type="article" class="mb-3" />
         </div>
@@ -24,40 +23,89 @@
         </v-alert>
 
         <div v-else class="question-list pa-4">
-            <v-card v-for="question in questionStore.questions" :key="question.id" class="question-card"
-                variant="outlined">
-                <v-card-title class="text-subtitle-1">
-                    {{ question.title }}
-                </v-card-title>
+            <v-card
+                v-for="question in questionStore.questions"
+                :key="question.id"
+                class="question-card"
+                variant="outlined"
+            >
+                <v-card-text class="pa-4">
+                    <v-row align="start">
+                        <v-col cols="12" md="10">
+                            <div class="question-heading d-flex align-center flex-wrap ga-2 mb-2">
+                                <div class="question-title text-subtitle-1 font-weight-medium">
+                                    {{ question.title }}
+                                </div>
 
-                <v-card-subtitle>
-                    {{ question.sender_name }} &lt;{{ question.sender_email }}&gt;
-                </v-card-subtitle>
+                                <div class="question-tags d-flex align-center flex-wrap ga-1">
+                                    <v-chip
+                                        :color="question.is_phishing ? 'error' : 'success'"
+                                        size="small"
+                                        variant="tonal"
+                                    >
+                                        {{ question.is_phishing ? '詐欺メール' : '安全メール' }}
+                                    </v-chip>
+                                    <v-chip
+                                        v-if="question.has_link"
+                                        color="warning"
+                                        size="small"
+                                        variant="tonal"
+                                    >
+                                        リンクあり
+                                    </v-chip>
+                                    <v-chip
+                                        v-if="question.has_attachment"
+                                        color="info"
+                                        size="small"
+                                        variant="tonal"
+                                    >
+                                        添付あり
+                                    </v-chip>
+                                </div>
+                            </div>
 
-                <v-card-text>
-                    <p class="question-preview mb-3">
-                        {{ previewBody(question.body) }}
-                    </p>
+                            <div class="question-sender text-body-2 text-medium-emphasis mb-2">
+                                差出人：{{ question.sender_name }}, {{ question.sender_email }}
+                            </div>
 
-                    <div class="d-flex align-center flex-wrap ga-2">
-                        <v-chip :color="question.is_phishing ? 'error' : 'success'" size="small" variant="tonal">
-                            {{ question.is_phishing ? 'フィッシング' : '安全' }}
-                        </v-chip>
-                        <v-chip v-if="question.has_link" color="warning" size="small" variant="tonal">
-                            リンクあり
-                        </v-chip>
-                        <v-chip v-if="question.has_attachment" color="info" size="small" variant="tonal">
-                            添付あり
-                        </v-chip>
-                        <v-spacer />
-                        <span class="text-caption text-medium-emphasis">
-                            {{ formatDate(question.created_at) }}
-                        </span>
-                    </div>
+                            <p class="question-preview mb-0">
+                                {{ previewBody(question.body) }}
+                            </p>
+                        </v-col>
+
+                        <v-col cols="12" md="2">
+                            <div class="question-actions d-flex justify-start justify-md-end ga-2">
+                                <v-tooltip text="編集" location="top">
+                                    <template #activator="{ props }">
+                                        <v-btn
+                                            v-bind="props"
+                                            icon="mdi-pencil-outline"
+                                            color="primary"
+                                            variant="tonal"
+                                            size="small"
+                                            aria-label="編集"
+                                        />
+                                    </template>
+                                </v-tooltip>
+
+                                <v-tooltip text="削除" location="top">
+                                    <template #activator="{ props }">
+                                        <v-btn
+                                            v-bind="props"
+                                            icon="mdi-delete-outline"
+                                            color="error"
+                                            variant="tonal"
+                                            size="small"
+                                            aria-label="削除"
+                                        />
+                                    </template>
+                                </v-tooltip>
+                            </div>
+                        </v-col>
+                    </v-row>
                 </v-card-text>
             </v-card>
         </div>
-
     </v-sheet>
 </template>
 
@@ -80,18 +128,7 @@ const questionListTitle = computed(() => {
 
 function previewBody(body: string): string {
     const plain = body.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim()
-    return plain.length > 80 ? `${plain.slice(0, 80)}...` : plain
-}
-
-function formatDate(iso: string): string {
-    const date = new Date(iso)
-    return date.toLocaleString('ja-JP', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-    })
+    return plain
 }
 
 watch(
@@ -113,9 +150,36 @@ watch(
     gap: 12px;
 }
 
+.question-heading {
+    min-width: 0;
+}
+
+.question-title {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.question-tags {
+    min-width: 0;
+}
+
+.question-sender {
+    overflow-wrap: anywhere;
+}
+
 .question-preview {
+    display: -webkit-box;
+    min-height: 3.2em;
+    max-height: 3.2em;
     line-height: 1.6;
+    overflow: hidden;
     word-break: break-word;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+
+.question-actions {
+    min-height: 40px;
 }
 
 .subtitle {
