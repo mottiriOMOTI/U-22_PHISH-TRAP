@@ -30,20 +30,17 @@
     <button type="submit">登録する</button>
 
     </form>
-<!-- Register.vue の下部 -->
-<div class="link-to-login">
-    すでにアカウントをお持ちですか？ 
-    <router-link to="/">ログインはこちら</router-link> <!-- 👈 「/」にする -->
-</div>
-
-
+    
+    <!-- ログイン画面への誘導 -->
+    <div class="link-to-login">
+    すでにアカウントをお持ちですか？ <a href="/login.vue">ログインはこちら</a>
+    </div>
 </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { registerUser } from '@/api/users.ts'
-
+import { registerUser } from '@/api/users'
 
 const name = ref('')
 const email = ref('')
@@ -52,35 +49,18 @@ const passwordConfirm = ref('')
 const errorMessage = ref('')
 const successMessage = ref('')
 
-const hashPassword = async (rawPassword: string): Promise<string> => {
-    // 文字列をバイト配列に変換
-    const encoder = new TextEncoder()
-    const data = encoder.encode(rawPassword)
-    
-
-
-}
-
 const handleRegister = async () => {
 errorMessage.value = ''
-
 
   // 【安全装置】パスワードと確認用パスワードが同じかチェック！
 if (password.value !== passwordConfirm.value) {
     errorMessage.value = 'パスワードが一致しません。'
-
     return // ここで処理をストップする
 }
 
 try {
-     // 【追加】パスワードをハッシュ化する
-        const hashedPassword = await hashPassword(password.value)
-        
-    console.log('3. API(registerUser)を呼び出します', { name: name.value, email: email.value })
     // 注文係（API）に新規登録をお願いする
-    const newUser = await registerUser(name.value, email.value, hashedPassword) // パスワードはハッシュ化して渡す
-
-    console.log('4. APIからの返り値:', newUser) 
+    const newUser = await registerUser(name.value, email.value, password.value)
     
     console.log('登録成功！', newUser)
     alert(`登録が完了しました！ようこそ、${newUser.user_name}さん！`)
@@ -111,7 +91,7 @@ try {
     .input-group input {
         width: 100%;
         padding: 8px;
-        background-color: #ffffff;
+        background-color: #b4b4b4;
   /* 略 */
 }
 

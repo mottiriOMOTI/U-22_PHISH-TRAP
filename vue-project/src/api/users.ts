@@ -108,11 +108,9 @@ export async function registerUser(name: string, email: string, password: string
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-    'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
     },
     // 名前、メール、パスワードをバックエンド（ウェイター）に渡す
-    body: JSON.stringify({ user_name: name, email, password_hash: password }),
+    body: JSON.stringify({ name, email, password }),
   })
 
   if (!res.ok) {
