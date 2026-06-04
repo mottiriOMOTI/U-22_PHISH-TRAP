@@ -37,7 +37,6 @@ const handleLogin = async () => {
         error instanceof Error ? error.message : 'メールアドレスかパスワードが間違っています。'   //エラーメッセージの設定
     }
 }
-
 </script>
 
 <style lang="css" scoped>
