@@ -32,26 +32,43 @@
       </template>
     </v-alert>
  
-    <v-data-table
-      v-else
-      :headers="headers"
-      :items="users"
-      :items-per-page="-1"
-      density="comfortable"
-      class="rounded-lg"
-      no-data-text="該当するユーザーがいません"
-    >
-      <template #item.current_scenario="{ item }">
-        {{ scenarioLabel(item.current_scenario) }}
-      </template>
-      <template #item.score="{ item }">
-        {{ formatScore(item) }}
-      </template>
-      <template #item.last_active_at="{ item }">
-        {{ formatDate(item.last_active_at) }}
-      </template>
-      <template #bottom />
-    </v-data-table>
+    <div v-else>
+      <v-row class="user-card-list" dense>
+        <v-col cols="12" sm="6" md="4" v-for="item in users" :key="item.id">
+          <v-card class="user-card" elevation="1">
+            <v-card-text class="user-card-header py-4">
+              <div class="user-card-main">
+                <div class="user-card-info">
+                  <div class="user-card-name">{{ item.name }}</div>
+                  <div class="user-card-email">{{ item.email }}</div>
+                </div>
+                <div class="user-card-status">
+                  <v-chip size="small" variant="tonal" class="user-card-chip">
+                    {{ scenarioLabel(item.current_scenario) }}
+                  </v-chip>
+                  <v-icon :color="item.is_active ? 'success' : 'grey'" size="24">
+                    {{ item.is_active ? 'mdi-check-circle' : 'mdi-clock-outline' }}
+                  </v-icon>
+                </div>
+              </div>
+              <div class="user-card-sub">
+                <div>
+                  <div class="text-caption text--secondary">スコア</div>
+                  <div class="text-body-2 fw-semibold">{{ formatScore(item) }}</div>
+                </div>
+                <div>
+                  <div class="text-caption text--secondary">最終アクティブ</div>
+                  <div class="text-body-2">{{ formatDate(item.last_active_at) }}</div>
+                </div>
+              </div>
+            </v-card-text>
+          </v-card>
+        </v-col>
+      </v-row>
+      <v-alert v-if="!loading && users.length === 0" type="info" variant="tonal">
+        該当するユーザーがいません
+      </v-alert>
+    </div>
   </v-container>
 </template>
  
@@ -73,14 +90,6 @@ const scenarioLabelMap: Record<Scenario, string> = {
   school: '学生',
   daily: '一般',
 }
- 
-const headers = [
-  { title: '名前', key: 'name', sortable: true },
-  { title: 'メールアドレス', key: 'email', sortable: true },
-  { title: 'シチュエーション', key: 'current_scenario', sortable: true },
-  { title: 'スコア', key: 'score', sortable: false },
-  
-]
  
 const selectedScenario = ref<ScenarioFilter>('all')
 const users = ref<UserListItem[]>([])
@@ -128,7 +137,72 @@ onMounted(load)
 </script>
  
 <style scoped>
-.admin-userlist :deep(.v-data-table) {
-  background-color: white;
+.user-card-list {
+  row-gap: 24px;
+  column-gap: 24px;
+}
+
+.user-card {
+  width: 100%;
+  min-height: 160px;
+  border-radius: 20px;
+}
+
+.user-card-header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.user-card-main {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+  flex-wrap: wrap;
+}
+
+.user-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.user-card-name {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.user-card-email {
+  color: rgba(0, 0, 0, 0.65);
+  font-size: 0.95rem;
+}
+
+.user-card-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.user-card-chip {
+  text-transform: none;
+}
+
+.user-card-sub {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.user-card-sub > div {
+  min-width: 120px;
+}
+
+.text-body-2 {
+  font-weight: 600;
 }
 </style>

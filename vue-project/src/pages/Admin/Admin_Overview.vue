@@ -217,7 +217,7 @@ const questionList = [
 
   padding: 24px;
 
-  background-color: #000101;
+  background-color: #f8fafc;
 }
 
 /* ヘッダー */
