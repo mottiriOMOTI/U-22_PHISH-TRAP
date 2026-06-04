@@ -19,6 +19,10 @@
         v-model="selectedCategory"
         class="select-box"
       >
+        <option value="all">
+          総ユーザー
+        </option>
+
         <option value="student">
           学生
         </option>
@@ -44,7 +48,17 @@
           総学習者数
         </h2>
 
-        <div class="dummy-box"></div>
+        <div class="count-box">
+          <template v-if="loadingLearnerCount">
+            <span>読み込み中...</span>
+          </template>
+          <template v-else-if="learnerCountError">
+            <span>エラー</span>
+          </template>
+          <template v-else>
+            <span class="count-display">{{ selectedCategoryCount.toLocaleString() }}人</span>
+          </template>
+        </div>
 
       </div>
 
@@ -55,7 +69,17 @@
           平均正答率
         </h2>
 
-        <div class="dummy-box"></div>
+        <div class="count-box">
+          <template v-if="loadingAccuracy">
+            <span>読み込み中...</span>
+          </template>
+          <template v-else-if="accuracyError">
+            <span>エラー</span>
+          </template>
+          <template v-else>
+            <span class="count-display">{{ averageAccuracy.toFixed(1) }}%</span>
+          </template>
+        </div>
 
       </div>
 
@@ -101,10 +125,81 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
+import { fetchLearnerCount, type Scenario } from '@/api/adminOverviewApi'
+import { fetchAverageAccuracy } from '@/api/trainingStatsApi'
 
-const selectedCategory =
-  ref('student')
+type Category = 'student' | 'company' | 'general' | 'all'
+
+const selectedCategory = ref<Category>('all')
+const learnerCounts = ref({
+  total: 0,
+  business: 0,
+  school: 0,
+  daily: 0,
+})
+const loadingLearnerCount = ref(true)
+const learnerCountError = ref(false)
+
+const averageAccuracy = ref(0)
+const loadingAccuracy = ref(true)
+const accuracyError = ref(false)
+
+const categoryMap: Record<Category, { label: string; key: keyof typeof learnerCounts.value; scenario?: Scenario }> = {
+  all: { label: '総ユーザー', key: 'total' },
+  student: { label: '学生', key: 'school', scenario: 'school' },
+  company: { label: '企業', key: 'business', scenario: 'business' },
+  general: { label: '一般', key: 'daily', scenario: 'daily' },
+}
+
+const selectedCategoryLabel = computed(() => categoryMap[selectedCategory.value].label)
+const selectedCategoryCount = computed(() => learnerCounts.value[categoryMap[selectedCategory.value].key])
+const selectedCategoryScenario = computed(() => categoryMap[selectedCategory.value].scenario)
+
+async function loadLearnerCount() {
+  loadingLearnerCount.value = true
+  learnerCountError.value = false
+
+  try {
+    const [total, business, school, daily] = await Promise.all([
+      fetchLearnerCount(),
+      fetchLearnerCount('business'),
+      fetchLearnerCount('school'),
+      fetchLearnerCount('daily'),
+    ])
+
+    learnerCounts.value = { total, business, school, daily }
+  } catch (error) {
+    learnerCountError.value = true
+    learnerCounts.value = { total: 0, business: 0, school: 0, daily: 0 }
+  } finally {
+    loadingLearnerCount.value = false
+  }
+}
+
+async function loadAccuracy() {
+  loadingAccuracy.value = true
+  accuracyError.value = false
+
+  try {
+    averageAccuracy.value = await fetchAverageAccuracy(selectedCategoryScenario.value)
+  } catch (error) {
+    accuracyError.value = true
+    averageAccuracy.value = 0
+  } finally {
+    loadingAccuracy.value = false
+  }
+}
+
+onMounted(() => {
+  loadLearnerCount()
+  loadAccuracy()
+})
+
+watch(selectedCategory, () => {
+  loadLearnerCount()
+  loadAccuracy()
+})
 
 const questionList = [
   'Amazon偽装',
@@ -122,7 +217,7 @@ const questionList = [
 
   padding: 24px;
 
-  background-color: #f8fafc;
+  background-color: #000101;
 }
 
 /* ヘッダー */
@@ -209,6 +304,35 @@ const questionList = [
   border-radius: 8px;
 
   background-color: #e2e8f0;
+}
+
+.count-box {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-width: 120px;
+  padding: 16px;
+  border-radius: 8px;
+  background-color: #e2e8f0;
+  color: #0f172a;
+}
+
+.count-display {
+  font-size: 24px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.count-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.count-row span:last-child {
+  color: #0f172a;
 }
 
 /* 説明 */

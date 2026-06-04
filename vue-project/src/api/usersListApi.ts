@@ -31,4 +31,4 @@ export async function fetchUsers(scenario?: Scenario): Promise<UserListItem[]> {
 
   return await res.json()
 }
- 
+
