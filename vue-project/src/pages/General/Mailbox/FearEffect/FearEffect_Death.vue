@@ -7,12 +7,18 @@
     <h1 class="text-h4 font-weight-bold mb-2">🚨 バッドエンド (Death)</h1>
     <p class="text-body-1 text-medium-emphasis text-center mb-6">演出テスト用の4×4ボタンエリアです。</p>
 
-    <!-- 4×4の演出テスト用ボタングリッド -->
+        <!-- 4×4の演出テスト用ボタングリッド -->
     <v-row class="w-100 max-width-grid mb-8" no-gutters>
       <v-col v-for="n in 16" :key="n" cols="3" class="pa-1">
         <v-btn
           block
-          :color="n === 7 || n === 8 ? 'error' : (n >= 4 && n <= 6 ? 'warning' : 'deep-orange-darken-4')"
+          :color="
+            n === 16 ? 'amber-accent-4' : // 👈 【追加】16番をゴールド（コンボボタン）に指定
+            (n >= 11 && n <= 14 ? 'purple-darken-3' : 
+            (n === 9 || n === 10 ? 'error' : 
+            (n === 7 || n === 8 ? 'success' : 
+            (n >= 4 && n <= 6 ? 'warning' : 'deep-orange-darken-4'))))
+          "
           variant="tonal"
           size="small"
           @click="triggerEffect(n)"
@@ -21,6 +27,75 @@
         </v-btn>
       </v-col>
     </v-row>
+
+
+    <!-- 🟢 【追加】演出11: 画面内に現れる「ファイル暗号化進行中」ステータスカード -->
+         <!-- 🔙 最前面の暗号化警告ダイアログ（動的バインド対応版） -->
+    <v-dialog
+      v-model="showEncrypt"
+      persistent
+      width="600"
+    >
+      <v-card
+        color="#150505"
+        variant="flat"
+        :style="{ border: `1px solid ${popupColor}`, boxShadow: `0 0 15px ${popupColor}66` }"
+        class="pa-6 rounded-lg text-left"
+      >
+        <!-- 🟢 動的アイコン & 動的タイトル -->
+        <div class="d-flex align-center mb-4">
+          <v-icon :icon="popupIcon" :color="popupColor" size="40" class="blink-fast me-3"></v-icon>
+          <h2 class="text-h5 font-weight-bold" :style="{ color: popupColor }">
+            {{ popupTitle }}
+          </h2>
+        </div>
+
+        <!-- 本文（動的バインド） -->
+        <v-card-text class="px-0 py-0 mb-4 text-body-1 text-white font-weight-bold" style="line-height: 1.5;">
+          {{ encryptMainText }}
+        </v-card-text>
+
+        <!-- 横長スライダータイマー（動的バインド） -->
+        <div class="mb-4">
+          <div class="d-flex align-center justify-space-between mb-1">
+            <span class="text-caption text-grey-lighten-1 font-mono">>> {{ encryptStatusText }}</span>
+            <span class="text-h6 font-weight-bold font-mono" :style="{ color: popupColor }">
+              {{ encryptProgress.toFixed(1) }}%
+            </span>
+          </div>
+          
+          <v-progress-linear
+            v-model="encryptProgress"
+            :color="popupColor"
+            height="16"
+            striped
+            class="rounded-pill"
+          ></v-progress-linear>
+        </div>
+
+        <v-divider :color="popupColor" class="border-opacity-30 my-4"></v-divider>
+
+        <!-- 箇条書き（動的バインド） -->
+        <div class="text-body-2 text-grey-lighten-2" style="line-height: 1.6;">
+          <p class="font-weight-bold text-grey-lighten-1 mb-2">■ 以下のステータスを確認してください：</p>
+          <v-list bg-color="transparent" density="compact" class="py-0">
+            <v-list-item v-for="(text, index) in encryptChecklist" :key="index" class="px-0 min-height-zero mb-1">
+              <template v-slot:prepend>
+                <v-icon icon="mdi-radiobox-marked" :color="popupColor" size="16" class="me-2"></v-icon>
+              </template>
+              <v-list-item-title class="text-wrap text-body-2 text-grey-lighten-2">
+                {{ text }}
+              </v-list-item-title>
+            </v-list-item>
+          </v-list>
+        </div>
+      </v-card>
+    </v-dialog>
+
+     <!-- 🟢 完全シャットダウン（暗転）用オーバーレイ -->
+    <!-- showBlackout が true になると active クラスが付与され、CSS側で滑らかなフェードが発動します -->
+    <div :class="['blackout-screen', { 'active': showBlackout }]"></div>
+
 
     <v-btn color="error" variant="flat" size="large" prepend-icon="mdi-arrow-left" @click="goBack">
       解説を読んでリトライする
@@ -97,20 +172,41 @@ import { triggerNoiseEffect } from '@/pages/General/Mailbox/FearEffect/FearEffec
 import { triggerBsodEffect } from '@/pages/General/Mailbox/FearEffect/FearEffect_Death_Attack/bsodEffect'
 
 
+// 🟢 【追加】演出11の新規インポート
+import { 
+  triggerEncryptEffect, 
+  resetEncryptEffect,
+  showEncrypt, 
+  encryptProgress, 
+  encryptStatusText,
+  encryptMainText,
+  encryptChecklist,
+  popupTitle, // 👈 追加
+  popupIcon,  // 👈 追加
+  popupColor  // 👈 追加
+} from '@/pages/General/Mailbox/FearEffect/FearEffect_Death_Attack/encryptEffect'
+
+// 🟢 【追加】演出14（シーケンス司令塔）のインポート
+import { triggerSequenceEffect } from '@/pages/General/Mailbox/FearEffect/FearEffect_Death_Attack/sequenceController'
+
+const showBlackout = ref(false)
+
 const router = useRouter()
 
-// 🟢 【修正】通知のリスト（配列）で管理します
 const notifications = ref<any[]>([])
-
-// 🟢 【追加】新規演出用のリアクティブ変数
 const showNoise = ref(false)
 const showBsod = ref(false)
 const bsodPercent = ref(0)
+
+// 演出のリセット処理
 const resetAll = () => {
   showBsod.value = false
   showNoise.value = false
   bsodPercent.value = 0
+  // 🟢 演出11の内部変数を外部からまとめてリセット
+  resetEncryptEffect()
 }
+
 
 const triggerEffect = (effectNumber: number) => {
   console.log(`🎬 演出テストボタン [ ${effectNumber} ] が押されました`)
@@ -144,13 +240,57 @@ const triggerEffect = (effectNumber: number) => {
       break
       
     // 🟢 演出8: ブルースクリーン
-    case 10:
-      triggerBsodEffect({ show: showBsod, percent: bsodPercent })
+     case 10: 
+      triggerBsodEffect({ 
+        show: showBsod, 
+        percent: bsodPercent, 
+        isBlackout: showBlackout,
+        onComplete: resetAll // ➔ 終わったら自動でこの関数のリセット処理が走る
+      }) 
       break
+
+      // 🟢 演出11: 身代金要求ポップアップ（既存の紫デザイン）
+    case 11:
+      triggerEncryptEffect('ransom')
+      break
+
+    // 🟢 演出12: 不審プロセス検出強制スキャン（赤色デザイン）
+    case 12:
+      triggerEncryptEffect('scan')
+      break
+
+    // 🟢 演出13: システムMBR破壊上書き（オレンジデザイン）
+    case 13:
+      triggerEncryptEffect('destroy')
+      break
+      
+    // 🟢 演出13: システムMBR破壊上書き（オレンジデザイン）
+    case 13:
+      triggerEncryptEffect('destroy')
+      break
+
+    // 🟢 演出14: カメラ作動（黄色デザイン）
+    case 14:
+      triggerEncryptEffect('camera')
+      break
+
+      // 🟢 演出16: 全演出同時多発スタックコンボを発動！
+    case 16:
+      triggerSequenceEffect(
+        notifications,
+        showNoise,
+        () => triggerBsodEffect({ 
+          show: showBsod, 
+          percent: bsodPercent, 
+          isBlackout: showBlackout,
+          onComplete: resetAll // ➔ 全てのパニック演出の最後に自動で元の画面に帰還
+        })
+      )
 
     default:
       console.log(`⚠️ 演出 ${effectNumber} はまだ実装されていません`)
       break
+
   }
 }
 
@@ -253,4 +393,28 @@ const goBack = () => { router.push({ name: 'Explanation' }) }
   margin-bottom: 10px;
 }
 
-</style>
+
+/* 🟢 【修正】消えるときは一瞬、戻るときはじわ〜っと戻る特別なCSS設定 */
+.blackout-screen {
+  position: fixed;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  background-color: #000000 !important; /* 完全な漆黒 */
+  z-index: 99999;
+  opacity: 0;
+  pointer-events: none;
+  
+  /* ➔ 戻るとき（activeが外れるとき）のアニメーション設定 */
+  /* 2.0s にしているので、真っ黒から2秒かけてじわ〜っと元の画面が浮き上がります */
+  transition: opacity 2.0s ease-in-out; 
+}
+
+.blackout-screen.active {
+  opacity: 1;
+  pointer-events: auto;
+  
+  /* ➔ 真っ黒になるとき（activeが付いたとき）のアニメーション設定 */
+  /* transitionの時間を一瞬（0s）にして上書きし、バッと一気に暗転させます */
+  transition: opacity 0s !important; 
+}
+</style> <!-- 👈 ファイルの一番最後の閉じタグ -->
+
