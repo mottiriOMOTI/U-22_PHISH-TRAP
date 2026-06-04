@@ -1,6 +1,7 @@
 const API_BASE_URL = '/api/supabasetest'
 
 export type user_role = 'admin' | 'learner'
+<<<<<<< HEAD
 export type scenario = 'student' | 'adult' | 'general'
 
 export type User = {
@@ -42,10 +43,63 @@ export async function fetchItem(id: string): Promise<User> {
 
 export async function createItem(user_name: string): Promise<User> {
   const res = await fetch(API_BASE_URL, {
+=======
+export type scenario = 'school' | 'student' | 'adult' | 'general'
+
+export type User = {
+  id: string
+  name: string
+  email: string
+  password_hash: string
+  role: user_role
+  current_scenario: scenario | null
+  created_at: string
+  last_active_at: string | null
+  is_active: boolean
+}
+
+type ApiErrorBody = {
+  error?: unknown
+  message?: unknown
+}
+
+async function throwApiError(res: Response, fallbackMessage: string): Promise<never> {
+  const textBody = await res
+    .clone()
+    .text()
+    .catch(() => '')
+  const body = (await res.json().catch(() => null)) as ApiErrorBody | null
+  const nonJsonMessage = textBody.trim().slice(0, 200)
+  const message =
+    typeof body?.error === 'string'
+      ? body.error
+      : typeof body?.message === 'string'
+        ? body.message
+        : nonJsonMessage
+          ? `${fallbackMessage}: ${nonJsonMessage}`
+          : `${fallbackMessage} (${res.status} ${res.statusText})`
+
+  throw new Error(message)
+}
+
+async function hashPassword(rawPassword: string): Promise<string> {
+  const encoder = new TextEncoder()
+  const data = encoder.encode(rawPassword)
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+  const hashArray = Array.from(new Uint8Array(hashBuffer))
+
+  return hashArray.map((byte) => byte.toString(16).padStart(2, '0')).join('')
+}
+
+export async function loginUser(email: string, password: string): Promise<User> {
+  const password_hash = await hashPassword(password)
+  const res = await fetch(`${API_BASE_URL}/login`, {
+>>>>>>> yuta
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
+<<<<<<< HEAD
     body: JSON.stringify({ user_name }),
   })
 
@@ -90,6 +144,8 @@ export async function loginUser(email: string, password_hash: string): Promise<U
       'Content-Type': 'application/json',
     },
     // メールアドレスとパスワードをウェイターに渡す
+=======
+>>>>>>> yuta
     body: JSON.stringify({ email, password_hash }),
   })
 
@@ -97,6 +153,7 @@ export async function loginUser(email: string, password_hash: string): Promise<U
     return throwApiError(res, 'ログインに失敗しました')
   }
 
+<<<<<<< HEAD
   // 成功したら、ユーザー情報が返ってくる
   return await res.json()
 }
@@ -113,6 +170,19 @@ export async function registerUser(name: string, email: string, password: string
     },
     // 名前、メール、パスワードをバックエンド（ウェイター）に渡す
     body: JSON.stringify({ user_name: name, email, password_hash: password }),
+=======
+  return await res.json()
+}
+
+export async function registerUser(name: string, email: string, password: string): Promise<User> {
+  const password_hash = await hashPassword(password)
+  const res = await fetch(`${API_BASE_URL}/register`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ name, email, password_hash }),
+>>>>>>> yuta
   })
 
   if (!res.ok) {
@@ -120,4 +190,8 @@ export async function registerUser(name: string, email: string, password: string
   }
 
   return await res.json()
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> yuta
