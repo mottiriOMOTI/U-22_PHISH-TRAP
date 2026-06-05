@@ -15,27 +15,17 @@
       </div>
 
       <!-- プルダウン -->
-      <select
-        v-model="selectedCategory"
-        class="select-box"
-      >
-        <option value="all">
-          総ユーザー
-        </option>
-
-        <option value="student">
-          学生
-        </option>
-
-        <option value="company">
-          企業
-        </option>
-
-        <option value="general">
-          一般
-        </option>
-      </select>
-
+      <v-select
+  v-model="selectedCategory"
+  :items="categoryOptions"
+  item-title="label"
+  item-value="value"
+  label="シチュエーション"
+  density="compact"
+  variant="outlined"
+  hide-details
+  style="max-width: 240px;"
+/>
     </div>
 
     <!-- 上カード -->
@@ -132,6 +122,12 @@ import { fetchAverageAccuracy } from '@/api/trainingStatsApi'
 type Category = 'student' | 'company' | 'general' | 'all'
 
 const selectedCategory = ref<Category>('all')
+const categoryOptions = [
+  { label: '総ユーザー', value: 'all' },
+  { label: '学生', value: 'student' },
+  { label: '企業', value: 'company' },
+  { label: '一般', value: 'general' },
+]
 const learnerCounts = ref({
   total: 0,
   business: 0,
@@ -247,22 +243,7 @@ const questionList = [
   color: #64748b;
 }
 
-/* select */
-.select-box {
-  width: 180px;
 
-  padding: 10px 14px;
-
-  border: none;
-
-  border-radius: 8px;
-
-  background-color: white;
-
-  color: #0f172a;
-
-  outline: none;
-}
 
 /* 2列 */
 .card-grid {
