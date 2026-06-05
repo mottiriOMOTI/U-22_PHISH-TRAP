@@ -30,13 +30,6 @@
     <button type="submit">登録する</button>
 
     </form>
-<<<<<<< HEAD
-    
-    <!-- ログイン画面への誘導 -->
-    <div class="link-to-login">
-    すでにアカウントをお持ちですか？ <a href="/login.vue">ログインはこちら</a>
-    </div>
-=======
 <!-- Register.vue の下部 -->
 <div class="link-to-login">
     すでにアカウントをお持ちですか？ 
@@ -44,20 +37,14 @@
 </div>
 
 
->>>>>>> yuta
 </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
-<<<<<<< HEAD
-import { registerUser } from '@/api/users'
-
-=======
 import { registerUser } from '@/api/users.ts'
 
 
->>>>>>> yuta
 const name = ref('')
 const email = ref('')
 const password = ref('')
@@ -68,28 +55,15 @@ const successMessage = ref('')
 const handleRegister = async () => {
 errorMessage.value = ''
 
-<<<<<<< HEAD
-  // 【安全装置】パスワードと確認用パスワードが同じかチェック！
-if (password.value !== passwordConfirm.value) {
-    errorMessage.value = 'パスワードが一致しません。'
-=======
 
   // 【安全装置】パスワードと確認用パスワードが同じかチェック！
 if (password.value !== passwordConfirm.value) {
     errorMessage.value = 'パスワードが一致しません。'
 
->>>>>>> yuta
     return // ここで処理をストップする
 }
 
 try {
-<<<<<<< HEAD
-    // 注文係（API）に新規登録をお願いする
-    const newUser = await registerUser(name.value, email.value, password.value)
-    
-    console.log('登録成功！', newUser)
-    alert(`登録が完了しました！ようこそ、${newUser.user_name}さん！`)
-=======
     console.log('3. API(registerUser)を呼び出します', { name: name.value, email: email.value })
     // 注文係（API）に新規登録をお願いする
     const newUser = await registerUser(name.value, email.value, password.value)
@@ -98,20 +72,15 @@ try {
     
     console.log('登録成功！', newUser)
     alert(`登録が完了しました！ようこそ、${newUser.name}さん！`)
->>>>>>> yuta
     
     // 【ここにログイン画面やホーム画面へ移動する処理を追加します】
 
 } catch (error: any) {
     console.error(error)
-<<<<<<< HEAD
-    errorMessage.value = 'アカウントの作成に失敗しました。別のメールアドレスをお試しください。'
-=======
     errorMessage.value =
         error instanceof Error
             ? error.message
             : 'アカウントの作成に失敗しました。別のメールアドレスをお試しください。'
->>>>>>> yuta
 }
 }
 </script>
@@ -133,11 +102,7 @@ try {
     .input-group input {
         width: 100%;
         padding: 8px;
-<<<<<<< HEAD
-        background-color: #b4b4b4;
-=======
         background-color: #ffffff;
->>>>>>> yuta
   /* 略 */
 }
 
@@ -177,7 +142,3 @@ input{
     background-color: #ffffff; 
 }
 </style>
-<<<<<<< HEAD
-
-=======
->>>>>>> yuta
