@@ -1,7 +1,7 @@
 const API_BASE_URL = '/api/supabasetest'
 
 export type user_role = 'admin' | 'learner'
-export type scenario = 'school' | 'student' | 'adult' | 'general'
+export type scenario = 'school' | 'student' | 'business' | 'general'
 
 export type User = {
   id: string
