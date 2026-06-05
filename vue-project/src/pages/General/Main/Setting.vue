@@ -17,7 +17,7 @@
       <div class="settings-list">
         <article v-for="item in settingItems" :key="item.key" class="setting-row">
           <div class="setting-row__content">
-            <v-icon :icon="item.icon" :class="['setting-row__icon', item.iconClass]" />
+            <v-icon :icon="item.icon" :class="['setting-row__icon', item.iconClass]"/>
             <div>
               <h3>{{ item.title }}</h3>
               <p>{{ item.description }}</p>
