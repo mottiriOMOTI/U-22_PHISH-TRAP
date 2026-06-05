@@ -19,11 +19,15 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import {loginUser } from '@/api/users'   
+import { useRouter } from 'vue-router'
+
+import { loginUser } from '@/api/users'
 
 const email = ref('')
 const password = ref('')
 const errorMessage = ref('')     //変数宣言
+const router = useRouter()
+
 const handleLogin = async () => {
     try { errorMessage.value = ''
 
@@ -31,6 +35,7 @@ const handleLogin = async () => {
     // ログイン成功時の処理
     console.log('ログイン成功!', user)
     alert('ようこそ、' + user.name + 'さん！')  //ユーザー名を表示
+    await router.push('/mailbox')
     } catch (error: any) {
     console.error('ログインエラー:', error)
     errorMessage.value =

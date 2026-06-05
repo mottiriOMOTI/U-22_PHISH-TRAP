@@ -1,5 +1,5 @@
 <template>
-  <v-navigation-drawer permanent width="288" class="general-sidebar">
+  <v-navigation-drawer permanent width="240" class="general-sidebar">
     <div class="general-sidebar__inner">
       <RouterLink to="/mailbox" class="brand-link" aria-label="PHISH-TRAP ホーム">
         <v-icon icon="mdi-shield-outline" class="brand-link__icon" />
@@ -26,7 +26,7 @@
       </nav>
 
       <div class="sidebar-footer">
-        <RouterLink to="/" class="logout-link">
+        <RouterLink to="/" class="logout-link" @click="clearCurrentUser">
           <v-icon icon="mdi-logout" />
           <span>ログアウト</span>
         </RouterLink>
@@ -38,6 +38,8 @@
 
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
+
+import { clearCurrentUser } from '@/api/users'
 
 const route = useRoute()
 
@@ -93,43 +95,43 @@ function isActive(path: string) {
   display: flex;
   height: 100%;
   flex-direction: column;
-  padding: 24px 20px 16px;
+  padding: 20px 16px 14px;
 }
 
 .brand-link {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 7px;
   color: #ffffff;
   text-decoration: none;
 }
 
 .brand-link__icon {
   color: #ff4052;
-  font-size: 38px;
+  font-size: 34px;
 }
 
 .brand-link__name {
-  font-size: 20px;
+  font-size: 17px;
   font-weight: 800;
   line-height: 1;
 }
 
 .brand-link__danger {
   color: #ff344c;
-  font-size: 19px;
+  font-size: 16px;
   font-weight: 900;
   line-height: 1;
 }
 
 .score-card {
   display: grid;
-  width: 200px;
-  min-height: 54px;
-  margin: 12px 0 0 47px;
+  width: 170px;
+  min-height: 48px;
+  margin: 10px 0 0 38px;
   align-content: center;
-  padding: 8px 12px;
-  border-radius: 9px;
+  padding: 7px 10px;
+  border-radius: 8px;
   background: #172238;
 }
 
@@ -141,36 +143,37 @@ function isActive(path: string) {
 
 .score-card strong {
   margin-top: 3px;
-  font-size: 21px;
+  font-size: 19px;
   font-weight: 900;
   line-height: 1;
 }
 
 .sidebar-nav {
   display: grid;
-  gap: 10px;
-  margin-top: 42px;
-  padding-bottom: 12px;
+  gap: 8px;
+  margin-top: 36px;
+  padding-bottom: 10px;
 }
 
 .sidebar-nav__link {
   display: flex;
-  height: 52px;
+  height: 46px;
   align-items: center;
-  gap: 14px;
-  padding: 0 17px;
-  border-radius: 26px;
+  gap: 12px;
+  padding: 0 14px;
+  border-radius: 23px;
   color: #d4e0f1;
-  font-size: 19px;
+  font-size: 16px;
   font-weight: 800;
   text-decoration: none;
+  white-space: nowrap;
   transition:
     background-color 160ms ease,
     color 160ms ease;
 }
 
 .sidebar-nav__link :deep(.v-icon) {
-  font-size: 26px;
+  font-size: 24px;
 }
 
 .sidebar-nav__link:hover,
@@ -185,26 +188,26 @@ function isActive(path: string) {
 
 .logout-link {
   display: flex;
-  height: 38px;
+  height: 34px;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  border-radius: 19px;
+  gap: 8px;
+  border-radius: 17px;
   background: #ffffff;
   color: #bdd0e6;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 800;
   text-decoration: none;
 }
 
 .logout-link :deep(.v-icon) {
-  font-size: 20px;
+  font-size: 18px;
 }
 
 .sidebar-footer p {
-  margin: 14px 0 0;
+  margin: 12px 0 0;
   color: #8aa0bd;
-  font-size: 13px;
+  font-size: 12px;
   text-align: center;
 }
 </style>

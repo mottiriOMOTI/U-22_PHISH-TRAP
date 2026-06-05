@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { getAccountSummary } from '../services/accountStore';
 import { getSettings, resetLearningHistory, updateSettings } from '../services/settingsStore';
 const router = Router();
 router.get('/jsonget', async (_req, res) => {
@@ -23,6 +24,16 @@ router.get('/settings', async (_req, res) => {
     catch (error) {
         console.error('settings get server error:', error);
         return res.status(500).json({ ok: false, error: 'Failed to fetch settings' });
+    }
+});
+router.get('/account', async (_req, res) => {
+    try {
+        const account = await getAccountSummary();
+        return res.json({ ok: true, account });
+    }
+    catch (error) {
+        console.error('account get server error:', error);
+        return res.status(500).json({ ok: false, error: 'Failed to fetch account' });
     }
 });
 router.put('/settings', async (req, res) => {

@@ -195,7 +195,7 @@ onMounted(loadSettings)
   position: relative;
   box-sizing: border-box;
   min-height: 100vh;
-  padding: 24px 28px 18px;
+  padding: 18px 22px 14px;
   background: #172337;
   color: #ffffff;
 }
@@ -203,18 +203,18 @@ onMounted(loadSettings)
 .settings-hero {
   display: flex;
   align-items: center;
-  gap: 13px;
-  margin-bottom: 20px;
+  gap: 11px;
+  margin-bottom: 14px;
 }
 
 .settings-hero__icon {
   color: #b449ff;
-  font-size: 42px;
+  font-size: 36px;
 }
 
 .settings-hero h1 {
   margin: 0;
-  font-size: 32px;
+  font-size: 28px;
   font-weight: 800;
   line-height: 1.1;
 }
@@ -227,47 +227,47 @@ onMounted(loadSettings)
 }
 
 .settings-hero p {
-  margin-top: 7px;
-  font-size: 17px;
+  margin-top: 5px;
+  font-size: 15px;
 }
 
 .settings-panel {
-  width: min(100%, 1100px);
-  padding: 20px 24px;
+  width: min(100%, 1040px);
+  padding: 16px 20px;
   border: 1px solid #34465f;
-  border-radius: 14px;
+  border-radius: 12px;
   background: #172337;
 }
 
 .settings-panel + .settings-panel {
-  margin-top: 18px;
+  margin-top: 12px;
 }
 
 .settings-panel__header h2 {
-  margin: 0 0 5px;
-  font-size: 18px;
+  margin: 0 0 4px;
+  font-size: 17px;
   font-weight: 800;
   line-height: 1.3;
 }
 
 .settings-panel__header p {
-  font-size: 16px;
+  font-size: 14px;
 }
 
 .settings-list {
   display: grid;
-  gap: 16px;
-  margin-top: 18px;
+  gap: 12px;
+  margin-top: 14px;
 }
 
 .setting-row {
   display: flex;
-  min-height: 58px;
+  min-height: 50px;
   align-items: center;
   justify-content: space-between;
-  gap: 20px;
-  padding: 0 18px;
-  border-radius: 10px;
+  gap: 16px;
+  padding: 0 14px;
+  border-radius: 8px;
   background: #111a2f;
 }
 
@@ -275,12 +275,12 @@ onMounted(loadSettings)
   display: flex;
   min-width: 0;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
 }
 
 .setting-row__icon {
   flex: 0 0 auto;
-  font-size: 24px;
+  font-size: 22px;
 }
 
 .setting-row__icon--sound {
@@ -297,13 +297,13 @@ onMounted(loadSettings)
 
 .setting-row h3 {
   margin: 0 0 2px;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 800;
   line-height: 1.25;
 }
 
 .setting-row p {
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.3;
 }
 
@@ -347,22 +347,22 @@ onMounted(loadSettings)
 }
 
 .settings-panel--data {
-  padding-bottom: 20px;
+  padding-bottom: 16px;
 }
 
 .reset-button {
   display: flex;
   width: 100%;
-  min-height: 38px;
+  min-height: 34px;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  margin-top: 18px;
+  gap: 10px;
+  margin-top: 14px;
   border: 2px solid #ff3048;
   border-radius: 8px;
   background: #ffffff;
   color: #ff3048;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 800;
   cursor: pointer;
   transition:
@@ -375,9 +375,9 @@ onMounted(loadSettings)
 }
 
 .settings-message {
-  width: min(100%, 1100px);
-  margin: 10px 0 0;
-  font-size: 14px;
+  width: min(100%, 1040px);
+  margin: 8px 0 0;
+  font-size: 13px;
   font-weight: 700;
 }
 
@@ -391,34 +391,34 @@ onMounted(loadSettings)
 
 .help-button {
   position: fixed;
-  right: 16px;
-  bottom: 14px;
-  width: 38px;
-  height: 38px;
+  right: 14px;
+  bottom: 12px;
+  width: 34px;
+  height: 34px;
   border: 1px solid #d7dce7;
   border-radius: 50%;
   background: #ffffff;
   color: #1e2430;
-  font-size: 24px;
+  font-size: 22px;
   line-height: 1;
   cursor: pointer;
 }
 
 @media (max-width: 900px) {
   .settings-page {
-    padding: 28px 18px 28px;
+    padding: 18px 14px 16px;
   }
 
   .settings-hero h1 {
-    font-size: 32px;
+    font-size: 28px;
   }
 
   .settings-panel {
-    padding: 22px;
+    padding: 16px;
   }
 
   .setting-row {
-    padding: 18px;
+    padding: 14px;
   }
 }
 
