@@ -180,6 +180,7 @@ onMounted(load)
 .user-card-name {
   font-size: 1.05rem;
   font-weight: 700;
+  padding: 5px;
 }
 
 .user-card-email {
