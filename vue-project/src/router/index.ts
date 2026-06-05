@@ -264,11 +264,7 @@ const router = createRouter({
         sidebar: 'admin',
         header: null,
       }
-    },{
-    path: '/mailbox/feareffect/virus-alert',
-    name: 'VirusAlertPage',
-    component: () => import('@/pages/General/Mailbox/FearEffect/FearEffect_Death_Attack/VirusAlertPage.vue'),
-  }
+    }
 
 
     

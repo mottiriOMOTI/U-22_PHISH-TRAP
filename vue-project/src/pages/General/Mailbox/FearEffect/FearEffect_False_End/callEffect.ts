@@ -1,78 +1,56 @@
 import { ref } from 'vue'
+import { type SituationTag } from './falseNotificationEffect'
 
-// 🟢 着信画面に必要なデータをすべて集中管理
 export const showCall = ref(false)
 export const callerName = ref('')
 export const callStatus = ref('着信中...')
 export const callDuration = ref(0)
-export const isCallConnected = ref(false) // 通話が繋がったかどうかのフラグ
+export const isCallConnected = ref(false)
+export const callAudioLog = ref('') // 🟢 上司・先生・サービスの怒鳴り声を切り替える用
 
 let callTimer: any = null
 let durationTimer: any = null
 
-/**
- * 演出15: 緊急社内通話の着信ポップアップを開始する
- * @param type かけてくる相手 ('boss' | 'hr')
- */
-export const triggerCallEffect = (type: 'boss' | 'hr') => {
-  console.log(`📞 演出15: 緊急着信を実行します [ ${type} ]`)
-
-  // タイマーの初期リセット
+export const triggerCallEffect = (tag: SituationTag) => {
   if (callTimer) clearTimeout(callTimer)
   if (durationTimer) clearInterval(durationTimer)
 
-  // 状態の初期化
   showCall.value = true
   isCallConnected.value = false
   callDuration.value = 0
-  callStatus.value = '社内ネットワークから着信中...'
+  callStatus.value = '緊急通信プロトコルで着信中...'
 
-  if (type === 'boss') {
+  // 🟢 タグに合わせて発信者名と繋がりメッセージを変更
+  if (tag === 'business') {
     callerName.value = 'システム開発部：山田課長 (緊急)'
-  } else {
-    callerName.value = '人事労務部：コンプライアンス統括'
+    callAudioLog.value = '「もしもし！？おい、何メール破棄してんだ！現場が大混乱だぞ、今すぐデスクに戻れ！！」'
+  } else if (tag === 'school') {
+    callerName.value = '学年主任：小林先生 (学務携帯)'
+    callAudioLog.value = '「もしもし！教務課からの留年警告メールをスパム報告したって本当か！？大至急職員室に来なさい！」'
+  } else if (tag === 'daily') {
+    callerName.value = 'ライフライン管理センター：担当窓口'
+    callAudioLog.value = '「お電話繋がりました。料金通知メールをブロックされたため未払いです。10分後に電気を止めます」'
   }
 
-  // 🔴 応答も拒否もせず放置した場合、10秒後に自動的に「不在着信」として閉じるタイマー
   callTimer = setTimeout(() => {
-    if (!isCallConnected.value) {
-      console.log('📞 応答がなかったため、不在着信となりました')
-      showCall.value = false
-    }
+    if (!isCallConnected.value) showCall.value = false
   }, 10000)
 }
 
-/**
- * 🟢 通話に応答した（緑のボタンを押した）時の処理
- */
 export const answerCall = () => {
-  if (callTimer) clearTimeout(callTimer) // 不在着信タイマーを解除
-  
+  if (callTimer) clearTimeout(callTimer)
   isCallConnected.value = true
   callStatus.value = '通話中...'
-  
-  // 1秒ごとに通話時間をカウントアップするタイマー
-  durationTimer = setInterval(() => {
-    callDuration.value++
-  }, 1000)
+  durationTimer = setInterval(() => { callDuration.value++ }, 1000)
 }
 
-/**
- * 🟢 通話を拒否した、または切断した（赤のボタンを押した）時の処理
- */
 export const hangUpCall = () => {
   if (callTimer) clearTimeout(callTimer)
   if (durationTimer) clearInterval(durationTimer)
-  
   showCall.value = false
   isCallConnected.value = false
-  callDuration.value = 0
-  console.log('📞 通話が切断されました')
 }
 
-/**
- * 通話時間を 「00:00」 の形式の文字列に変換するヘルパー関数
- */
 export const formatCallTime = (seconds: number): string => {
   const mins = Math.floor(seconds / 60)
   const secs = seconds % 60

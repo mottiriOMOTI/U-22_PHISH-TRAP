@@ -1,72 +1,74 @@
 import { type Ref } from 'vue'
 
+interface NotificationConfig {
+  id: string
+  title: string
+  text: string
+  icon: string
+  color: string
+  borderClass: string
+}
+
 /**
- * 演出4~6: 疑似デスクトップ通知をストックして積み重ねるエフェクト
- * @param notificationsList 親コンポーネントの通知配列（ref）
- * @param type 通知のバリエーションタイプ
+ * Death画面用: シチュエーション別の破滅通知スタック
  */
-export const triggerNotificationEffect = (notificationsList: Ref<any[]>, type: 'warning' | 'trojan' | 'ransom' | 'Shatter' | 'message') => {
-  console.log(`🔔 疑似通知スタックを追加: [ ${type} ]`)
+export const triggerNotificationEffect = (
+  notificationsList: Ref<NotificationConfig[]>, 
+  tag: 'business' | 'school' | 'daily',
+  level: 1 | 2
+) => {
+  console.log(`🔔 Death疑似通知スタックを追加: [ ${tag} / Level: ${level} ]`)
 
-  // 各通知を識別するためのユニークなIDと、初期データオブジェクトを作成
   const id = Date.now() + Math.random().toString(36).substr(2, 9)
-  let newToast = {
-    id,
-    title: '',
-    text: '',
-    icon: '',
-    color: '',
-    borderClass: ''
-  }
+  let newToast: NotificationConfig = { id, title: '', text: '', icon: '', color: '', borderClass: '' }
 
-  // タイプ別に出し分け
-  switch (type) {
-    case 'warning':
-      newToast.title = '⚠️ セキュリティ警告'
-      newToast.text = 'システムが危険にさらされています。今すぐ対策が必要です。'
+  if (tag === 'business') {
+    if (level === 1) {
+      newToast.title = '🚨 SYSTEM COMPROMISED'
+      newToast.text = '社内ファイルサーバーの全域に不正アクセスを検知。感染拡大中。'
       newToast.icon = 'mdi-shield-alert'
-      newToast.color = '#ff5252'
-      newToast.borderClass = 'border-red'
-      break
-
-    case 'trojan':
-      newToast.title = '🚨 トロイの木馬検出'
-      newToast.text = 'バックグラウンドで不審な通信ログを検知しました。スキャンを推奨します。'
-      newToast.icon = 'mdi-virus'
       newToast.color = '#ff9800'
       newToast.borderClass = 'border-orange'
-      break
-
-    case 'ransom':
+    } else {
       newToast.title = '🔒 CRITICAL LOCKOUT'
-      newToast.text = 'すべてのローカルファイルが暗号化されました。解除キーを要求します。'
+      newToast.text = '社外秘の顧客データベースが完全に暗号化されました。身代金要求ノートを確認してください。'
       newToast.icon = 'mdi-lock-alert'
       newToast.color = '#ff1a1a'
       newToast.borderClass = 'border-red'
-      break
-
-    case 'Shatter':
-      newToast.title = '📸 写真を保存'
-      newToast.text = '写真を送信しました。'
-      newToast.icon = 'mdi-camera'
-      newToast.color = '#4caf50'
-      newToast.borderClass = 'border-green'
-      break
-
-    case 'message':
-      newToast.title = '✉ 請求書が届きました'
-      newToast.text = '今すぐ指定のURLにアクセスして、支払いを完了してください。'
-      newToast.icon = 'mdi-email'
-      newToast.color = '#05b0ff'
-      newToast.borderClass = 'border-green'
-      break
+    }
+  } else if (tag === 'school') {
+    if (level === 1) {
+      newToast.title = '⚠️ NETWORK ALERT'
+      newToast.text = '大学統合認証システム（教務ポータル）へのDDoS、およびマルウェアのバックドアを確認。'
+      newToast.icon = 'mdi-lan-disconnect'
+      newToast.color = '#ff9800'
+      newToast.borderClass = 'border-orange'
+    } else {
+      newToast.title = '💀 DISASTER: DATA LOST'
+      newToast.text = '学籍データ、履修登録ログ、および教員の研究論文データが完全消去されました。'
+      newToast.icon = 'mdi-virus'
+      newToast.color = '#ff5252'
+      newToast.borderClass = 'border-red'
+    }
+  } else if (tag === 'daily') {
+    if (level === 1) {
+      newToast.title = '🔒 ID COMPROMISED'
+      newToast.text = 'Apple ID / Google アカウントのパスワードが不正に変更されました。セッションを強制切断。'
+      newToast.icon = 'mdi-account-key'
+      newToast.color = '#ff9800'
+      newToast.borderClass = 'border-orange'
+    } else {
+      newToast.title = '💸 BANKING FRAUD'
+      newToast.text = 'オンラインバンキング、および紐付けられた全クレジットカードから限度額いっぱいの不正出金を検知。'
+      newToast.icon = 'mdi-cash-remove'
+      newToast.color = '#ff1a1a'
+      newToast.borderClass = 'border-red'
+    }
   }
 
-  // 🟢 親の配列にデータを追加（これで画面に新しい通知が生成される）
   notificationsList.value.push(newToast)
 
-  // 🟢 3.5秒後に、追加したこの通知だけをピンポイントで削除するタイマーを起動
   setTimeout(() => {
     notificationsList.value = notificationsList.value.filter(item => item.id !== id)
-  }, 3500)
+  }, 4000)
 }

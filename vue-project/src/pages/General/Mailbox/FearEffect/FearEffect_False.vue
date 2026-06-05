@@ -3,7 +3,7 @@
   <div class="d-flex flex-column align-center justify-center pa-8 mt-4 position-relative">
     
      <!-- 🟢 演出16: 画面上部から降ってくるチャットポップアップ（Discord対応版） -->
-    <!-- 1. 画面上部の Slack 用トースト（Slack の時だけ動くように v-if を修正） -->
+    <!-- 1. 画面上部の Slack 用トースト（元の位置のまま、LINE を除外） -->
 <transition name="slide-top">
   <div 
     v-if="showSlack && chatType === 'slack'" 
@@ -23,6 +23,34 @@
     </div>
   </div>
 </transition>
+
+<!-- 2. 【修正】実際のLINEデスクトップ通知そっくりに仕上げた右下スライドトースト -->
+<!-- アニメーションを右からのスライド(name="slide-right")にします -->
+<transition name="slide-right">
+  <div 
+    v-if="showSlack && chatType === 'line'" 
+    class="custom-chat-popup line line-bottom-position pa-3 d-flex align-center elevation-12"
+  >
+    <!-- LINE特有の綺麗な黄緑色（#24d500）の真ん丸アバター -->
+    <v-avatar color="#24d500" size="40" class="me-3 elevation-1">
+      <v-icon :icon="slackAvatar" color="white" size="small"></v-icon>
+    </v-avatar>
+    <div class="text-left flex-grow-1">
+      <div class="d-flex align-center justify-space-between">
+        <!-- LINEの標準フォントに寄せた太文字表記 -->
+        <span class="text-subtitle-2 font-weight-bold text-black" style="letter-spacing: -0.5px;">
+          {{ slackUser }}
+        </span>
+        <span class="text-caption text-grey-darken-1">現在</span>
+      </div>
+      <!-- 本文（LINE風の少し明るいダークグレー） -->
+      <p class="text-body-2 text-wrap text-grey-darken-3 ma-0" style="line-height: 1.3; max-width: 280px;">
+        {{ slackMessage }}
+      </p>
+    </div>
+  </div>
+</transition>
+
 
 <!-- 2. 【追加】画面右下からスライドインする Discord 専用トースト -->
 <!-- アニメーションを右からのスライドにするため、name="slide-right" を指定します -->
@@ -60,28 +88,30 @@
       演出テスト用の4×4ボタンエリアで挙動を確認できます。
     </p>
 
-     <!-- 4×4の演出テスト用ボタングリッド -->
+         <!-- 4×4の演出テスト用ボタングリッド（列別のシチュエーションカラー） -->
     <v-row class="w-100 max-width-grid mb-8" no-gutters>
       <v-col v-for="n in 16" :key="n" cols="3" class="pa-1">
         <v-btn
           block
           :color="
-            n === 16 ? 'purple-darken-3' : // 👈 【追加】16番をチャット専用の紫に指定
-            (n === 15 ? 'green-darken-3' : 
-            (n === 11 || n === 12 ? 'purple-darken-1' : 
-            (n === 3 ? 'info' : 
-            (n === 6 ? 'error' : 
-            (n === 4 || n === 5 ? 'warning' : 
-            (n === 1 || n === 2 ? 'info' : 'blue-grey-darken-3'))))))
+            n >= 1 && n <= 4 ? 'deep-orange-darken-3' :  // 💼 ビジネス列 (茶・橙)
+            (n >= 5 && n <= 8 ? 'indigo-darken-2' :      // 🎓 学校列 (インディゴブルー)
+            (n >= 9 && n <= 12 ? 'green-darken-3' :     // 🏠 日常列 (グリーン)
+            'red-darken-4'))                             // 🚨 通話・特殊アクション列 (赤)
           "
           variant="tonal"
           size="small"
           @click="triggerEffect(n)"
         >
-          演出 {{ n }}
+          {{ 
+            n >= 1 && n <= 4 ? `会社 ${n}` : 
+            (n >= 5 && n <= 8 ? `学校 ${n-4}` : 
+            (n >= 9 && n <= 12 ? `日常 ${n-8}` : `通話 ${n-12}`)) 
+          }}
         </v-btn>
       </v-col>
     </v-row>
+
 
 
     <!-- 🔙 解説画面に戻るボタン -->
@@ -215,15 +245,15 @@
           ></v-btn>
         </div>
 
-        <!-- 通話が繋がった後に表示される、さらに焦らせる上司のリアルタイムセリフ -->
-        <v-expand-transition>
-          <div v-if="isCallConnected" class="mt-6 pa-3 rounded bg-grey-darken-4 text-left border-left-error">
-            <p class="text-caption text-error font-weight-bold mb-1">>> AUDIO LOG:</p>
-            <p class="text-body-2 text-grey-lighten-2" style="line-height: 1.4;">
-              「もしもし！？おい、何メール破棄してんだ！今すぐ席に戻ってこい！！」
-            </p>
-          </div>
-        </v-expand-transition>
+        <!-- 通話が繋がった後に表示される、さらに焦らせる上司のリアルタイムセリフ --><!-- 変更箇所：v-dialog (showCall) 内の最下部にあるオーディオログテキスト -->
+<v-expand-transition>
+  <div v-if="isCallConnected" class="mt-6 pa-3 rounded bg-grey-darken-4 text-left border-left-error">
+    <p class="text-caption text-error font-weight-bold mb-1">>> AUDIO LOG:</p>
+    <!-- 🟢 変数バンドに変更して、タグ別の怒鳴り声が流れるようにします -->
+    <p class="text-body-2 text-grey-lighten-2" style="line-height: 1.4;">{{ callAudioLog }}</p>
+  </div>
+</v-expand-transition>
+
       </v-card>
     </v-dialog>
 
@@ -235,89 +265,43 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { triggerFalseNotification } from './FearEffect_False_End/falseNotificationEffect'
-// 🟢 【修正】diagEffect.ts から、表示用のテキストデータをすべてインポート
-import { 
-  triggerDiagEffect, 
-  showDiag, 
-  resetDiagEffect,
-  mailSubject,
-  mailSender,
-  mailAddress,
-  mailBody,
-  popupColor,
-  popupBgColor,
-  isForcedMode // 👈 【追加】
-} from './FearEffect_False_End/diagEffect'
-
-// スクリプト上部のインポートエリアの最後に追加
-import { 
-  triggerCallEffect, 
-  answerCall, 
-  hangUpCall, 
-  formatCallTime, 
-  showCall, 
-  callerName, 
-  callStatus, 
-  callDuration, 
-  isCallConnected 
-} from './FearEffect_False_End/callEffect'
-
-import { 
-  triggerSlackEffect, 
-  showSlack, 
-  slackUser, 
-  slackMessage, 
-  slackAvatar,
-  chatType // 👈 インポートに追加
-} from './FearEffect_False_End/slackEffect'
+import { triggerDiagEffect, showDiag, resetDiagEffect, mailSubject, mailSender, mailAddress, mailBody, popupColor, popupBgColor, isForcedMode } from './FearEffect_False_End/diagEffect'
+import { triggerCallEffect, answerCall, hangUpCall, formatCallTime, showCall, callerName, callStatus, callDuration, isCallConnected, callAudioLog } from './FearEffect_False_End/callEffect'
+import { triggerChatEffectByTag, showSlack, slackUser, slackMessage, slackAvatar, chatType } from './FearEffect_False_End/slackEffect'
 
 const router = useRouter()
 const notifications = ref<any[]>([])
 
+// 🟢 テスト用4×4ボタングリッドを「シチュエーション別」に完全に整理！
 const triggerEffect = (effectNumber: number) => {
   console.log(`🎬 False演出テストボタン [ ${effectNumber} ] が押されました`)
 
   switch (effectNumber) {
-    case 1: triggerFalseNotification(notifications, 'miss'); break
-    case 2: triggerFalseNotification(notifications, 'info'); break
-    
-    // 🟢 演出3: 強制開封（自動で閉じる）➔ 第二引数を省略、または true を指定
-    case 3: 
-      triggerDiagEffect('overdue', true) 
-      break
+    // 💼 ─── 横1列目: ビジネス（会社員）シチュエーション ───
+    case 1: triggerFalseNotification(notifications, 'business', 1); break // 警告通知
+    case 2: triggerFalseNotification(notifications, 'business', 2); break // 処分通知
+    case 3: triggerDiagEffect('business', true); break                     // 最前面メール
+    case 4: triggerChatEffectByTag('business'); break                      // Slack通知
 
-    case 4: triggerFalseNotification(notifications, 'overdue'); break
-    case 5: triggerFalseNotification(notifications, 'penalty'); break
-    case 6: triggerFalseNotification(notifications, 'fired'); break
+    // 🎓 ─── 横2列目: 学校（学生）シチュエーション ───
+    case 5: triggerFalseNotification(notifications, 'school', 1); break   // 督促通知
+    case 6: triggerFalseNotification(notifications, 'school', 2); break   // 呼出通知
+    case 7: triggerDiagEffect('school', true); break                       // 最前面メール
+    case 8: triggerChatEffectByTag('school'); break                        // Discord通知
 
-    // 🟢 演出11: 強制開封（自動で閉じる）
-    case 11:
-      triggerDiagEffect('penalty', true)
-      break
+    // 🏠 ─── 横3列目: 日常（プライベート）シチュエーション ───
+    case 9:  triggerFalseNotification(notifications, 'daily', 1); break    // 引落不可通知
+    case 10: triggerFalseNotification(notifications, 'daily', 2); break    // 訴訟告知通知
+    case 11: triggerDiagEffect('daily', true); break                       // 最前面メール
+    case 12: triggerChatEffectByTag('daily'); break                        // LINE通知
 
-    // 🟢 演出12: 強制開封（自動で閉じる）
-    case 12:
-      triggerDiagEffect('fired', false)
-      break
-
-    // 🟢 【新規テスト】演出13: 手動開封（自動で閉じない、右上の✖ボタンで閉じる！）
-    // 第二引数に false を渡すことで、タイマーが起動しなくなります
-    case 13:
-      triggerDiagEffect('overdue', false)
-      break
-
-    case 14:
-    triggerCallEffect('boss')
-    break
-    
-    // 🟢 【追加】演出16: 画面上部からのチャットトースト（佐藤くんから）
-    case 15:
-      triggerSlackEffect('colleague')
-      break
-      
-    // 🟢 【追加】演出16: 画面上部からのチャットトースト（佐藤くんから）
+    // 🚨 ─── 横4列目: 緊急アクション・特殊検証デモ ───
+    case 13: triggerCallEffect('business'); break                          // 上司からの緊急着信
+    case 14: triggerCallEffect('school'); break                            // 先生からの緊急着信
+    case 15: triggerCallEffect('daily'); break                             // 管理センターからの着信
     case 16:
-      triggerSlackEffect('discord_friend')
+      // 🟢 最後の仕上げ: 手動バツボタンで閉じるビジネスメール
+      triggerDiagEffect('business', false)
       break
 
     default:
@@ -328,9 +312,11 @@ const triggerEffect = (effectNumber: number) => {
 
 const goBack = () => {
   resetDiagEffect()
+  hangUpCall()
   router.push({ name: 'Explanation' })
 }
 </script>
+
 
 <style lang="css" scoped>
 .max-width-grid { max-width: 600px; }
@@ -381,6 +367,7 @@ const goBack = () => {
 
 /* 🟢 演出16: 画面上部に絶対配置するSlack風ポップアップの見た目 *//* 🟢 共通のポップアップベース（クラス名を slack から chat に変更） */
 /* 🟢 共通のポップアップベース（position-relative 等の不要なクラスをクリーンアップ） */
+/* 🟢 共通のポップアップベース */
 .custom-chat-popup {
   position: fixed;
   width: 360px;
@@ -388,33 +375,43 @@ const goBack = () => {
   z-index: 99999;
 }
 
-/* 🟢 Slack 用：画面の上部中央に固定 */
+/* Slack 用：画面の上部中央に固定 */
 .custom-chat-popup.slack {
   top: 16px;
   left: 50%;
   transform: translateX(-50%);
   background-color: #ffffff !important;
   border: 1px solid #dcdcdc;
+  color: #4a154b !important;
   border-left: 5px solid #4a154b !important;
 }
 
-/* 🟢 Discord 用：画面の右下隅に固定配置 */
+/* Discord 用：画面の右下隅に固定配置 */
 .custom-chat-popup.discord-bottom-position {
-  bottom: 24px; /* 既存の通知スタックと重ならない位置、またはお好みの高さに調整可能 */
+  bottom: 24px;
   right: 24px;
-  background-color: #2f3136 !important; /* Discordダーク */
+  background-color: #2f3136 !important;
   border: 1px solid #202225;
-  border-left: 5px solid #5865F2 !important; /* Discordブルー */
+  border-left: 5px solid #5865F2 !important;
+}
+
+/* 🟢 【修正】LINE 用：実際のLINEデスクトップ通知に合わせた右下配置とデザイン */
+/* Discordや既存の右下スタックと画面上で重なって消えないように、少し高めの位置(bottom: 120px)に生えるように配置しています */
+.custom-chat-popup.line-bottom-position {
+  bottom: 120px; 
+  right: 24px;
+  background-color: #ffffff !important; /* 本物のLINE通知そっくりの完全な白 */
+  border: 1px solid #e5e5e5;
+  border-radius: 12px !important; /* LINE特有の強い丸み */
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12) !important;
 }
 
 /* ─── アニメーション設定 ─── */
-
-/* Slack用：上からピョコン */
 .slide-top-enter-active { transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
 .slide-top-leave-active { transition: all 0.25s ease-in; }
 .slide-top-enter-from, .slide-top-leave-to { transform: translate(-50%, -100px); opacity: 0; }
 
-/* 🟢 Discord用：右下からシュッ（右から左へスライドイン） */
+/* LINEとDiscordが右から同時にシュッと飛び出してくるスライドインCSS */
 .slide-right-enter-active {
   transition: all 0.25s cubic-bezier(0.25, 1, 0.5, 1);
 }
@@ -423,8 +420,9 @@ const goBack = () => {
 }
 .slide-right-enter-from,
 .slide-right-leave-to {
-  transform: translateX(120px); /* 画面の右外側からスタート */
+  transform: translateX(120px); /* 画面の右外側から滑らかにスライド */
   opacity: 0;
 }
+
 
 </style>

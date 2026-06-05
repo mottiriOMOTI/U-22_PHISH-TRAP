@@ -1,6 +1,5 @@
 import { ref } from 'vue'
 
-// 🟢 画面表示に必要なリアクティブデータを一元管理
 export const showEncrypt = ref(false)
 export const encryptProgress = ref(0)
 export const encryptStatusText = ref('')
@@ -10,114 +9,68 @@ export const popupTitle = ref('')
 export const popupIcon = ref('')
 export const popupColor = ref('')
 
-// タイマーの参照を保持する変数
 let encryptTimer: any = null
 
 /**
- * 演出11~13: 最前面警告ポップアップを種類別に出し分けるエフェクト
- * @param type ポップアップのバリエーションタイプ ('ransom' | 'scan' | 'destroy' | 'camera')
+ * 最前面破滅ポップアップ（シチュエーションタグ対応版）
  */
-export const triggerEncryptEffect = (type: 'ransom' | 'scan' | 'destroy' | 'camera') => {
-  console.log(`🔒 最前面ポップアップを実行: [ ${type} ]`)
+export const triggerEncryptEffect = (tag: 'business' | 'school' | 'daily') => {
+  console.log(`🔒 Death最前面ポップアップを実行: [ ${tag} ]`)
 
-  // すでにタイマーが動いていたら一度クリア（連打対策）
   if (encryptTimer) clearInterval(encryptTimer)
-
-  // 内部の状態を初期化して画面を表示
   showEncrypt.value = true
   encryptProgress.value = 0
 
-  // 🟢 タイプ別に出し分けデータを注入
-  switch (type) {
-    case 'ransom':
-      popupTitle.value = 'WARNING: ファイル暗号化中...'
+  switch (tag) {
+    case 'business':
+      popupTitle.value = 'WARNING: 社内データ完全暗号化中'
       popupIcon.value = 'mdi-lock-alert'
-      popupColor.value = 'purple-accent-4'
-      encryptMainText.value = 'あなたのコンピュータ内にあるすべての重要ドキュメント、データベース、画像、およびシステムファイルが暗号化されました。'
-      encryptStatusText.value = 'システムファイルをスキャン中...'
+      popupColor.value = '#aa00ff' // 妖しい紫
+      encryptMainText.value = '社内機密ファイル、財務ログ、顧客の個人情報データすべての暗号化が開始されました。'
+      encryptStatusText.value = '企業データベースをパッキング中...'
       encryptChecklist.value = [
-        '独自の復号ツールを購入する必要があります。自身での修復試行はデータを破壊します。',
-        '指定された暗号通貨（Bitcoin）ウォレットへ、期限内に身代金を送金してください。',
-        '48時間を過ぎると復号キーは永久に消去され、二度と復元できなくなります。'
+        '独自の復号ツールを購入する必要があります。自身での修復試行はサーバーを完全破壊します。',
+        '指定のBitcoinウォレットへ、期限内（48時間）に身代金を送金してください。',
+        '期限が過ぎると復号キーは破棄され、企業の信頼性ごと全てのデータが永久に失われます。'
       ]
       break
 
-    case 'scan':
-      popupTitle.value = 'CRITICAL: 不審な活動を検出'
-      popupIcon.value = 'mdi-shield-search'
-      popupColor.value = 'red-accent-4'
-      encryptMainText.value = 'システムバックグラウンドで悪意のあるトロイの木馬プロセスが実行されました。現在強制スキャンを実行しています。'
-      encryptStatusText.value = 'ルートディレクトリを走査中...'
-      encryptChecklist.value = [
-        '検出された脅威: Trojan.Win32.Generic (深刻な危険)',
-        'プロセスの強制終了を試みています。PCの電源を切らないでください。',
-        'メモリハックの形跡が見つかりました。認証情報が漏洩している可能性があります。'
-      ]
-      break
-
-    case 'destroy':
-      popupTitle.value = 'ALERT: ハッカーによるシステム上書き'
+    case 'school':
+      popupTitle.value = 'CRITICAL: 大学サーバー上書きロック'
       popupIcon.value = 'mdi-skull'
-      popupColor.value = 'deep-orange-accent-4'
-      encryptMainText.value = 'リモートアクセス（RAT）が確立されました。ローカルのシステムログおよびMBR（マスターブートレコード）の書き換えが開始されました。'
-      encryptStatusText.value = 'C:\\Windows\\System32 を書き換え中...'
+      popupColor.value = '#d50000' // 赤
+      encryptMainText.value = '学内ネットワークにインジェクションが完了。全学生の成績証明ログ、履修マスター、研究室ファイルの暗号化を実行中です。'
+      encryptStatusText.value = 'C:\\University\\Gakumu_Data を書き換え中...'
       encryptChecklist.value = [
         '警告：この操作はハッカーによって遠隔から強制実行されています。',
-        'セキュリティソフトウェアは完全に無効化されました。',
-        'まもなくオペレーティングシステムが崩壊します。'
+        'セキュリティ管理者への通報は、暗号化スピードを2倍に加速させる自動プログラムを起動します。',
+        '修復不可能なレベルまで学籍情報が上書きされる前に、要求に従ってください。'
       ]
       break
 
-    case 'camera':
-      popupTitle.value = 'Camera: カメラ作動中'
-      popupIcon.value = 'mdi-webcam'
-      popupColor.value = 'deep-yellow-accent-4'
-      encryptMainText.value = '現在カメラが作動しています。周囲の映像がリアルタイムで外部に送信されています。'
-      encryptStatusText.value = '映像を保存中...'
+    case 'daily':
+      popupTitle.value = 'ALERT: スマホ＆PC全財産ハッキング'
+      popupIcon.value = 'mdi-incognito'
+      popupColor.value = '#ff6d00' // ダークオレンジ
+      encryptMainText.value = 'あなたのWebカメラ、写真、キー入力、SNSのパスワード、およびオンラインウォレットの全履歴を奪取・ロックしました。'
+      encryptStatusText.value = '写真フォルダ（DCIM）をリモート転送中...'
       encryptChecklist.value = [
-        '現在の映像はすでに外部サーバーに保存されています。',
-        '映像情報からあなたの位置情報が特定される可能性があります。',
-        'この機能の利用は、規約に同意したものとみなされます。'
+        'すべてのローカルファイルは強力な暗号（AES-256）で完全にロックされました。',
+        '本日中に送金がない場合、あなたの非公開写真や個人データすべてを連絡先全員に自動暴露します。',
+        '端末の初期化を行っても、クラウド上のリークサーバーからデータが消えることはありません。'
       ]
       break
   }
 
-  // 🟢 進捗を進めるタイマー処理
   encryptTimer = setInterval(() => {
     if (encryptProgress.value < 100) {
-      // リアルなランダム進捗
       encryptProgress.value += Math.random() * 1.2 + 0.6
       
-      // ランサムウェアタイプの場合のみ進捗テキストを細かく変える
-      if (type === 'ransom') {
-        if (encryptProgress.value > 15 && encryptProgress.value <= 45) {
-          encryptStatusText.value = 'ドキュメント・画像を暗号化中...'
-        } else if (encryptProgress.value > 45 && encryptProgress.value <= 80) {
-          encryptStatusText.value = 'データベースおよび認証ログを暗号化中...'
-        } else if (encryptProgress.value > 80 && encryptProgress.value < 100) {
-          encryptStatusText.value = 'バックアップデータを完全消去中...'
-        }
-      } else if (type === 'scan') {
-        encryptStatusText.value = `メモリダンプを解析中... (${Math.floor(encryptProgress.value)}/100)`
-      } else if (type === 'destroy') {
-        encryptStatusText.value = `MBRセクター領域を物理上書き中...`
-      } else if (type === 'camera') {
-        if (encryptProgress.value > 15 && encryptProgress.value <= 45) {
-          encryptStatusText.value = '映像を暗号化中...'
-        } else if (encryptProgress.value > 45 && encryptProgress.value <= 80) {
-          encryptStatusText.value = '映像をアップロード中...'
-        } else if (encryptProgress.value > 80 && encryptProgress.value < 100) {
-          encryptStatusText.value = 'アップロードはもうすぐ完了します'
-        }
-      }
-      
       if (encryptProgress.value > 100) encryptProgress.value = 100
-
     } else {
       clearInterval(encryptTimer)
-      encryptStatusText.value = '❌ プロセス完了'
+      encryptStatusText.value = '❌ プロセス完了。すべてのデータが失われました。'
       
-      // 100%になったら0.8秒後に自動でポップアップを閉じる
       setTimeout(() => {
         showEncrypt.value = false
       }, 800)
@@ -125,9 +78,6 @@ export const triggerEncryptEffect = (type: 'ransom' | 'scan' | 'destroy' | 'came
   }, 50)
 }
 
-/**
- * 状態リセット関数
- */
 export const resetEncryptEffect = () => {
   if (encryptTimer) clearInterval(encryptTimer)
   showEncrypt.value = false

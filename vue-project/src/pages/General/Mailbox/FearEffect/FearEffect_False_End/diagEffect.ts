@@ -1,6 +1,6 @@
 import { ref } from 'vue'
+import { type SituationTag } from './falseNotificationEffect'
 
-// 画面表示に必要なフラグを管理
 export const showDiag = ref(false)
 export const mailSubject = ref('')
 export const mailSender = ref('')
@@ -8,58 +8,44 @@ export const mailAddress = ref('')
 export const mailBody = ref('')
 export const popupColor = ref('')
 export const popupBgColor = ref('')
-// 🟢 【追加】強制開封（バツなしタイマー式）かどうかを親に伝える変数
 export const isForcedMode = ref(false)
 
 let falseTimer: any = null
 
 /**
- * 演出3, 11, 12, およびその他の最前面ポップアップ共通処理
- * @param type 開封するメールの種類 ('overdue' | 'penalty' | 'fired')
- * @param isForced 🟢 追加: trueなら5秒で自動で閉じる、falseなら自動で閉じない（✖ボタン用）
+ * 最前面メール開封ペナルティポップアップ（シチュエーションタグ対応）
  */
-export const triggerDiagEffect = (type: 'overdue' | 'penalty' | 'fired', isForced: boolean = true) => {
-  console.log(`📧 最前面メール開封を実行: [ ${type} ] (強制モード: ${isForced})`)
+export const triggerDiagEffect = (tag: SituationTag, isForced: boolean = true) => {
+  console.log(`📧 最前面メール開封: [ ${tag} ] (強制: ${isForced})`)
 
   if (falseTimer) clearTimeout(falseTimer)
-
-  // 🟢 モードのフラグをセット
   isForcedMode.value = isForced
-
-  // タイプ別に出し分けデータを注入
-  switch (type) {
-    case 'overdue':
-      mailSubject.value = '【大至急】先ほど詐欺通報されたメールについて（至急確認してください）'
-      mailSender.value = 'システム開発部：上司（課長）'
-      mailAddress.value = 'boss_kacho@company.co.jp'
-      mailBody.value = 'お疲れ様です。先ほどあなたがフィッシング詐欺としてシステム通報したメールですが、あれは公式クライアント（重要顧客）からの緊急案件メールですよ！！\n既に先方への回答納期を過ぎており、現場が大混乱しています。サボっている暇はありません、このメッセージを見たら大至急私のデスクに来るか、直接クライアントへ謝罪の連絡を入れてください。'
-      popupColor.value = '#ff9800'
-      popupBgColor.value = '#fff9f0'
-      break
-
-    case 'penalty':
-      mailSubject.value = '【重要・公式通達】業務メールの虚偽報告（不適切行為）に関する服務調査について'
-      mailSender.value = '人事労務部：コンプライアンス遵守委員会'
-      mailAddress.value = 'jinji_compliance@company.co.jp'
-      mailBody.value = '対象者に対しては、本日より事実関係のヒアリング調査を開始し、就業規則に基づき厳正な処分を検討いたします。'
-      popupColor.value = '#ff5252'
-      popupBgColor.value = '#fff5f5'
-      break
-
-    case 'fired':
-      mailSubject.value = '【通達】就業規則に基づく懲戒解雇処分の決定について'
-      mailSender.value = '経営審議会・法務部：人事最高責任者'
-      mailAddress.value = 'board_executive@company.co.jp'
-      mailBody.value = '度重なる重大な業務命令の拒否、虚偽通報による基幹システムへの混乱、および重大な職務怠慢（故意の業務放置）による会社への多大な損害を鑑み、経営審議会の全会一致により、あなたを【懲戒解雇処分】とすることを決定致しました。'
-      popupColor.value = '#ff1a1a'
-      popupBgColor.value = '#ffebee'
-      break
-  }
-
-  // ダイアログを開く
   showDiag.value = true
 
-  // 🟢 【重要】isForced（強制）が true の場合のみ、5秒の自動消滅タイマーを起動する
+  // 🟢 タグに応じて最前面に割り込むメールの中身を切り替え
+  if (tag === 'business') {
+    mailSubject.value = '【重要】服務規程違反および重要案件放置に関する顛末書の提出要請'
+    mailSender.value = '総務人事部：コンプライアンス管理委員会'
+    mailAddress.value = 'jinji_rules@company.co.jp'
+    mailBody.value = '本日発生した、正規取引先からの緊急業務メールを「フィッシング詐欺」として虚偽システム報告を行った事案について、社内セキュリティ服務規程に著しく違反したと判断いたします。本件に伴う損失および経緯を記した顛末書を大至急提出してください。'
+    popupColor.value = '#ff5252'
+    popupBgColor.value = '#fff5f5'
+  } else if (tag === 'school') {
+    mailSubject.value = '【通知】大学教務規程に基づく特別面談（親同伴）と指導書の交付について'
+    mailSender.value = '学生支援・教学統括本部：学部長室'
+    mailAddress.value = 'gakumu_support@university.ac.jp'
+    mailBody.value = '重要課題の提出案内メールを故意に虚偽通報・破棄し、大学の管理システム運用を妨害した件について確認を行います。就業・就学態度に重大な問題があると認められるため、保証人（親）同伴の上、教授会による緊急面談を行います。'
+    popupColor.value = '#ff9800'
+    popupBgColor.value = '#fff9f0'
+  } else if (tag === 'daily') {
+    mailSubject.value = '【電子送達】債務不履行による契約解除通告および損害賠償督促状'
+    mailSender.value = '法務大臣認証・オンライン民事調停センター'
+    mailAddress.value = 'notice@civil-court.go.jp'
+    mailBody.value = '正規の利用料金請求メールを一方的に詐欺として破棄・放置し、催促を無視し続けたため、契約は強制解除となりました。本日より年利14.6%の遅延損害金が加算されます。期日までに指定口座へ振込がない場合、法的措置に移行します。'
+    popupColor.value = '#ff1a1a'
+    popupBgColor.value = '#ffebee'
+  }
+
   if (isForced) {
     falseTimer = setTimeout(() => {
       showDiag.value = false
@@ -67,9 +53,6 @@ export const triggerDiagEffect = (type: 'overdue' | 'penalty' | 'fired', isForce
   }
 }
 
-/**
- * 状態リセット関数
- */
 export const resetDiagEffect = () => {
   if (falseTimer) clearTimeout(falseTimer)
   showDiag.value = false
