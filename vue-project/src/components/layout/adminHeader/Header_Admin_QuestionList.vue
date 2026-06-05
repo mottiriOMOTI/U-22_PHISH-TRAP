@@ -7,29 +7,15 @@
                 <h5 class="subtitle">登録済みの訓練用フィッシングメール</h5>
             </div>
         </template>
+
         <template v-slot:append>
-            <v-select v-model="selectedScenario" :items="scenarioSelectItems" variant="outlined" density="compact"
-                hide-details />
+            <AdminScenarioSelect />
         </template>
     </v-app-bar>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import {
-    question_scenario,
-    scenarioSelectItems,
-    type Scenario,
-} from '@/stores/admin_questionList'
-
-const scenarioStore = question_scenario()
-
-const selectedScenario = computed<Scenario>({
-    get: () => scenarioStore.scenario,
-    set: (scenario) => {
-        scenarioStore.setScenario(scenario)
-    },
-})
+import AdminScenarioSelect from './AdminScenarioSelect.vue'
 </script>
 
 <style lang="css" scoped>
