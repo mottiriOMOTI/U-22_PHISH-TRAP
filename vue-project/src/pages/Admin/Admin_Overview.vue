@@ -87,24 +87,35 @@
       </p>
 
       <div
-        v-for="(item, index) in questionList"
-        :key="index"
+        v-for="item in questionItems"
+        :key="item.id"
         class="question-item"
       >
 
         <div class="question-row">
 
           <span class="question-name">
-            {{ item }}
+            {{ item.label }}
+          </span>
+          <span class="question-value">
+            <template v-if="loadingQuestionAccuracy">
+              読み込み中...
+            </template>
+            <template v-else-if="questionAccuracyError">
+              —
+            </template>
+            <template v-else>
+              {{ questionAccuracy(item).toFixed(1) }}%
+            </template>
           </span>
 
         </div>
 
-        <!-- バー -->
         <div class="progress-bg">
-
-          <div class="progress-bar"></div>
-
+          <div
+            class="progress-bar"
+            :style="{ width: `${questionAccuracy(item)}%` }"
+          ></div>
         </div>
 
       </div>
@@ -117,9 +128,21 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { fetchLearnerCount, type Scenario } from '@/api/adminOverviewApi'
-import { fetchAverageAccuracy } from '@/api/trainingStatsApi'
+import { fetchAverageAccuracy, fetchQuestionAccuracy, type QuestionAccuracy } from '@/api/trainingStatsApi'
 
 type Category = 'student' | 'company' | 'general' | 'all'
+
+type QuestionItem = {
+  id: string
+  label: string
+}
+
+const questionItems: QuestionItem[] = [
+  { id: 'amazon', label: 'Amazon偽装' },
+  { id: 'ceo', label: 'CEO詐欺' },
+  { id: 'lottery', label: '当選詐欺' },
+  { id: 'microsoft', label: 'Microsoft偽装' },
+]
 
 const selectedCategory = ref<Category>('all')
 const categoryOptions = [
@@ -140,6 +163,10 @@ const learnerCountError = ref(false)
 const averageAccuracy = ref(0)
 const loadingAccuracy = ref(true)
 const accuracyError = ref(false)
+
+const questionAccuracies = ref<QuestionAccuracy[]>([])
+const loadingQuestionAccuracy = ref(true)
+const questionAccuracyError = ref(false)
 
 const categoryMap: Record<Category, { label: string; key: keyof typeof learnerCounts.value; scenario?: Scenario }> = {
   all: { label: '総ユーザー', key: 'total' },
@@ -187,22 +214,47 @@ async function loadAccuracy() {
   }
 }
 
+async function loadQuestionAccuracy() {
+  loadingQuestionAccuracy.value = true
+  questionAccuracyError.value = false
+
+  try {
+    questionAccuracies.value = await fetchQuestionAccuracy(selectedCategoryScenario.value)
+  } catch (error) {
+    questionAccuracyError.value = true
+    questionAccuracies.value = []
+  } finally {
+    loadingQuestionAccuracy.value = false
+  }
+}
+
 onMounted(() => {
   loadLearnerCount()
   loadAccuracy()
+  loadQuestionAccuracy()
 })
 
 watch(selectedCategory, () => {
   loadLearnerCount()
   loadAccuracy()
+  loadQuestionAccuracy()
 })
 
-const questionList = [
-  'Amazon偽装',
-  'CEO詐欺',
-  '当選詐欺',
-  'Microsoft偽装',
-]
+const questionAccuracyMap = computed(() => {
+  const map = new Map<string, number>()
+  questionAccuracies.value.forEach(item => {
+    map.set(item.question, item.accuracy)
+  })
+  return map
+})
+
+function questionAccuracy(item: QuestionItem): number {
+  return (
+    questionAccuracyMap.value.get(item.id) ??
+    questionAccuracyMap.value.get(item.label) ??
+    0
+  )
+}
 </script>
 
 <style scoped>
