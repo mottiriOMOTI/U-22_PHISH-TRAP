@@ -99,7 +99,10 @@ const router = createRouter({
       component: Situation,
       meta: {
         sidebar: 'user',
-        header: 'situation'
+        header: null,
+        shell: 'dark',
+        fluid: true,
+        flush: true,
       }
     },
     {
