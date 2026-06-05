@@ -2,10 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { Router } from 'express';
 import { supabaseAdmin } from '../lib/supabase';
 const router = Router();
-<<<<<<< HEAD
-=======
 const USER_COLUMNS = 'id, email, password_hash, name, role, current_scenario, created_at, last_active_at, is_active';
->>>>>>> yuta
 function validateDisplayName(displayName, res) {
     if (!displayName || typeof displayName !== 'string') {
         res.status(400).json({ error: 'display_name is required' });
@@ -13,8 +10,6 @@ function validateDisplayName(displayName, res) {
     }
     return true;
 }
-<<<<<<< HEAD
-=======
 function validateString(value) {
     return typeof value === 'string' && value.trim().length > 0;
 }
@@ -87,7 +82,6 @@ router.post('/login', async (req, res) => {
         return sendUnexpectedError(res, error);
     }
 });
->>>>>>> yuta
 router.get('/', async (_req, res) => {
     const { data, error } = await supabaseAdmin
         .from('profiles')
