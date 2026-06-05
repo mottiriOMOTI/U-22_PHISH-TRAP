@@ -1,0 +1,9 @@
+{
+  "settings": {
+    "soundEnabled": true,
+    "notificationsEnabled": true,
+    "fearEffectEnabled": true
+  },
+  "learningHistory": [],
+  "lastResetAt": null
+}
