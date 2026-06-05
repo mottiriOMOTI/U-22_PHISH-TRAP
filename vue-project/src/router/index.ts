@@ -135,7 +135,10 @@ const router = createRouter({
       component: Setting,
       meta: {
         sidebar: 'user',
-        header: 'setting',
+        header: null,
+        shell: 'dark',
+        fluid: true,
+        flush: true,
       }
     },
     {
