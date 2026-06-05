@@ -12,6 +12,7 @@ export type MailListItem = {
   sender_email: string
   body: string
   is_phishing: boolean
+  phishing_type: string | null
   has_link: boolean
   has_attachment: boolean
   created_at: string
@@ -32,13 +33,39 @@ export type SafeAttachment = {
 }
 
 export type MailDetail = MailListItem & {
-  phishing_type: string | null
   dangerous_links: DangerousLink[] | null
   dangerous_attachments: DangerousAttachment[] | null
   safe_attachments: SafeAttachment[] | null
   is_decoy: boolean
   is_active: boolean
   updated_at: string
+}
+
+export type UpdateMailPayload = {
+  title: string
+  sender_name: string
+  sender_email: string
+  body: string
+  is_phishing: boolean
+  phishing_type: string | null
+  has_link: boolean
+  has_attachment: boolean
+}
+
+export type QuestionExplanation = {
+  id: string
+  question_id: string
+  why_dangerous: string
+  warning_signals: string[]
+  correct_action: string
+  created_at: string | null
+  updated_at: string | null
+}
+
+export type SaveQuestionExplanationPayload = {
+  why_dangerous: string
+  warning_signals: string[]
+  correct_action: string
 }
 
 async function throwApiError(res: Response, fallbackMessage: string): Promise<never> {
@@ -62,6 +89,62 @@ export async function fetchMail(id: string): Promise<MailDetail> {
 
   if (!res.ok) {
     return throwApiError(res, 'Failed to fetch mail')
+  }
+
+  return await res.json()
+}
+
+export async function updateMailQuestion(
+  id: string,
+  payload: UpdateMailPayload,
+): Promise<MailListItem> {
+  const res = await fetch(`${API_BASE_URL}/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+
+  if (!res.ok) {
+    return throwApiError(res, 'Failed to update mail')
+  }
+
+  return await res.json()
+}
+
+export async function deleteMailQuestion(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/${id}`, {
+    method: 'DELETE',
+  })
+
+  if (!res.ok) {
+    return throwApiError(res, 'Failed to delete mail')
+  }
+}
+
+export async function fetchQuestionExplanation(
+  questionId: string,
+): Promise<QuestionExplanation | null> {
+  const res = await fetch(`${API_BASE_URL}/${questionId}/explanation`)
+
+  if (!res.ok) {
+    return throwApiError(res, 'Failed to fetch explanation')
+  }
+
+  return await res.json()
+}
+
+export async function saveQuestionExplanation(
+  questionId: string,
+  payload: SaveQuestionExplanationPayload,
+): Promise<QuestionExplanation> {
+  const res = await fetch(`${API_BASE_URL}/${questionId}/explanation`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+
+  if (!res.ok) {
+    return throwApiError(res, 'Failed to save explanation')
   }
 
   return await res.json()
