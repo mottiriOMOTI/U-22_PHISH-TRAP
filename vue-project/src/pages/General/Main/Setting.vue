@@ -193,8 +193,9 @@ onMounted(loadSettings)
 <style lang="css" scoped>
 .settings-page {
   position: relative;
+  box-sizing: border-box;
   min-height: 100vh;
-  padding: 42px 30px 32px;
+  padding: 24px 28px 18px;
   background: #172337;
   color: #ffffff;
 }
@@ -202,18 +203,18 @@ onMounted(loadSettings)
 .settings-hero {
   display: flex;
   align-items: center;
-  gap: 16px;
-  margin-bottom: 36px;
+  gap: 13px;
+  margin-bottom: 20px;
 }
 
 .settings-hero__icon {
   color: #b449ff;
-  font-size: 50px;
+  font-size: 42px;
 }
 
 .settings-hero h1 {
   margin: 0;
-  font-size: 38px;
+  font-size: 32px;
   font-weight: 800;
   line-height: 1.1;
 }
@@ -226,47 +227,47 @@ onMounted(loadSettings)
 }
 
 .settings-hero p {
-  margin-top: 12px;
-  font-size: 20px;
+  margin-top: 7px;
+  font-size: 17px;
 }
 
 .settings-panel {
-  width: min(100%, 1004px);
-  padding: 30px;
+  width: min(100%, 1100px);
+  padding: 20px 24px;
   border: 1px solid #34465f;
-  border-radius: 16px;
+  border-radius: 14px;
   background: #172337;
 }
 
 .settings-panel + .settings-panel {
-  margin-top: 30px;
+  margin-top: 18px;
 }
 
 .settings-panel__header h2 {
-  margin: 0 0 8px;
-  font-size: 21px;
+  margin: 0 0 5px;
+  font-size: 18px;
   font-weight: 800;
   line-height: 1.3;
 }
 
 .settings-panel__header p {
-  font-size: 19px;
+  font-size: 16px;
 }
 
 .settings-list {
   display: grid;
-  gap: 30px;
-  margin-top: 32px;
+  gap: 16px;
+  margin-top: 18px;
 }
 
 .setting-row {
   display: flex;
-  min-height: 82px;
+  min-height: 58px;
   align-items: center;
   justify-content: space-between;
-  gap: 24px;
-  padding: 0 22px;
-  border-radius: 12px;
+  gap: 20px;
+  padding: 0 18px;
+  border-radius: 10px;
   background: #111a2f;
 }
 
@@ -274,12 +275,12 @@ onMounted(loadSettings)
   display: flex;
   min-width: 0;
   align-items: center;
-  gap: 18px;
+  gap: 14px;
 }
 
 .setting-row__icon {
   flex: 0 0 auto;
-  font-size: 28px;
+  font-size: 24px;
 }
 
 .setting-row__icon--sound {
@@ -296,13 +297,13 @@ onMounted(loadSettings)
 
 .setting-row h3 {
   margin: 0 0 2px;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 800;
   line-height: 1.25;
 }
 
 .setting-row p {
-  font-size: 16px;
+  font-size: 14px;
   line-height: 1.3;
 }
 
@@ -346,22 +347,22 @@ onMounted(loadSettings)
 }
 
 .settings-panel--data {
-  padding-bottom: 30px;
+  padding-bottom: 20px;
 }
 
 .reset-button {
   display: flex;
   width: 100%;
-  min-height: 46px;
+  min-height: 38px;
   align-items: center;
   justify-content: center;
-  gap: 14px;
-  margin-top: 32px;
+  gap: 12px;
+  margin-top: 18px;
   border: 2px solid #ff3048;
   border-radius: 8px;
   background: #ffffff;
   color: #ff3048;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 800;
   cursor: pointer;
   transition:
@@ -374,9 +375,9 @@ onMounted(loadSettings)
 }
 
 .settings-message {
-  width: min(100%, 1004px);
-  margin: 18px 0 0;
-  font-size: 15px;
+  width: min(100%, 1100px);
+  margin: 10px 0 0;
+  font-size: 14px;
   font-weight: 700;
 }
 
@@ -390,15 +391,15 @@ onMounted(loadSettings)
 
 .help-button {
   position: fixed;
-  right: 18px;
-  bottom: 18px;
-  width: 44px;
-  height: 44px;
+  right: 16px;
+  bottom: 14px;
+  width: 38px;
+  height: 38px;
   border: 1px solid #d7dce7;
   border-radius: 50%;
   background: #ffffff;
   color: #1e2430;
-  font-size: 28px;
+  font-size: 24px;
   line-height: 1;
   cursor: pointer;
 }

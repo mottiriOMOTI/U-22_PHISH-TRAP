@@ -1,5 +1,5 @@
 <template>
-  <v-navigation-drawer permanent width="368" class="general-sidebar">
+  <v-navigation-drawer permanent width="288" class="general-sidebar">
     <div class="general-sidebar__inner">
       <RouterLink to="/mailbox" class="brand-link" aria-label="PHISH-TRAP ホーム">
         <v-icon icon="mdi-shield-outline" class="brand-link__icon" />
@@ -17,6 +17,7 @@
           v-for="item in navItems"
           :key="item.to"
           :to="item.to"
+          :aria-current="isActive(item.to) ? 'page' : undefined"
           :class="['sidebar-nav__link', { 'sidebar-nav__link--active': isActive(item.to) }]"
         >
           <v-icon :icon="item.icon" />
@@ -92,42 +93,42 @@ function isActive(path: string) {
   display: flex;
   height: 100%;
   flex-direction: column;
-  padding: 31px 28px 22px;
+  padding: 24px 20px 16px;
 }
 
 .brand-link {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 9px;
   color: #ffffff;
   text-decoration: none;
 }
 
 .brand-link__icon {
   color: #ff4052;
-  font-size: 47px;
+  font-size: 38px;
 }
 
 .brand-link__name {
-  font-size: 25px;
+  font-size: 20px;
   font-weight: 800;
   line-height: 1;
 }
 
 .brand-link__danger {
   color: #ff344c;
-  font-size: 24px;
+  font-size: 19px;
   font-weight: 900;
   line-height: 1;
 }
 
 .score-card {
   display: grid;
-  width: 254px;
-  min-height: 69px;
-  margin: 14px 0 0 66px;
+  width: 200px;
+  min-height: 54px;
+  margin: 12px 0 0 47px;
   align-content: center;
-  padding: 10px 14px;
+  padding: 8px 12px;
   border-radius: 9px;
   background: #172238;
 }
@@ -139,27 +140,28 @@ function isActive(path: string) {
 }
 
 .score-card strong {
-  margin-top: 4px;
-  font-size: 24px;
+  margin-top: 3px;
+  font-size: 21px;
   font-weight: 900;
   line-height: 1;
 }
 
 .sidebar-nav {
   display: grid;
-  gap: 15px;
-  margin-top: 75px;
+  gap: 10px;
+  margin-top: 42px;
+  padding-bottom: 12px;
 }
 
 .sidebar-nav__link {
   display: flex;
-  height: 64px;
+  height: 52px;
   align-items: center;
-  gap: 20px;
-  padding: 0 20px;
-  border-radius: 32px;
+  gap: 14px;
+  padding: 0 17px;
+  border-radius: 26px;
   color: #d4e0f1;
-  font-size: 23px;
+  font-size: 19px;
   font-weight: 800;
   text-decoration: none;
   transition:
@@ -168,7 +170,7 @@ function isActive(path: string) {
 }
 
 .sidebar-nav__link :deep(.v-icon) {
-  font-size: 30px;
+  font-size: 26px;
 }
 
 .sidebar-nav__link:hover,
@@ -183,26 +185,26 @@ function isActive(path: string) {
 
 .logout-link {
   display: flex;
-  height: 43px;
+  height: 38px;
   align-items: center;
   justify-content: center;
-  gap: 14px;
-  border-radius: 22px;
+  gap: 10px;
+  border-radius: 19px;
   background: #ffffff;
   color: #bdd0e6;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 800;
   text-decoration: none;
 }
 
 .logout-link :deep(.v-icon) {
-  font-size: 22px;
+  font-size: 20px;
 }
 
 .sidebar-footer p {
-  margin: 21px 0 0;
+  margin: 14px 0 0;
   color: #8aa0bd;
-  font-size: 14px;
+  font-size: 13px;
   text-align: center;
 }
 </style>
