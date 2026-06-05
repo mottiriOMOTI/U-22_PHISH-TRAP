@@ -34,7 +34,7 @@
  
     <div v-else>
       <v-row class="user-card-list" dense>
-        <v-col cols="12" sm="6" md="4" v-for="item in users" :key="item.id">
+        <v-col cols="12" sm="6" v-for="item in users" :key="item.id">
           <v-card class="user-card" elevation="1">
             <v-card-text class="user-card-header py-4">
               <div class="user-card-main">
@@ -143,27 +143,33 @@ onMounted(load)
 }
 
 .user-card {
-  width: 100%;
-  min-height: 160px;
+  width: 200%;
+  min-height: 100px;
   border-radius: 20px;
 }
 
 .user-card-header {
   display: flex;
-  flex-direction: row;
   align-items: center;
-  justify-content: space-between;
-  gap: 20px;
   flex-wrap: wrap;
+
+  justify-content: flex-start;
+  gap: 300px;
 }
 
-.user-card-main {
+/*.user-card-main {
   display: flex;
   align-items: center;
   gap: 16px;
-  flex: 1;
   flex-wrap: wrap;
+
+  flex: 0;
+}*/
+
+.user-card-main {
+  flex: none;
 }
+
 
 .user-card-info {
   display: flex;
@@ -181,10 +187,17 @@ onMounted(load)
   font-size: 0.95rem;
 }
 
+.user-card-email {
+  width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .user-card-status {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 5px;
 }
 
 .user-card-chip {
@@ -193,13 +206,17 @@ onMounted(load)
 
 .user-card-sub {
   display: flex;
-  justify-content: space-between;
-  gap: 24px;
-  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 44px;
 }
 
 .user-card-sub > div {
+  flex: 1;
   min-width: 120px;
+}
+
+.text-caption {
+  white-space: nowrap;
 }
 
 .text-body-2 {
