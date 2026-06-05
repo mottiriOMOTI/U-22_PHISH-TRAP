@@ -15,9 +15,71 @@ export type User = {
   is_active: boolean
 }
 
+export type CurrentUser = Omit<User, 'password_hash'>
+
 type ApiErrorBody = {
   error?: unknown
   message?: unknown
+}
+
+const CURRENT_USER_STORAGE_KEY = 'phish-trap-current-user'
+
+function toCurrentUser(user: User): CurrentUser {
+  const { password_hash: _passwordHash, ...currentUser } = user
+  return currentUser
+}
+
+export function saveCurrentUser(user: User): CurrentUser {
+  const currentUser = toCurrentUser(user)
+
+  if (typeof localStorage !== 'undefined') {
+    localStorage.setItem(CURRENT_USER_STORAGE_KEY, JSON.stringify(currentUser))
+  }
+
+  return currentUser
+}
+
+export function getCurrentUser(): CurrentUser | null {
+  if (typeof localStorage === 'undefined') {
+    return null
+  }
+
+  const rawUser = localStorage.getItem(CURRENT_USER_STORAGE_KEY)
+
+  if (!rawUser) {
+    return null
+  }
+
+  try {
+    const user = JSON.parse(rawUser) as Partial<CurrentUser>
+
+    if (
+      typeof user.id !== 'string' ||
+      typeof user.email !== 'string' ||
+      typeof user.created_at !== 'string'
+    ) {
+      return null
+    }
+
+    return {
+      id: user.id,
+      name: typeof user.name === 'string' ? user.name : '',
+      email: user.email,
+      role: user.role === 'admin' ? 'admin' : 'learner',
+      current_scenario: user.current_scenario ?? null,
+      created_at: user.created_at,
+      last_active_at: user.last_active_at ?? null,
+      is_active: user.is_active !== false,
+    }
+  } catch {
+    return null
+  }
+}
+
+export function clearCurrentUser() {
+  if (typeof localStorage !== 'undefined') {
+    localStorage.removeItem(CURRENT_USER_STORAGE_KEY)
+  }
 }
 
 async function throwApiError(res: Response, fallbackMessage: string): Promise<never> {
@@ -62,7 +124,10 @@ export async function loginUser(email: string, password: string): Promise<User> 
     return throwApiError(res, 'ログインに失敗しました')
   }
 
-  return await res.json()
+  const user = (await res.json()) as User
+  saveCurrentUser(user)
+
+  return user
 }
 
 export async function registerUser(name: string, email: string, password: string): Promise<User> {
@@ -79,5 +144,8 @@ export async function registerUser(name: string, email: string, password: string
     return throwApiError(res, 'アカウントの作成に失敗しました')
   }
 
-  return await res.json()
+  const user = (await res.json()) as User
+  saveCurrentUser(user)
+
+  return user
 }

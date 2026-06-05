@@ -18,6 +18,7 @@ node_modules
 dist
 dist-ssr
 server/dist
+server/data/
 
 # --- tests ---
 coverage
