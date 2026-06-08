@@ -1,5 +1,6 @@
+<!-- Explanation.vue -->
 <template>
-  <!-- 🟢 動的なクラスと動的なアイコン名が連動するようにバインド -->
+  <!-- 動的なクラスと動的なアイコン名が連動するようにバインド -->
   <div class="d-flex justify-center mt-6 mb-2">
     <v-icon
       :icon="pageIcon"
@@ -8,28 +9,34 @@
     ></v-icon>
   </div>
 
+  <h1 class="d-flex justify-center">Welcome! {{ userName }}</h1>
   <h1 class="d-flex justify-center">{{ pageTitle }}</h1>
   <h3 class="d-flex justify-center">{{ pageSubtitle }}</h3>
 
-  <!-- 🔁 カードのループ処理 -->
-  <v-row class="margin-3">
+  <!-- ローディング表示（通信が終わるまで表示されます） -->
+  <v-row v-if="isLoading" class="margin-3 justify-center">
+    <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
+  </v-row>
+
+  <!-- カードのループ処理（Supabaseからの動的データに対応） -->
+  <v-row v-else class="margin-3">
     <v-col v-for="item in cards" :key="item.id" cols="12">
       
       <!-- 🚨 type: danger -->
       <BaseCard
         v-if="item.type === 'danger'"
         :type="item.type"
-        :subTitle="item.SenderAddress"
-        :text="item.Title" 
+        :subTitle="item.sender_email"
+        :text="item.body" 
         :color="item.color"
         :variant="item.variant"
       />
       
-      <!-- ⚠ type: DangerExplanation (v-slotの重複ミスを修正しました) -->
+      <!-- ⚠ type: DangerExplanation -->
       <BaseCard
         v-else-if="item.type === 'DangerExplanation'"
         :type="item.type"
-        :text="item.Explanation"
+        :text="item.why_dangerous"
         :color="item.color"
         :variant="item.variant"
       />
@@ -38,7 +45,7 @@
       <BaseCard
         v-else-if="item.type === 'advice'"
         :type="item.type"
-        :textList="item.checklist"
+        :textList="item.warning_signals"
         :color="item.color"
         :variant="item.variant"
       />
@@ -47,16 +54,7 @@
       <BaseCard
         v-else-if="item.type === 'correctiveAction'"
         :type="item.type"
-        :textList="item.Explanation"
-        :color="item.color"
-        :variant="item.variant"
-      />
-
-      <!-- ⚠ type: learningPoint -->
-      <BaseCard
-        v-else-if="item.type === 'learningPoint'"
-        :type="item.type"
-        :text="item.Explanation"
+        :textList="item.correct_action"
         :color="item.color"
         :variant="item.variant"
       />
@@ -83,197 +81,152 @@
     </v-col>
   </v-row>
 
-  <!-- ボタンレイアウト -->
+  <!-- 通常ボタンレイアウト -->
   <v-row class="mt-4 px-1">
-    <!-- 🟢 不正解解説ボタン（赤バツ点滅に戻すトリガー） -->
     <v-col cols="12" sm="3">
-      <v-btn
-        block
-        color="error"
-        variant="tonal"
-        prepend-icon="mdi-refresh"
-        @click="setToDanger"
-      >
+      <v-btn block color="error" variant="tonal" prepend-icon="mdi-refresh" @click="setToDanger">
         不正解解説
       </v-btn>
     </v-col>
-
-    <!-- 🟢 正解ボタン（緑チェック点滅停止トリガー） -->
     <v-col cols="12" sm="3">
-      <v-btn
-        block
-        color="success"
-        variant="flat"
-        append-icon="mdi-arrow-right"
-        @click="setToCorrect"
-      >
+      <v-btn block color="success" variant="flat" append-icon="mdi-arrow-right" @click="setToCorrect">
         正解！！！！！！！
       </v-btn>
     </v-col>
-
-    
-    <!-- 💀 【追加】FearEffect_Death ページへの遷移ボタン -->
     <v-col cols="12" sm="3">
-      <v-btn
-        block
-        color="grey-darken-3"
-        variant="elevated"
-        prepend-icon="mdi-skull"
-        @click="goToPage('FearEffect_Death')"
-      >
+      <v-btn block color="grey-darken-3" variant="elevated" prepend-icon="mdi-skull" @click="goToPage('FearEffect_Death')">
         Deathイベントへ
       </v-btn>
     </v-col>
-
-    <!-- ❓ 【追加】FearEffect_False ページへの遷移ボタン -->
     <v-col cols="12" sm="3">
-      <v-btn
-        block
-        color="amber-darken-2"
-        variant="outlined"
-        prepend-icon="mdi-alert"
-        @click="goToPage('FearEffect_False')"
-      >
+      <v-btn block color="amber-darken-2" variant="outlined" prepend-icon="mdi-alert" @click="goToPage('FearEffect_False')">
         Falseイベントへ
       </v-btn>
     </v-col>
+  </v-row>
 
+  <!-- 🟢 【追加】デバッグ用：問題1〜3を個別に呼び出すボタンエリア -->
+  <v-row class="mt-6 px-1 justify-center" no-gutters style="border-top: 1px dashed #777; padding-top: 1.5em;">
+    <v-col cols="12" class="text-center mb-2">
+      <span class="text-caption text-grey font-weight-bold">⚙️ バックエンド・デバック用問題切替スイッチ</span>
+    </v-col>
+    <v-col cols="4" class="pa-1">
+      <v-btn block color="blue-grey-darken-2" variant="outlined" size="small" prepend-icon="mdi-database-search" @click="loadQuestionData(1)">
+        問題 ID: 1
+      </v-btn>
+    </v-col>
+    <v-col cols="4" class="pa-1">
+      <v-btn block color="blue-grey-darken-2" variant="outlined" size="small" prepend-icon="mdi-database-search" @click="loadQuestionData(2)">
+        問題 ID: 2
+      </v-btn>
+    </v-col>
+    <v-col cols="4" class="pa-1">
+      <v-btn block color="blue-grey-darken-2" variant="outlined" size="small" prepend-icon="mdi-database-search" @click="loadQuestionData(3)">
+        問題 ID: 3
+      </v-btn>
+    </v-col>
   </v-row>
 </template>
 
 <script setup lang="ts">
 import BaseCard from '@/components/ui/IshikawaStyle.vue'
 import { useUserInput } from '@/stores/userInput'
-import { ref, watch } from 'vue'
-
-// 🟢 【追加】Vue Routerからルーター機能をインポート
+import { ref, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 
-import { type CardItem } from '@/components/ui/IshikawaStyle.vue'
+// バックスラッシュで通らない場合の書き方
+import { fetchQuestion } from '@/api/QuestionApi'
 
-// 🟢 【追加】ルーターのインスタンスを作成
-const router = useRouter()
+interface ApiDangerCard {
+  id: string | number
+  type: 'danger'
+  sender_email: string
+  body: string
+  color?: string
+  variant?: 'flat' | 'text' | 'tonal' | 'elevated' | 'outlined' | 'plain'
+}
+interface ApiExplanationCard {
+  id: string | number
+  type: 'DangerExplanation'
+  why_dangerous: string
+  color?: string
+  variant?: 'flat' | 'text' | 'tonal' | 'elevated' | 'outlined' | 'plain'
+}
+interface ApiAdviceCard {
+  id: string | number
+  type: 'advice'
+  warning_signals: string[]
+  color?: string
+  variant?: 'flat' | 'text' | 'tonal' | 'elevated' | 'outlined' | 'plain'
+}
+interface ApiActionCard {
+  id: string | number
+  type: 'correctiveAction'
+  correct_action: string[]
+  color?: string
+  variant?: 'flat' | 'text' | 'tonal' | 'elevated' | 'outlined' | 'plain'
+}
+type LocalCardItem = ApiDangerCard | ApiExplanationCard | ApiAdviceCard | ApiActionCard
 
 const userInput = useUserInput()
 const userName = ref('')
+const router = useRouter()
 
-// 見出し文字をコントロールするためのリアクティブな変数
 const pageTitle = ref('フィッシング詐欺に遭遇')
 const pageSubtitle = ref('今のは危険なメールでした')
-
-// 🟢 【追加】最上部アイコンの種類とCSSスタイルクラスを管理するリアクティブ変数
 const pageIcon = ref('mdi-close-circle-outline')
 const pageIconClass = ref('slow-pulse super-vivid-red')
 
-// 🟢 【追加】別ページへ安全に遷移するための関数
-const goToPage = (pageName: string) => {
-  // ルーターのルーティング設定（src/router/index.ts など）で指定している path や name に合わせて遷移させます
-  // 今回は名前（name属性）で指定して移動する書き方にしています
-  router.push({ name: pageName })
-  
-  // もしルーターの設定がURLパス（例: /mailbox/feareffect/death）で管理されている場合は、以下のようにパスを直接書くことも可能です
-  // router.push(`/General/Mailbox/FearEffect/${pageName}`)
+const cards = ref<LocalCardItem[]>([])
+const isLoading = ref(true)
+
+/**
+ * 🟢 APIを呼び出し、取得した成形済みデータをそのまま cards 配列にセットする関数
+ * @param targetId 🟢 引数で指定されたID（省略された場合は初期読み込みとして最新を取得）
+ */
+const loadQuestionData = async (targetId?: number) => {
+  try {
+    isLoading.value = true
+    // 🟢 引数のIDをそのままQuestionApi.tsに横流しします
+    cards.value = await fetchQuestion(targetId) as any
+    
+    // データが切り替わったら、見出しのアイコン状態を初期警告（赤バツ）にリセット
+    setToDanger()
+  } catch (err) {
+    console.error(`❌ 画面への問題データ(ID: ${targetId})の読み込みに失敗しました:`, err)
+  } finally {
+    isLoading.value = false
+  }
 }
 
-// 🟢 トリガー処理A: 「正解」状態へ切り替える（緑のチェックに変化し、点滅が止まる）
+onMounted(() => {
+  loadQuestionData() // 初期表示は通常通り最新データを取得
+})
+
 const setToCorrect = () => {
   pageTitle.value = '正解'
   pageSubtitle.value = '適切な判断ができました'
-  
-  pageIcon.value = 'mdi-check-circle-outline' // 🟢 緑のチェックマークに変更
-  pageIconClass.value = 'super-vivid-green'    // 🟢 点滅クラス(slow-pulse)を外し、緑クラスを適用
+  pageIcon.value = 'mdi-check-circle-outline'
+  pageIconClass.value = 'super-vivid-green'
 }
 
-// 🟢 トリガー処理B: 「不正解」状態に戻す（赤のバツに変化し、ゆっくり点滅する）
 const setToDanger = () => {
   pageTitle.value = 'フィッシング詐欺に遭遇'
   pageSubtitle.value = '今のは危険なメールでした'
-  
-  pageIcon.value = 'mdi-close-circle-outline'  // 🔴 赤のバツマークに戻す
-  pageIconClass.value = 'slow-pulse super-vivid-red' // 🔴 点滅クラスと赤クラスを再適用
+  pageIcon.value = 'mdi-close-circle-outline'
+  pageIconClass.value = 'slow-pulse super-vivid-red'
 }
 
-const cards = ref<CardItem[]>([
-  {
-    id: 'danger-1',
-    type: 'danger',
-    color: 'error',
-    variant: 'outlined',
-    CardTitle: 'メール詳細',
-    appendIcon: 'mdi-alert-octagon',
-    Title: '偽のサインイン通知に注意',
-    Sender: 'Microsoft セキュリティチーム',
-    SenderAddress: 'security@microsoft-365-support.com',
-    Judge: 'フィッシングメールです',
-    text: '24時間以内に確認しないとアカウントを停止しますといった文面です。'
-  },
-  {
-    id: 'DangerExplanation-1',
-    type: 'DangerExplanation',
-    color: 'warning',
-    variant: 'tonal',
-    Explanation: 'このメールは、Microsoftを装ったフィッシングメールの典型的な例です。送信元のメールアドレスが公式のものと異なっている点や、緊急性を煽る文面が特徴적です。ユーザーは、送信元のメールアドレスを確認し、メール内のURLを直接クリックせずに公式アプリやウェブサイトから確認することが重要です。'
-  },
-  {
-    id: 'advice-1',
-    type: 'advice',
-    color: 'success',
-    variant: 'outlined',
-    CardTitle: 'なぜ危険なのか',
-    adviceIcon: 'mdi-lightbulb-on',
-    tipTitle: '安全に見破るチェックリスト',
-    checklist: [
-      '送信元のメールアドレス（@以降のドメイン）を確認する',
-      'メール内のURLを直接クリックせず、公式アプリ等から確認する'
-    ],
-    points: 100
-  },
-  {
-    id: 'correctiveAction-1',
-    type: 'correctiveAction',
-    color: 'info',
-    variant: 'elevated',
-    Explanation: [
-      'メールを開かずに削除する',
-      '公式アプリやウェブサイトからアカウントの安全を確認する',
-      '不審なメールはセキュリティチームに報告する'
-    ]
-  }
-])
+const goToPage = (pageName: string) => { router.push({ name: pageName }) }
 
-watch(userName, (s) => {
-  userInput.userName = s
-})
+watch(userName, (s) => { userInput.userName = s })
 </script>
 
 <style lang="css" scoped>
-.margin-3 {
-  margin-top: 2em;
-}
-
-/* 🔴 鮮やかな純赤を強制適用 */
-.super-vivid-red {
-  color: #FF0000 !important;
-}
-
-/* 🟢 鮮やかな純緑を強制適用 */
-.super-vivid-green {
-  color: #00FF00 !important;
-}
-
-/* 🟢 ゆっくり点滅させるアニメーションの設定（スピードを少し調整可能） */
-.slow-pulse {
-  animation: pulse-animation 1.5s ease-in-out infinite alternate;
-}
-
-/* アニメーションの具体的な動き（透明度の変化） */
-@keyframes pulse-animation {
-  0% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0.15; /* 一番薄いときの設定 */
-  }
-}
+.margin-3 { margin-top: 2em; }
+.super-vivid-red { color: #FF0000 !important; }
+.super-vivid-green { color: #00FF00 !important; }
+.slow-pulse { animation: pulse-animation 1.5s ease-in-out infinite alternate; }
+@keyframes pulse-animation { 0% { opacity: 1; } 100% { opacity: 0.15; } }
 </style>
