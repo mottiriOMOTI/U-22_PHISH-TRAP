@@ -1,6 +1,5 @@
 import { type Ref } from 'vue'
 import { triggerNotificationEffect } from './notificationEffect'
-import { triggerNoiseEffect } from './noiseEffect'
 import { triggerEncryptEffect, showEncrypt } from './encryptEffect'
 
 /**
@@ -36,7 +35,6 @@ export const triggerSequenceEffect = async (
   // 各シチュエーション（会社・学校・日常）の不気味な警告ログ通知を
   // 0.2秒刻みで右下にガガガッと一斉に積み上げ（スタック）ます
   // ----------------------------------------------------
-  triggerNoiseEffect(showNoise) // 画面にガガガッと砂嵐ノイズ
 
   // ビジネス警告ログ
   triggerNotificationEffect(notificationsList, 'business', 1)
@@ -74,7 +72,6 @@ export const triggerSequenceEffect = async (
   // 🟢 パート3: 【フィナーレ】
   // すべてのポップアップを潜り抜けた直後、最後にもう一度強烈なノイズを挟んでブルースクリーンへ
   // ----------------------------------------------------
-  triggerNoiseEffect(showNoise) // 再び激しいデジタルノイズ
   
   setTimeout(() => {
     // 💻 ドカンとブルースクリーン強制起動（100%に達したら3秒待機➔自動一瞬暗転➔3秒後に自動フェード復帰）

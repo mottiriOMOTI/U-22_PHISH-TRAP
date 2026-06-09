@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 
 const url = 'https://ijluptjauhyhdswzrojk.supabase.co'
-const serviceRoleKey = 'sb_publishable_jUE6reEqjZTAGTbw3cuj-Q_7fH9TnNY'
+const serviceRoleKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlqbHVwdGphdWh5aGRzd3pyb2prIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTQwNDMwMCwiZXhwIjoyMDk0OTgwMzAwfQ.zdMb093bsFbY1rifYV2ePqagoHbFkb5UycmatAnE3lE'
 
 if (!url || !serviceRoleKey) {
   throw new Error(

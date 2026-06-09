@@ -26,11 +26,12 @@
       <BaseCard
         v-if="item.type === 'danger'"
         :type="item.type"
-        :subTitle="item.sender_email"
+        :title="item.title || 'フィッシングメール本文'" 
+        :subTitle="item.sender_name ? `${item.sender_name} <${item.sender_email}>` : item.sender_email" 
         :text="item.body" 
         :color="item.color"
         :variant="item.variant"
-      />
+/>
       
       <!-- ⚠ type: DangerExplanation -->
       <BaseCard
@@ -82,7 +83,12 @@
   </v-row>
 
   <!-- 通常ボタンレイアウト -->
-  <v-row class="mt-4 px-1">
+  <!-- ⚙️ 以下デバッグ用ボタン 本番に移行するときは消してね♡ -->
+    <v-col cols="12" class="text-center mb-2">
+      <span class="text-caption text-grey font-weight-bold">⚙️ 以下デバッグ用ボタン 本番に移行するときは消してね♡</span>
+    </v-col>
+  <v-row class="mt-4 px-1" >
+    
     <v-col cols="12" sm="3">
       <v-btn block color="error" variant="tonal" prepend-icon="mdi-refresh" @click="setToDanger">
         不正解解説
@@ -126,6 +132,10 @@
       </v-btn>
     </v-col>
   </v-row>
+
+  <!-- ⚙️ 以上デバッグ用ボタン 本番に移行するときは消してね♡ -->
+
+
 </template>
 
 <script setup lang="ts">
@@ -141,6 +151,8 @@ import { fetchQuestion } from '@/api/QuestionApi'
 interface ApiDangerCard {
   id: string | number
   type: 'danger'
+  title?: string         // 👈 追加：メールの件名
+  sender_name?: string   // 👈 追加：送信者名（大学ITサポートセンター など）
   sender_email: string
   body: string
   color?: string
