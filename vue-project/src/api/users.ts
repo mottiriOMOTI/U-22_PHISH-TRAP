@@ -82,6 +82,12 @@ if (typeof localStorage !== 'undefined') {
 }
 }
 
+export type UpdateCurrentUserProfileInput = {
+id: string
+name: string
+email: string
+}
+
 async function throwApiError(res: Response, fallbackMessage: string): Promise<never> {
 const textBody = await res
   .clone()
@@ -148,4 +154,25 @@ const user = (await res.json()) as User
 saveCurrentUser(user)
 
 return user
+}
+
+export async function updateCurrentUserProfile({
+id,
+name,
+email,
+}: UpdateCurrentUserProfileInput): Promise<CurrentUser> {
+const res = await fetch(`${API_BASE_URL}/users/${encodeURIComponent(id)}`, {
+  method: 'PUT',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({ name, email }),
+})
+
+if (!res.ok) {
+  return throwApiError(res, 'アカウント情報の更新に失敗しました')
+}
+
+const user = (await res.json()) as User
+return saveCurrentUser(user)
 }
