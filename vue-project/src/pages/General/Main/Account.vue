@@ -14,7 +14,7 @@
       <div class="profile-card">
         <div class="profile-avatar">{{ avatarInitial }}</div>
         <div class="profile-summary">
-          <strong>{{ account.profile.email }}</strong>
+          <strong>{{ account.profile.name }}</strong>
           <span>
             <v-icon icon="mdi-email-outline" />
             {{ account.profile.email }}
@@ -74,11 +74,18 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { fetchAccountSummary, type AccountSummary } from '@/api/account'
 import { getCurrentUser, type CurrentUser } from '@/api/users'
 
-const account = reactive<AccountSummary>({
+type AccountView = AccountSummary & {
+  profile: AccountSummary['profile'] & {
+    name: string
+  }
+}
+
+const account = reactive<AccountView>({
   profile: {
     email: 'user@example.com',
     joinedAt: '2026-05-15T00:00:00.000Z',
     rank: '初心者',
+    name: 'ユーザー',
   },
   stats: {
     completedTrainings: 1,
@@ -91,7 +98,7 @@ const isLoading = ref(true)
 const errorMessage = ref('')
 
 const avatarInitial = computed(() => {
-  const initial = account.profile.email.trim().charAt(0)
+  const initial = account.profile.name.trim().charAt(0) || account.profile.email.trim().charAt(0)
   return initial ? initial.toUpperCase() : 'U'
 })
 
@@ -131,6 +138,7 @@ function applyAccountSummary(nextAccount: AccountSummary) {
 }
 
 function applyCurrentUser(user: CurrentUser) {
+  account.profile.name = user.name.trim() || 'ユーザー'
   account.profile.email = user.email
   account.profile.joinedAt = user.created_at
 }
