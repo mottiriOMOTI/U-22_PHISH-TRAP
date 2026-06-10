@@ -1,0 +1,186 @@
+{
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+        "questions": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "category": {
+                        "type": "string",
+                        "enum": [
+                            "student",
+                            "company",
+                            "general"
+                        ],
+                        "description": "問題カテゴリ"
+                    },
+                    "title": {
+                        "type": "string",
+                        "description": "メールタイトル"
+                    },
+                    "sender_name": {
+                        "type": "string",
+                        "description": "差出人名"
+                    },
+                    "sender_email": {
+                        "type": "string",
+                        "description": "差出人メールアドレス"
+                    },
+                    "body": {
+                        "type": "string",
+                        "description": "メール本文"
+                    },
+                    "is_phishing": {
+                        "type": "boolean",
+                        "description": "フィッシングメールかどうか"
+                    },
+                    "phishing_type": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "credential_theft",
+                            "account_takeover",
+                            "malware_attachment",
+                            null
+                        ],
+                        "description": "フィッシングタイプ。通常メールの場合はnull"
+                    },
+                    "has_link": {
+                        "type": "boolean",
+                        "description": "リンクがあるかどうか"
+                    },
+                    "dangerous_links": {
+                        "type": "array",
+                        "description": "危険なリンク。ない場合は空配列",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                                "url": {
+                                    "type": "string",
+                                    "description": "危険なURL"
+                                },
+                                "reason": {
+                                    "type": "string",
+                                    "description": "危険な理由"
+                                }
+                            },
+                            "required": [
+                                "url",
+                                "reason"
+                            ]
+                        }
+                    },
+                    "has_attachment": {
+                        "type": "boolean",
+                        "description": "添付ファイルがあるかどうか"
+                    },
+                    "dangerous_attachments": {
+                        "type": "array",
+                        "description": "危険な添付ファイル。ない場合は空配列",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                                "filename": {
+                                    "type": "string",
+                                    "description": "ファイル名"
+                                },
+                                "reason": {
+                                    "type": "string",
+                                    "description": "危険な理由"
+                                }
+                            },
+                            "required": [
+                                "filename",
+                                "reason"
+                            ]
+                        }
+                    },
+                    "is_decoy": {
+                        "type": "boolean",
+                        "description": "演出用のダミーメールかどうか"
+                    },
+                    "is_active": {
+                        "type": "boolean",
+                        "description": "有効かどうか"
+                    },
+                    "safe_attachments": {
+                        "type": "array",
+                        "description": "安全な添付ファイル。ない場合は空配列",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                                "filename": {
+                                    "type": "string",
+                                    "description": "ファイル名"
+                                },
+                                "reason": {
+                                    "type": "string",
+                                    "description": "安全な理由"
+                                }
+                            },
+                            "required": [
+                                "filename",
+                                "reason"
+                            ]
+                        }
+                    },
+                    "explanation": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "description": "この問題の解説",
+                        "properties": {
+                            "why_dangerous": {
+                                "type": "string",
+                                "description": "なぜ危険か"
+                            },
+                            "warning_signals": {
+                                "type": "array",
+                                "description": "警告サインのリスト",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "correct_action": {
+                                "type": "string",
+                                "description": "正しい対処法"
+                            }
+                        },
+                        "required": [
+                            "why_dangerous",
+                            "warning_signals",
+                            "correct_action"
+                        ]
+                    }
+                },
+                "required": [
+                    "category",
+                    "title",
+                    "sender_name",
+                    "sender_email",
+                    "body",
+                    "is_phishing",
+                    "phishing_type",
+                    "has_link",
+                    "dangerous_links",
+                    "has_attachment",
+                    "dangerous_attachments",
+                    "is_decoy",
+                    "is_active",
+                    "safe_attachments",
+                    "explanation"
+                ]
+            }
+        }
+    },
+    "required": [
+        "questions"
+    ]
+}

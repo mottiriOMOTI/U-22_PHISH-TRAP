@@ -1,15 +1,50 @@
 const API_BASE = import.meta.env.VITE_API_URL ?? ''
 const API_BASE_URL = `${API_BASE}/api/generate`
 
-export type GenerateQuestionExplanationPayload = {
-  questionText: string
+export type GenerateCategory = 'student' | 'company' | 'general'
+
+export type GenerateQuestionPayload = {
+  category: GenerateCategory
+  count: 1
+}
+
+export type GeneratedDangerousLink = {
+  url: string
+  reason: string
+}
+
+export type GeneratedAttachment = {
+  filename: string
+  reason: string
 }
 
 export type GeneratedQuestionExplanation = {
-  title: string
   why_dangerous: string
   warning_signals: string[]
   correct_action: string
+}
+
+export type GeneratedQuestion = {
+  id?: string
+  category: GenerateCategory
+  title: string
+  sender_name: string
+  sender_email: string
+  body: string
+  is_phishing: boolean
+  phishing_type: 'credential_theft' | 'account_takeover' | 'malware_attachment' | null
+  has_link: boolean
+  dangerous_links: GeneratedDangerousLink[]
+  has_attachment: boolean
+  dangerous_attachments: GeneratedAttachment[]
+  is_decoy: boolean
+  is_active: boolean
+  safe_attachments: GeneratedAttachment[]
+  explanation: GeneratedQuestionExplanation
+}
+
+export type GeneratedQuestionSet = {
+  questions: GeneratedQuestion[]
 }
 
 async function throwApiError(res: Response, fallbackMessage: string): Promise<never> {
@@ -18,8 +53,8 @@ async function throwApiError(res: Response, fallbackMessage: string): Promise<ne
 }
 
 export async function generateQuestionExplanation(
-  payload: GenerateQuestionExplanationPayload,
-): Promise<GeneratedQuestionExplanation> {
+  payload: GenerateQuestionPayload,
+): Promise<GeneratedQuestionSet> {
   const res = await fetch(API_BASE_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -27,7 +62,7 @@ export async function generateQuestionExplanation(
   })
 
   if (!res.ok) {
-    return throwApiError(res, 'Failed to generate question explanation')
+    return throwApiError(res, 'Failed to generate questions')
   }
 
   return await res.json()
