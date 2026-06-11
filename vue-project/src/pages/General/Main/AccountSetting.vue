@@ -75,8 +75,8 @@
           <button
             class="secondary-button"
             type="button"
-            :disabled="isLoading || isSaving || !hasChanges"
-            @click="resetForm"
+            :disabled="isLoading || isSaving"
+            @click="handleCancel"
           >
             元に戻す
           </button>
@@ -98,6 +98,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
 
 import { fetchAccountSummary } from '@/api/account'
 import {
@@ -105,6 +106,8 @@ import {
   updateCurrentUserProfile,
   type CurrentUser,
 } from '@/api/users'
+
+const router = useRouter()
 
 const form = reactive({
   name: '',
@@ -173,11 +176,8 @@ function showError(message: string) {
   successMessage.value = ''
 }
 
-function resetForm() {
-  form.name = original.name
-  form.email = original.email
-  successMessage.value = ''
-  errorMessage.value = ''
+async function handleCancel() {
+  await router.push({ name: 'Account' })
 }
 
 function validateForm() {
@@ -236,6 +236,7 @@ async function handleSave() {
 
     applyUser(updatedUser)
     showSuccess('アカウント情報を保存しました')
+    await router.push({ name: 'Account' })
   } catch (error) {
     console.error(error)
     showError(error instanceof Error ? error.message : 'アカウント情報の保存に失敗しました')
