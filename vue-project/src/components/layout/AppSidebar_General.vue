@@ -7,9 +7,15 @@
         <span class="brand-link__danger">死線</span>
       </RouterLink>
 
-      <div class="score-card">
-        <span>スコア</span>
-        <strong>0 / 8</strong>
+      <div class="profile-score-row">
+        <RouterLink to="/account" class="sidebar-profile-avatar" aria-label="プロフィール">
+          {{ profileInitial }}
+        </RouterLink>
+
+        <div class="score-card">
+          <span>スコア</span>
+          <strong>0 / 8</strong>
+        </div>
       </div>
 
       <nav class="sidebar-nav" aria-label="メインメニュー">
@@ -37,11 +43,28 @@
 </template>
 
 <script setup lang="ts">
+import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
-import { clearCurrentUser } from '@/api/users'
+import { clearCurrentUser, getCurrentUser } from '@/api/users'
 
 const route = useRoute()
+const currentUser = ref(getCurrentUser())
+
+watch(
+  () => route.fullPath,
+  () => {
+    currentUser.value = getCurrentUser()
+  },
+  { immediate: true },
+)
+
+const profileInitial = computed(() => {
+  const user = currentUser.value
+  const initial = user?.name.trim().charAt(0) || user?.email.trim().charAt(0)
+
+  return initial ? initial.toUpperCase() : 'U'
+})
 
 const navItems = [
   {
@@ -124,11 +147,43 @@ function isActive(path: string) {
   line-height: 1;
 }
 
+.profile-score-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.sidebar-profile-avatar {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  place-items: center;
+  border-radius: 50%;
+  background: #00bf56;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 900;
+  line-height: 1;
+  text-decoration: none;
+  transition:
+    background-color 160ms ease,
+    transform 160ms ease;
+}
+
+.sidebar-profile-avatar:hover,
+.sidebar-profile-avatar:focus-visible {
+  background: #00d766;
+  outline: none;
+  transform: translateY(-1px);
+}
+
 .score-card {
   display: grid;
-  width: 170px;
+  min-width: 0;
   min-height: 48px;
-  margin: 10px 0 0 38px;
+  flex: 1 1 auto;
   align-content: center;
   padding: 7px 10px;
   border-radius: 8px;

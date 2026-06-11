@@ -3,7 +3,7 @@
     <header class="account-setting-hero">
       <v-icon icon="mdi-account-cog-outline" class="account-setting-hero__icon" />
       <div>
-        <h1>アカウント設定</h1>
+        <h1>アカウント変更</h1>
         <p>プロフィール情報の変更</p>
       </div>
     </header>
