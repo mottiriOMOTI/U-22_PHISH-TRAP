@@ -70,7 +70,7 @@
 <p v-if="errorMessage" class="error-text">{{ errorMessage }}</p>
 <p v-if="successMessage" class="success-text">{{ successMessage }}</p>
 
-<button type="submit">登録する</button>
+<button type="submit" :disabled="isSubmitting">登録する</button>
 </form>
 </section>
 
@@ -85,6 +85,8 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+
 import { registerUser } from '@/api/users.ts'
 
 const name = ref('')
@@ -94,8 +96,14 @@ const passwordConfirm = ref('')
 const agreedToPolicies = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
+const isSubmitting = ref(false)
+const router = useRouter()
 
 const handleRegister = async () => {
+if (isSubmitting.value) {
+return
+}
+
 errorMessage.value = ''
 successMessage.value = ''
 
@@ -110,19 +118,22 @@ return
 }
 
 try {
+isSubmitting.value = true
 console.log('3. API(registerUser)を呼び出します', { name: name.value, email: email.value })
 const newUser = await registerUser(name.value, email.value, password.value)
 
 console.log('4. APIからの返り値:', newUser)
 console.log('登録成功！', newUser)
 successMessage.value = '登録が完了しました。'
-alert(`登録が完了しました！ようこそ、${newUser.name}さん！`)
+await router.push('/mailbox')
 } catch (error: any) {
 console.error(error)
 errorMessage.value =
 error instanceof Error
 ? error.message
 : 'アカウントの作成に失敗しました。別のメールアドレスをお試しください。'
+} finally {
+isSubmitting.value = false
 }
 }
 </script>
@@ -317,6 +328,11 @@ cursor: pointer;
 
 button:hover {
 background: #1e55dc;
+}
+
+button:disabled {
+cursor: wait;
+opacity: 0.65;
 }
 
 .auth-link {
