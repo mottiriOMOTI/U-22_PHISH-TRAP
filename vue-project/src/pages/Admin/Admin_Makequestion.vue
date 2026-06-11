@@ -11,7 +11,7 @@
                 color="primary"
                 prepend-icon="mdi-auto-fix"
                 :loading="loading"
-                :disabled="loading"
+                :disabled="loading || saving"
                 @click="generate"
             >
                 生成する
@@ -22,19 +22,40 @@
             {{ error }}
         </v-alert>
 
+        <v-alert v-if="saveError" type="error" variant="tonal" class="mt-4">
+            {{ saveError }}
+        </v-alert>
+
+        <v-alert v-if="saveMessage" type="success" variant="tonal" class="mt-4">
+            {{ saveMessage }}
+        </v-alert>
+
         <div v-if="generatedQuestions.length > 0" class="generated-list mt-4">
-            <div class="d-flex align-center">
-                <h4 class="mb-0">生成結果</h4>
-                <v-spacer />
-                <span class="text-caption text-medium-emphasis">
-                    {{ generatedQuestions.length }}件
-                </span>
+            <div class="generated-header">
+                <div>
+                    <h4 class="mb-0">生成結果</h4>
+                    <span class="text-caption text-medium-emphasis">
+                        {{ generatedQuestions.length }}件
+                    </span>
+                </div>
+
+                <v-btn
+                    color="success"
+                    prepend-icon="mdi-content-save-outline"
+                    variant="tonal"
+                    :loading="saving"
+                    :disabled="saving || unsavedQuestions.length === 0"
+                    @click="saveGeneratedQuestions"
+                >
+                    Supabaseに保存
+                </v-btn>
             </div>
 
             <AdminQuestionCard
                 v-for="question in generatedQuestions"
                 :key="question.id"
                 :question="question"
+                :busy="saving"
                 show-explanation-action
                 @edit-question="openQuestionDialog"
                 @edit-explanation="openExplanationDialog"
@@ -69,6 +90,7 @@ import AdminScenarioSelect from '@/components/layout/adminHeader/AdminScenarioSe
 import type { SaveQuestionExplanationPayload, UpdateMailPayload } from '@/api/mailApi'
 import {
     generateQuestionExplanation,
+    saveGeneratedQuestion,
     type GenerateCategory,
     type GeneratedQuestion,
 } from '@/api/question_generate'
@@ -88,8 +110,12 @@ const scenarioToCategory: Record<Scenario, GenerateCategory> = {
 const questionStore = question_scenario()
 
 const loading = ref(false)
+const saving = ref(false)
 const error = ref<string | null>(null)
+const saveError = ref<string | null>(null)
+const saveMessage = ref<string | null>(null)
 const generatedQuestions = ref<EditableGeneratedQuestion[]>([])
+const savedQuestionIds = ref<Set<string>>(new Set())
 const selectedQuestion = ref<EditableGeneratedQuestion | null>(null)
 const questionDialog = ref(false)
 const explanationDialog = ref(false)
@@ -97,11 +123,17 @@ const questionDialogError = ref<string | null>(null)
 const explanationDialogError = ref<string | null>(null)
 
 const selectedCategory = computed(() => scenarioToCategory[questionStore.scenario])
+const unsavedQuestions = computed(() =>
+    generatedQuestions.value.filter((question) => !savedQuestionIds.value.has(question.id)),
+)
 
 async function generate() {
     loading.value = true
     error.value = null
+    saveError.value = null
+    saveMessage.value = null
     generatedQuestions.value = []
+    savedQuestionIds.value = new Set()
 
     try {
         const result = await generateQuestionExplanation({
@@ -116,6 +148,26 @@ async function generate() {
         error.value = e instanceof Error ? e.message : '生成に失敗しました。'
     } finally {
         loading.value = false
+    }
+}
+
+async function saveGeneratedQuestions() {
+    if (unsavedQuestions.value.length === 0) return
+
+    saving.value = true
+    saveError.value = null
+    saveMessage.value = null
+
+    try {
+        for (const question of unsavedQuestions.value) {
+            await saveGeneratedQuestion(question)
+            savedQuestionIds.value = new Set([...savedQuestionIds.value, question.id])
+        }
+        saveMessage.value = '生成した問題をSupabaseに保存しました。'
+    } catch (e) {
+        saveError.value = e instanceof Error ? e.message : 'Supabaseへの保存に失敗しました。'
+    } finally {
+        saving.value = false
     }
 }
 
@@ -150,7 +202,7 @@ function saveExplanationDialog(payload: SaveQuestionExplanationPayload) {
     if (!selectedQuestion.value) return
 
     if (!payload.why_dangerous || !payload.correct_action) {
-        explanationDialogError.value = '危険な理由と正しい対処法を入力してください。'
+        explanationDialogError.value = 'なぜ危険か、正しい対処法を入力してください。'
         return
     }
 
@@ -163,6 +215,9 @@ function saveExplanationDialog(payload: SaveQuestionExplanationPayload) {
 
 function deleteGeneratedQuestion(question: EditableGeneratedQuestion) {
     generatedQuestions.value = generatedQuestions.value.filter((item) => item.id !== question.id)
+    savedQuestionIds.value = new Set(
+        [...savedQuestionIds.value].filter((savedId) => savedId !== question.id),
+    )
 }
 
 function updateGeneratedQuestion(id: string, nextQuestion: EditableGeneratedQuestion) {
@@ -182,11 +237,15 @@ function updateGeneratedQuestion(id: string, nextQuestion: EditableGeneratedQues
     opacity: 50%;
 }
 
-.generate-actions {
+.generate-actions,
+.generated-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 16px;
+}
+
+.generate-actions {
     max-width: 520px;
 }
 
@@ -196,7 +255,8 @@ function updateGeneratedQuestion(id: string, nextQuestion: EditableGeneratedQues
 }
 
 @media (max-width: 600px) {
-    .generate-actions {
+    .generate-actions,
+    .generated-header {
         align-items: stretch;
         flex-direction: column;
     }

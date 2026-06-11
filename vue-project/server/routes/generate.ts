@@ -4,6 +4,8 @@ import { fileURLToPath } from 'node:url'
 
 import { Router } from 'express'
 
+import { supabaseAdmin } from '../lib/supabase'
+
 const router = Router()
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -17,7 +19,92 @@ type GenerateRequestBody = {
   count?: number
 }
 
+type GeneratedQuestionExplanation = {
+  why_dangerous?: unknown
+  warning_signals?: unknown
+  correct_action?: unknown
+}
+
+type SaveGeneratedQuestionBody = {
+  category?: unknown
+  title?: unknown
+  sender_name?: unknown
+  sender_email?: unknown
+  body?: unknown
+  is_phishing?: unknown
+  phishing_type?: unknown
+  has_link?: unknown
+  dangerous_links?: unknown
+  has_attachment?: unknown
+  dangerous_attachments?: unknown
+  is_decoy?: unknown
+  is_active?: unknown
+  safe_attachments?: unknown
+  explanation?: GeneratedQuestionExplanation
+}
+
 const categories: GenerateCategory[] = ['student', 'company', 'general']
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === 'string')
+}
+
+function parseJsonArray(value: unknown) {
+  return Array.isArray(value) ? value : []
+}
+
+function parseSavePayload(body: SaveGeneratedQuestionBody) {
+  if (
+    typeof body.category !== 'string' ||
+    !categories.includes(body.category as GenerateCategory) ||
+    typeof body.title !== 'string' ||
+    typeof body.sender_name !== 'string' ||
+    typeof body.sender_email !== 'string' ||
+    typeof body.body !== 'string' ||
+    typeof body.is_phishing !== 'boolean' ||
+    typeof body.has_link !== 'boolean' ||
+    typeof body.has_attachment !== 'boolean' ||
+    !isRecord(body.explanation) ||
+    typeof body.explanation.why_dangerous !== 'string' ||
+    !isStringArray(body.explanation.warning_signals) ||
+    typeof body.explanation.correct_action !== 'string'
+  ) {
+    return null
+  }
+
+  const phishingType =
+    typeof body.phishing_type === 'string' || body.phishing_type === null
+      ? body.phishing_type
+      : null
+
+  return {
+    question: {
+      category: body.category,
+      title: body.title,
+      sender_name: body.sender_name,
+      sender_email: body.sender_email,
+      body: body.body,
+      is_phishing: body.is_phishing,
+      phishing_type: body.is_phishing ? phishingType : null,
+      has_link: body.has_link,
+      dangerous_links: parseJsonArray(body.dangerous_links),
+      has_attachment: body.has_attachment,
+      dangerous_attachments: parseJsonArray(body.dangerous_attachments),
+      is_decoy: typeof body.is_decoy === 'boolean' ? body.is_decoy : false,
+      is_active: typeof body.is_active === 'boolean' ? body.is_active : true,
+      safe_attachments: parseJsonArray(body.safe_attachments),
+    },
+    explanation: {
+      why_dangerous: body.explanation.why_dangerous,
+      warning_signals: body.explanation.warning_signals,
+      correct_action: body.explanation.correct_action,
+    },
+  }
+}
 
 router.post('/', async (req, res) => {
   const { category, count } = req.body as GenerateRequestBody
@@ -88,6 +175,49 @@ router.post('/', async (req, res) => {
       return res.status(500).json({ error: 'Failed to parse generator output' })
     }
   })
+})
+
+router.post('/save', async (req, res) => {
+  const payload = parseSavePayload(req.body as SaveGeneratedQuestionBody)
+
+  if (!payload) {
+    return res.status(400).json({ error: 'Invalid generated question payload' })
+  }
+
+  const { data: question, error: questionError } = await supabaseAdmin
+    .from('questions')
+    .insert(payload.question)
+    .select('*')
+    .single()
+
+  if (questionError || !question) {
+    return res.status(500).json({ error: questionError?.message ?? 'Failed to save question' })
+  }
+
+  const { data: explanation, error: explanationError } = await supabaseAdmin
+    .from('question_explanations')
+    .insert({
+      ...payload.explanation,
+      question_id: question.id,
+    })
+    .select('*')
+    .single()
+
+  if (explanationError || !explanation) {
+    await supabaseAdmin
+      .from('questions')
+      .update({
+        is_active: false,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', question.id)
+
+    return res
+      .status(500)
+      .json({ error: explanationError?.message ?? 'Failed to save explanation' })
+  }
+
+  return res.status(201).json({ question, explanation })
 })
 
 export default router

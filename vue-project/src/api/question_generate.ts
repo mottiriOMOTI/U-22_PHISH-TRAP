@@ -47,6 +47,20 @@ export type GeneratedQuestionSet = {
   questions: GeneratedQuestion[]
 }
 
+export type SavedGeneratedQuestion = {
+  question: GeneratedQuestion & {
+    id: string
+    created_at: string | null
+    updated_at?: string | null
+  }
+  explanation: GeneratedQuestionExplanation & {
+    id: string
+    question_id: string
+    created_at: string | null
+    updated_at: string | null
+  }
+}
+
 async function throwApiError(res: Response, fallbackMessage: string): Promise<never> {
   const body = await res.json().catch(() => null)
   throw new Error(body?.error ?? fallbackMessage)
@@ -63,6 +77,22 @@ export async function generateQuestionExplanation(
 
   if (!res.ok) {
     return throwApiError(res, 'Failed to generate questions')
+  }
+
+  return await res.json()
+}
+
+export async function saveGeneratedQuestion(
+  payload: GeneratedQuestion,
+): Promise<SavedGeneratedQuestion> {
+  const res = await fetch(`${API_BASE_URL}/save`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+
+  if (!res.ok) {
+    return throwApiError(res, 'Failed to save generated question')
   }
 
   return await res.json()
