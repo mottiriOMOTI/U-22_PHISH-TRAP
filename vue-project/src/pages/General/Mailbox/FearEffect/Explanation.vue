@@ -1,6 +1,4 @@
-<!-- Explanation.vue -->
 <template>
-  <!-- 動的なクラスと動的なアイコン名が連動するようにバインド -->
   <div class="d-flex justify-center mt-6 mb-2">
     <v-icon
       :icon="pageIcon"
@@ -13,16 +11,13 @@
   <h1 class="d-flex justify-center">{{ pageTitle }}</h1>
   <h3 class="d-flex justify-center">{{ pageSubtitle }}</h3>
 
-  <!-- ローディング表示（通信が終わるまで表示されます） -->
   <v-row v-if="isLoading" class="margin-3 justify-center">
     <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
   </v-row>
 
-  <!-- カードのループ処理（Supabaseからの動的データに対応） -->
   <v-row v-else class="margin-3">
     <v-col v-for="item in cards" :key="item.id" cols="12">
       
-      <!-- 🚨 type: danger -->
       <BaseCard
         v-if="item.type === 'danger'"
         :type="item.type"
@@ -31,9 +26,8 @@
         :text="item.body" 
         :color="item.color"
         :variant="item.variant"
-/>
+      />
       
-      <!-- ⚠ type: DangerExplanation -->
       <BaseCard
         v-else-if="item.type === 'DangerExplanation'"
         :type="item.type"
@@ -42,7 +36,6 @@
         :variant="item.variant"
       />
 
-      <!-- 💡 type: advice -->
       <BaseCard
         v-else-if="item.type === 'advice'"
         :type="item.type"
@@ -51,7 +44,6 @@
         :variant="item.variant"
       />
 
-      <!-- ⚠ type: correctiveAction -->
       <BaseCard
         v-else-if="item.type === 'correctiveAction'"
         :type="item.type"
@@ -63,7 +55,6 @@
     </v-col>
   </v-row>
 
-  <!-- 固定カードを配置 -->
   <v-row class="mt-2">
     <v-col cols="12">
       <v-card
@@ -82,11 +73,9 @@
     </v-col>
   </v-row>
 
-  <!-- 通常ボタンレイアウト -->
-  <!-- ⚙️ 以下デバッグ用ボタン 本番に移行するときは消してね♡ -->
-    <v-col cols="12" class="text-center mb-2">
-      <span class="text-caption text-grey font-weight-bold">⚙️ 以下デバッグ用ボタン 本番に移行するときは消してね♡</span>
-    </v-col>
+  <v-col cols="12" class="text-center mb-2">
+    <span class="text-caption text-grey font-weight-bold">⚙️ 以下デバッグ用ボタン 本番に移行するときは消してね♡</span>
+  </v-col>
   <v-row class="mt-4 px-1" >
     
     <v-col cols="12" sm="3">
@@ -111,7 +100,6 @@
     </v-col>
   </v-row>
 
-  <!-- 🟢 【追加】デバッグ用：問題1〜3を個別に呼び出すボタンエリア -->
   <v-row class="mt-6 px-1 justify-center" no-gutters style="border-top: 1px dashed #777; padding-top: 1.5em;">
     <v-col cols="12" class="text-center mb-2">
       <span class="text-caption text-grey font-weight-bold">⚙️ バックエンド・デバック用問題切替スイッチ</span>
@@ -132,29 +120,23 @@
       </v-btn>
     </v-col>
   </v-row>
-
-  <!-- ⚙️ 以上デバッグ用ボタン 本番に移行するときは消してね♡ -->
-
-
-</template>
+  </template>
 
 <script setup lang="ts">
 import BaseCard from '@/components/ui/IshikawaStyle.vue'
 import { useUserInput } from '@/stores/userInput'
 import { ref, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-
-
-// バックスラッシュで通らない場合の書き方
 import { fetchQuestion } from '@/api/QuestionApi'
 
 interface ApiDangerCard {
   id: string | number
   type: 'danger'
-  title?: string         // 👈 追加：メールの件名
-  sender_name?: string   // 👈 追加：送信者名（大学ITサポートセンター など）
+  title?: string         
+  sender_name?: string   
   sender_email: string
   body: string
+  is_phishing?: boolean  // 👈 データベースから渡るフラグを受け取れるよう型を追加
   color?: string
   variant?: 'flat' | 'text' | 'tonal' | 'elevated' | 'outlined' | 'plain'
 }
@@ -194,16 +176,23 @@ const cards = ref<LocalCardItem[]>([])
 const isLoading = ref(true)
 
 /**
- * 🟢 APIを呼び出し、取得した成形済みデータをそのまま cards 配列にセットする関数
- * @param targetId 🟢 引数で指定されたID（省略された場合は初期読み込みとして最新を取得）
+ * 💡 現在読み込まれているカードデータから、is_phishing の真偽値を安全に探すヘルパー関数
+ */
+const getIsPhishingStatus = (): boolean => {
+  const dangerCard = cards.value.find(item => item.type === 'danger') as ApiDangerCard | undefined
+  // 該当カードがない、または明示的に false の場合を除き、安全のためデフォルトは true (詐欺メール扱い) とします
+  return dangerCard?.is_phishing !== false
+}
+
+/**
+ * APIを呼び出し、取得した成形済みデータをそのまま cards 配列にセットする関数
  */
 const loadQuestionData = async (targetId?: number) => {
   try {
     isLoading.value = true
-    // 🟢 引数のIDをそのままQuestionApi.tsに横流しします
     cards.value = await fetchQuestion(targetId) as any
     
-    // データが切り替わったら、見出しのアイコン状態を初期警告（赤バツ）にリセット
+    // データが切り替わったら、その問題の「is_phishing」を元に初期の不正解（初期状態）表示を自動生成
     setToDanger()
   } catch (err) {
     console.error(`❌ 画面への問題データ(ID: ${targetId})の読み込みに失敗しました:`, err)
@@ -216,18 +205,43 @@ onMounted(() => {
   loadQuestionData() // 初期表示は通常通り最新データを取得
 })
 
+/**
+ * 🎯 【正解ボタン】クリック時の動的テキスト切り替え
+ */
 const setToCorrect = () => {
+  const isPhishing = getIsPhishingStatus()
+  
   pageTitle.value = '正解'
-  pageSubtitle.value = '適切な判断ができました'
   pageIcon.value = 'mdi-check-circle-outline'
   pageIconClass.value = 'super-vivid-green'
+
+  if (isPhishing) {
+    // True: 詐欺メールを見破って回避した場合
+    pageSubtitle.value = '適切な判断ができました'
+  } else {
+    // False: 安全な通常メールだと正しく見抜いた場合
+    pageSubtitle.value = '仕事をやり遂げました！'
+  }
 }
 
+/**
+ * 🎯 【不正解ボタン / 初期表示】クリック時の動的テキスト切り替え
+ */
 const setToDanger = () => {
-  pageTitle.value = 'フィッシング詐欺に遭遇'
-  pageSubtitle.value = '今のは危険なメールでした'
+  const isPhishing = getIsPhishingStatus()
+  
   pageIcon.value = 'mdi-close-circle-outline'
   pageIconClass.value = 'slow-pulse super-vivid-red'
+
+  if (isPhishing) {
+    // True: 詐欺メールに引っかかってしまった場合
+    pageTitle.value = 'フィッシング詐欺に遭遇'
+    pageSubtitle.value = '今のは詐欺でした'
+  } else {
+    // False: 普通の業務メールなのに過剰警戒してスルー・通報してしまった場合
+    pageTitle.value = '安全なメールの確認'
+    pageSubtitle.value = '今のは正常なメールでした'
+  }
 }
 
 const goToPage = (pageName: string) => { router.push({ name: pageName }) }
