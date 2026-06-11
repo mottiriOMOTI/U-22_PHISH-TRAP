@@ -38,6 +38,10 @@
 
     <p v-if="selectedItem">
       Selected: {{ selectedItem.id }} / {{ selectedItem.display_name || 'No display name' }}
+      <template v-if="selectedItem.last_sign_in_at">
+        <br />
+        最終アクティブ: {{ formatDate(selectedItem.last_sign_in_at) }}
+      </template>
     </p>
 
     <ul>

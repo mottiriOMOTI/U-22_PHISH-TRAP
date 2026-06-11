@@ -117,7 +117,7 @@ function formatScore(item: UserListItem): string {
   if (item.latest_correct_count === null || item.latest_total_questions === null) {
     return '未受講'
   }
-  return `${item.latest_total_questions} 問中 ${item.latest_correct_count} 問正解`
+  return `${item.latest_correct_count} / ${item.latest_total_questions}問正解`
 }
  
 function formatDate(iso: string | null): string {

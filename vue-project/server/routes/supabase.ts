@@ -30,17 +30,27 @@ router.get('/', async (_req, res) => {
 })
 
 router.get('/:id', async (req, res) => {
+  const userId = req.params.id
+
   const { data, error } = await supabaseAdmin
     .from('profiles')
     .select('id, display_name, created_at')
-    .eq('id', req.params.id)
+    .eq('id', userId)
     .maybeSingle()
 
   if (error || !data) {
     return res.status(404).json({ error: error?.message ?? 'Profile not found' })
   }
 
-  return res.json(data)
+  const { data: authData, error: authError } = await supabaseAdmin.auth.admin.getUserById(userId)
+  if (authError) {
+    return res.status(500).json({ error: authError.message })
+  }
+
+  return res.json({
+    ...data,
+    last_sign_in_at: authData.user?.last_sign_in_at ?? null,
+  })
 })
 
 router.post('/', async (req, res) => {
