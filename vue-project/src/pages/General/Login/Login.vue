@@ -33,6 +33,10 @@
         <input id="password" v-model="password" type="password" required placeholder="••••••••" />
     </div>
 
+    <div class="forgot-password-link">
+        <router-link to="/forgotaccount">パスワードを忘れた方はこちら</router-link>
+    </div>
+
     <p v-if="errorMessage" class="error-text">{{ errorMessage }}</p>
 
     <button type="submit">ログイン</button>
@@ -212,6 +216,17 @@ box-shadow: 0 0 0 3px rgba(44, 104, 255, 0.22);
 margin: 0;
 color: #ff8a95;
 font-size: 14px;
+}
+
+.forgot-password-link {
+margin-top: -6px;
+font-size: 13px;
+text-align: right;
+}
+
+.forgot-password-link a {
+color: #ffffff;
+font-weight: 800;
 }
 
 button {
