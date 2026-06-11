@@ -99,7 +99,7 @@
       {{ successMessage }}
     </p>
 
-    <button class="help-button" type="button" aria-label="ヘルプ">?</button>
+
   </main>
 </template>
 

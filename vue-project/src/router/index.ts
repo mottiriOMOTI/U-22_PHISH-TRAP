@@ -123,7 +123,10 @@ const router = createRouter({
       component: AccountSetting,
       meta: {
         sidebar: 'user',
-        header: 'account',
+        header: null,
+        shell: 'dark',
+        fluid: true,
+        flush: true,
       }
     },
     {
