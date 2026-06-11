@@ -9,7 +9,17 @@
     </header>
 
     <section class="account-panel">
-      <h2>プロフィール</h2>
+      <div class="account-panel__header">
+        <h2>プロフィール</h2>
+        <RouterLink
+          class="profile-edit-button"
+          to="/accountsetting"
+          aria-label="プロフィールを編集"
+          title="プロフィールを編集"
+        >
+          <v-icon icon="mdi-pencil-outline" />
+        </RouterLink>
+      </div>
 
       <div class="profile-card">
         <div class="profile-avatar">{{ avatarInitial }}</div>
@@ -225,6 +235,47 @@ onMounted(loadAccountSummary)
   font-size: 18px;
   font-weight: 800;
   line-height: 1.3;
+}
+
+.account-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.account-panel__header h2 {
+  margin: 0;
+}
+
+.profile-edit-button {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid #4d6079;
+  border-radius: 50%;
+  background: #111a2f;
+  color: #ffffff;
+  text-decoration: none;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease;
+}
+
+.profile-edit-button:hover,
+.profile-edit-button:focus-visible {
+  border-color: #45a4ff;
+  background: #1f55ca;
+  color: #ffffff;
+  outline: none;
+}
+
+.profile-edit-button :deep(.v-icon) {
+  font-size: 20px;
 }
 
 .profile-card,
