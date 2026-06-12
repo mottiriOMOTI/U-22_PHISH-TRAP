@@ -203,18 +203,18 @@ onMounted(loadSettings)
 .settings-hero {
   display: flex;
   align-items: center;
-  gap: 11px;
-  margin-bottom: 14px;
+  gap: 12px;
+  margin-bottom: 18px;
 }
 
 .settings-hero__icon {
   color: #b449ff;
-  font-size: 36px;
+  font-size: 42px;
 }
 
 .settings-hero h1 {
   margin: 0;
-  font-size: 28px;
+  font-size: 30px;
   font-weight: 800;
   line-height: 1.1;
 }
@@ -227,25 +227,25 @@ onMounted(loadSettings)
 }
 
 .settings-hero p {
-  margin-top: 5px;
-  font-size: 15px;
+  margin-top: 6px;
+  font-size: 16px;
 }
 
 .settings-panel {
   width: min(100%, 1040px);
-  padding: 16px 20px;
+  padding: 18px 22px 20px;
   border: 1px solid #34465f;
   border-radius: 12px;
   background: #172337;
 }
 
 .settings-panel + .settings-panel {
-  margin-top: 12px;
+  margin-top: 16px;
 }
 
 .settings-panel__header h2 {
   margin: 0 0 4px;
-  font-size: 17px;
+  font-size: 18px;
   font-weight: 800;
   line-height: 1.3;
 }
@@ -347,13 +347,13 @@ onMounted(loadSettings)
 }
 
 .settings-panel--data {
-  padding-bottom: 16px;
+  padding-bottom: 20px;
 }
 
 .reset-button {
   display: flex;
   width: 100%;
-  min-height: 34px;
+  min-height: 40px;
   align-items: center;
   justify-content: center;
   gap: 10px;
