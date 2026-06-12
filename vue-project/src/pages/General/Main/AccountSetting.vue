@@ -292,7 +292,7 @@ onMounted(loadAccountSetting)
 }
 
 .account-setting-panel {
-  width: 100%;
+  width: min(100%, 1040px);
   padding: 18px 22px 20px;
   border: 1px solid #34465f;
   border-radius: 12px;
@@ -470,7 +470,7 @@ onMounted(loadAccountSetting)
 }
 
 .account-setting-message {
-  width: 100%;
+  width: min(100%, 1040px);
   margin: 8px 0 0;
   font-size: 13px;
   font-weight: 700;

@@ -68,7 +68,6 @@
 </label>
 
 <p v-if="errorMessage" class="error-text">{{ errorMessage }}</p>
-<p v-if="successMessage" class="success-text">{{ successMessage }}</p>
 
 <button type="submit" :disabled="isSubmitting">登録する</button>
 </form>
@@ -95,7 +94,6 @@ const password = ref('')
 const passwordConfirm = ref('')
 const agreedToPolicies = ref(false)
 const errorMessage = ref('')
-const successMessage = ref('')
 const isSubmitting = ref(false)
 const router = useRouter()
 
@@ -105,7 +103,6 @@ return
 }
 
 errorMessage.value = ''
-successMessage.value = ''
 
 if (!agreedToPolicies.value) {
 errorMessage.value = 'プライバシーポリシーと利用規約を確認し、同意してください。'
@@ -124,7 +121,6 @@ const newUser = await registerUser(name.value, email.value, password.value)
 
 console.log('4. APIからの返り値:', newUser)
 console.log('登録成功！', newUser)
-successMessage.value = '登録が完了しました。'
 await router.push('/mailbox')
 } catch (error: any) {
 console.error(error)
@@ -301,18 +297,13 @@ accent-color: #2463ff;
 cursor: pointer;
 }
 
-.error-text,
-.success-text {
+.error-text {
 margin: 0;
 font-size: 13px;
 }
 
 .error-text {
 color: #ff8a95;
-}
-
-.success-text {
-color: #6ee7a8;
 }
 
 button {

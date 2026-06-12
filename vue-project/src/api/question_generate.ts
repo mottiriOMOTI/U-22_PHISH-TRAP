@@ -6,6 +6,7 @@ export type GenerateCategory = 'student' | 'company' | 'general'
 export type GenerateQuestionPayload = {
   category: GenerateCategory
   count: 1
+  isPhishing: boolean
 }
 
 export type GeneratedDangerousLink = {
