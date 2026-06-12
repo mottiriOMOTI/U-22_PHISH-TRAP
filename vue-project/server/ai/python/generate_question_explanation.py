@@ -68,7 +68,19 @@ def build_generation_schema(source_schema: dict) -> dict:
     }
 
 
-def build_messages(category: str, count: int) -> list[dict[str, str]]:
+def build_messages(category: str, count: int, is_phishing: bool) -> list[dict[str, str]]:
+    mail_type = "phishing" if is_phishing else "safe legitimate"
+    explanation_hint = (
+        "explanation means: why dangerous, warning signs, correct action."
+        if is_phishing
+        else "explanation means: why safe, notable points, safe action."
+    )
+    fixed_values = (
+        "Set is_phishing=true and choose phishing_type."
+        if is_phishing
+        else "Set is_phishing=false, phishing_type=null, and avoid dangerous links/attachments."
+    )
+
     return [
         {
             "role": "system",
@@ -77,8 +89,8 @@ def build_messages(category: str, count: int) -> list[dict[str, str]]:
         {
             "role": "user",
             "content": (
-                f"Create {count} phishing-training email for {category}. "
-                "Use fictional names/domains."
+                f"Create {count} {mail_type} training email for {category}. "
+                f"{fixed_values} {explanation_hint} Use fictional names/domains."
             ),
         },
     ]
@@ -97,7 +109,7 @@ def extract_json(content: str) -> dict:
     return json.loads(text)
 
 
-def validate_result(result: dict, category: str, count: int) -> dict:
+def validate_result(result: dict, category: str, count: int, is_phishing: bool) -> dict:
     questions = result.get("questions")
     if not isinstance(questions, list):
         raise ValueError("AI response must include a questions array")
@@ -109,13 +121,18 @@ def validate_result(result: dict, category: str, count: int) -> dict:
             raise ValueError(f"Question {index} must be an object")
         if question.get("category") != category:
             question["category"] = category
+        question["is_phishing"] = is_phishing
         question.setdefault("dangerous_links", [])
         question.setdefault("dangerous_attachments", [])
         question.setdefault("safe_attachments", [])
         question.setdefault("is_decoy", False)
         question.setdefault("is_active", True)
-        if question.get("is_phishing") is False:
+        if not is_phishing:
             question["phishing_type"] = None
+            question["dangerous_links"] = []
+            question["dangerous_attachments"] = []
+        elif question.get("phishing_type") is None:
+            question["phishing_type"] = "credential_theft"
 
     return {"questions": questions}
 
@@ -127,7 +144,7 @@ def read_error_body(error: urllib.error.HTTPError) -> str:
     return body
 
 
-def generate_questions(category: str, count: int) -> dict:
+def generate_questions(category: str, count: int, is_phishing: bool) -> dict:
     api_key = os.getenv("GROQ_API_KEY")
     if not api_key:
         raise ValueError("GROQ_API_KEY is not set")
@@ -135,7 +152,7 @@ def generate_questions(category: str, count: int) -> dict:
     schema = build_generation_schema(strip_schema_descriptions(load_schema()))
     payload = {
         "model": MODEL,
-        "messages": build_messages(category, count),
+        "messages": build_messages(category, count, is_phishing),
         "temperature": 0.7,
         "max_completion_tokens": 3000,
         "response_format": {
@@ -176,7 +193,7 @@ def generate_questions(category: str, count: int) -> dict:
 
     data = json.loads(body)
     content = data["choices"][0]["message"]["content"]
-    return validate_result(extract_json(content), category, count)
+    return validate_result(extract_json(content), category, count, is_phishing)
 
 
 def main():
@@ -184,13 +201,16 @@ def main():
         data = json.loads(sys.stdin.read())
         category = data.get("category")
         count = data.get("count", 1)
+        is_phishing = data.get("isPhishing")
 
         if category not in CATEGORY_LABELS:
             raise ValueError("category must be student, company, or general")
         if count != 1:
             raise ValueError("count must be 1")
+        if not isinstance(is_phishing, bool):
+            raise ValueError("isPhishing must be boolean")
 
-        result = generate_questions(category, count)
+        result = generate_questions(category, count, is_phishing)
         print(json.dumps(result, ensure_ascii=False))
     except Exception as e:
         print(json.dumps({"error": str(e)}, ensure_ascii=False), file=sys.stderr)

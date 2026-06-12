@@ -17,6 +17,7 @@ type GenerateCategory = 'student' | 'company' | 'general'
 type GenerateRequestBody = {
   category?: GenerateCategory
   count?: number
+  isPhishing?: boolean
 }
 
 type GeneratedQuestionExplanation = {
@@ -107,7 +108,7 @@ function parseSavePayload(body: SaveGeneratedQuestionBody) {
 }
 
 router.post('/', async (req, res) => {
-  const { category, count } = req.body as GenerateRequestBody
+  const { category, count, isPhishing } = req.body as GenerateRequestBody
 
   if (!category || !categories.includes(category)) {
     return res.status(400).json({ error: 'category must be student, company, or general' })
@@ -115,6 +116,10 @@ router.post('/', async (req, res) => {
 
   if (count !== 1) {
     return res.status(400).json({ error: 'count must be 1' })
+  }
+
+  if (typeof isPhishing !== 'boolean') {
+    return res.status(400).json({ error: 'isPhishing must be boolean' })
   }
 
   const generationCount = count
@@ -149,7 +154,7 @@ router.post('/', async (req, res) => {
     stderr += chunk
   })
 
-  child.stdin.write(JSON.stringify({ category, count: generationCount }))
+  child.stdin.write(JSON.stringify({ category, count: generationCount, isPhishing }))
   child.stdin.end()
 
   child.on('error', (error) => {

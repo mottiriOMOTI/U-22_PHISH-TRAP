@@ -48,6 +48,7 @@
         <AdminExplanationEditDialog
             v-model="explanationDialog"
             :explanation="selectedExplanation"
+            :is-phishing="selectedQuestion?.is_phishing ?? true"
             :loading="questionStore.explanationLoading"
             :saving="questionStore.explanationSaving"
             :error="explanationDialogError"
@@ -170,7 +171,9 @@ async function saveExplanationDialog(payload: SaveQuestionExplanationPayload) {
     if (!selectedQuestion.value) return
 
     if (!payload.why_dangerous || !payload.correct_action) {
-        explanationDialogError.value = 'なぜ危険か、正しい対処法を入力してください。'
+        explanationDialogError.value = selectedQuestion.value.is_phishing
+            ? 'なぜ危険か、正しい対処法を入力してください。'
+            : '安全と判断できる理由、安全な対応を入力してください。'
         return
     }
 
