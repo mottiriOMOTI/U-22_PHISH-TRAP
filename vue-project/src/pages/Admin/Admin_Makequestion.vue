@@ -30,12 +30,12 @@
             {{ saveMessage }}
         </v-alert>
 
-        <div v-if="generatedQuestions.length > 0" class="generated-list mt-4">
+        <div v-if="generatedStore.questions.length > 0" class="generated-list mt-4">
             <div class="generated-header">
                 <div>
                     <h4 class="mb-0">生成結果</h4>
                     <span class="text-caption text-medium-emphasis">
-                        {{ generatedQuestions.length }}件
+                        {{ generatedStore.questions.length }}件
                     </span>
                 </div>
 
@@ -44,7 +44,7 @@
                     prepend-icon="mdi-content-save-outline"
                     variant="tonal"
                     :loading="saving"
-                    :disabled="saving || unsavedQuestions.length === 0"
+                    :disabled="saving || generatedStore.unsavedQuestions.length === 0"
                     @click="saveGeneratedQuestions"
                 >
                     Supabaseに保存
@@ -52,11 +52,12 @@
             </div>
 
             <AdminQuestionCard
-                v-for="question in generatedQuestions"
+                v-for="question in generatedStore.questions"
                 :key="question.id"
                 :question="question"
                 :busy="saving"
                 show-explanation-action
+                @open="openQuestionDetail"
                 @edit-question="openQuestionDialog"
                 @edit-explanation="openExplanationDialog"
                 @delete="deleteGeneratedQuestion"
@@ -83,6 +84,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import AdminExplanationEditDialog from '@/components/admin/AdminExplanationEditDialog.vue'
 import AdminQuestionCard from '@/components/admin/AdminQuestionCard.vue'
 import AdminQuestionEditDialog from '@/components/admin/AdminQuestionEditDialog.vue'
@@ -92,14 +94,15 @@ import {
     generateQuestionExplanation,
     saveGeneratedQuestion,
     type GenerateCategory,
-    type GeneratedQuestion,
 } from '@/api/question_generate'
 import {
     question_scenario,
     type Scenario,
 } from '@/stores/admin_questionList'
-
-type EditableGeneratedQuestion = GeneratedQuestion & { id: string }
+import {
+    useAdminGeneratedQuestions,
+    type EditableGeneratedQuestion,
+} from '@/stores/admin_generatedQuestions'
 
 const scenarioToCategory: Record<Scenario, GenerateCategory> = {
     school: 'student',
@@ -107,15 +110,15 @@ const scenarioToCategory: Record<Scenario, GenerateCategory> = {
     daily: 'general',
 }
 
+const router = useRouter()
 const questionStore = question_scenario()
+const generatedStore = useAdminGeneratedQuestions()
 
 const loading = ref(false)
 const saving = ref(false)
 const error = ref<string | null>(null)
 const saveError = ref<string | null>(null)
 const saveMessage = ref<string | null>(null)
-const generatedQuestions = ref<EditableGeneratedQuestion[]>([])
-const savedQuestionIds = ref<Set<string>>(new Set())
 const selectedQuestion = ref<EditableGeneratedQuestion | null>(null)
 const questionDialog = ref(false)
 const explanationDialog = ref(false)
@@ -123,27 +126,19 @@ const questionDialogError = ref<string | null>(null)
 const explanationDialogError = ref<string | null>(null)
 
 const selectedCategory = computed(() => scenarioToCategory[questionStore.scenario])
-const unsavedQuestions = computed(() =>
-    generatedQuestions.value.filter((question) => !savedQuestionIds.value.has(question.id)),
-)
 
 async function generate() {
     loading.value = true
     error.value = null
     saveError.value = null
     saveMessage.value = null
-    generatedQuestions.value = []
-    savedQuestionIds.value = new Set()
 
     try {
         const result = await generateQuestionExplanation({
             category: selectedCategory.value,
             count: 1,
         })
-        generatedQuestions.value = result.questions.map((question, index) => ({
-            ...question,
-            id: `generated-${Date.now()}-${index}`,
-        }))
+        generatedStore.replaceQuestions(result.questions)
     } catch (e) {
         error.value = e instanceof Error ? e.message : '生成に失敗しました。'
     } finally {
@@ -152,16 +147,16 @@ async function generate() {
 }
 
 async function saveGeneratedQuestions() {
-    if (unsavedQuestions.value.length === 0) return
+    if (generatedStore.unsavedQuestions.length === 0) return
 
     saving.value = true
     saveError.value = null
     saveMessage.value = null
 
     try {
-        for (const question of unsavedQuestions.value) {
+        for (const question of generatedStore.unsavedQuestions) {
             await saveGeneratedQuestion(question)
-            savedQuestionIds.value = new Set([...savedQuestionIds.value, question.id])
+            generatedStore.markSaved(question.id)
         }
         saveMessage.value = '生成した問題をSupabaseに保存しました。'
     } catch (e) {
@@ -169,6 +164,16 @@ async function saveGeneratedQuestions() {
     } finally {
         saving.value = false
     }
+}
+
+function openQuestionDetail(question: EditableGeneratedQuestion) {
+    router.push({
+        path: '/admin_questiondetail',
+        query: {
+            source: 'generated',
+            id: question.id,
+        },
+    })
 }
 
 function openQuestionDialog(question: EditableGeneratedQuestion) {
@@ -185,10 +190,8 @@ function saveQuestionDialog(payload: UpdateMailPayload) {
         return
     }
 
-    updateGeneratedQuestion(selectedQuestion.value.id, {
-        ...selectedQuestion.value,
-        ...payload,
-    })
+    generatedStore.updateQuestion(selectedQuestion.value.id, payload)
+    selectedQuestion.value = generatedStore.getQuestion(selectedQuestion.value.id)
     questionDialog.value = false
 }
 
@@ -206,25 +209,13 @@ function saveExplanationDialog(payload: SaveQuestionExplanationPayload) {
         return
     }
 
-    updateGeneratedQuestion(selectedQuestion.value.id, {
-        ...selectedQuestion.value,
-        explanation: payload,
-    })
+    generatedStore.updateExplanation(selectedQuestion.value.id, payload)
+    selectedQuestion.value = generatedStore.getQuestion(selectedQuestion.value.id)
     explanationDialog.value = false
 }
 
 function deleteGeneratedQuestion(question: EditableGeneratedQuestion) {
-    generatedQuestions.value = generatedQuestions.value.filter((item) => item.id !== question.id)
-    savedQuestionIds.value = new Set(
-        [...savedQuestionIds.value].filter((savedId) => savedId !== question.id),
-    )
-}
-
-function updateGeneratedQuestion(id: string, nextQuestion: EditableGeneratedQuestion) {
-    const index = generatedQuestions.value.findIndex((question) => question.id === id)
-    if (index === -1) return
-    generatedQuestions.value[index] = nextQuestion
-    selectedQuestion.value = nextQuestion
+    generatedStore.deleteQuestion(question.id)
 }
 </script>
 

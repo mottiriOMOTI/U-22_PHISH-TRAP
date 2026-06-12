@@ -1,5 +1,13 @@
 <template>
-    <v-card class="question-card" variant="outlined">
+    <v-card
+        class="question-card"
+        variant="outlined"
+        role="button"
+        tabindex="0"
+        @click="$emit('open', question)"
+        @keydown.enter.prevent="$emit('open', question)"
+        @keydown.space.prevent="$emit('open', question)"
+    >
         <v-card-text class="pa-4">
             <v-row align="start">
                 <v-col cols="12" md="9">
@@ -46,7 +54,7 @@
                                     size="small"
                                     aria-label="問題編集"
                                     :disabled="busy"
-                                    @click="$emit('edit-question', question)"
+                                    @click.stop="$emit('edit-question', question)"
                                 />
                             </template>
                         </v-tooltip>
@@ -61,7 +69,7 @@
                                     size="small"
                                     aria-label="解説編集"
                                     :disabled="busy"
-                                    @click="$emit('edit-explanation', question)"
+                                    @click.stop="$emit('edit-explanation', question)"
                                 />
                             </template>
                         </v-tooltip>
@@ -77,7 +85,7 @@
                                     aria-label="削除"
                                     :loading="deleteLoading"
                                     :disabled="busy"
-                                    @click="$emit('delete', question)"
+                                    @click.stop="$emit('delete', question)"
                                 />
                             </template>
                         </v-tooltip>
@@ -109,6 +117,7 @@ defineProps<{
 }>()
 
 defineEmits<{
+    open: [question: AdminQuestionCardItem]
     'edit-question': [question: AdminQuestionCardItem]
     'edit-explanation': [question: AdminQuestionCardItem]
     delete: [question: AdminQuestionCardItem]
@@ -122,6 +131,18 @@ function previewBody(body: string): string {
 <style scoped>
 .question-card {
     border-color: rgba(var(--v-border-color), 0.12);
+    cursor: pointer;
+    transition:
+        border-color 0.16s ease,
+        box-shadow 0.16s ease,
+        transform 0.16s ease;
+}
+
+.question-card:hover,
+.question-card:focus-visible {
+    border-color: rgba(var(--v-theme-primary), 0.35);
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+    outline: none;
 }
 
 .question-heading,
