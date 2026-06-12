@@ -1,15 +1,216 @@
 <template>
-  <v-navigation-drawer :permanent="true" width="260" color="grey-darken-3"> <!-- 管理者画面と分かるように色を変えるのもおすすめ -->
-    <v-list nav>
-      <v-list-item title="概要" to="/admin_overview" prepend-icon="mdi-view-dashboard" />
-      <!-- 管理者用メニュー -->
-      <v-list-item title="ユーザー一覧" to="/admin_userlist" prepend-icon="mdi-account-group" />
-      <v-list-item title="問題作成" to="/admin_makequestion" prepend-icon="mdi-plus-box" />
-      <v-list-item title="問題一覧" to="/admin_questionlist" prepend-icon="mdi-help-box" />
-      <v-list-item title="管理者設定" to="/admin_setting" prepend-icon="mdi-shield-cog" />
-    </v-list>
+  <v-navigation-drawer permanent width="240" class="admin-sidebar">
+    <div class="admin-sidebar__inner">
+      <RouterLink to="/admin_overview" class="admin-brand" aria-label="PHISH-TRAP 管理画面">
+        <v-icon icon="mdi-shield-outline" class="admin-brand__icon" />
+        <span class="admin-brand__text">
+          <span class="admin-brand__title"> PHISH-TRAP <strong>死線</strong> </span>
+          <span class="admin-brand__subtitle">管理画面</span>
+        </span>
+      </RouterLink>
+
+      <nav class="admin-nav" aria-label="管理者メニュー">
+        <RouterLink
+          v-for="item in navItems"
+          :key="item.to"
+          :to="item.to"
+          :aria-current="isActive(item) ? 'page' : undefined"
+          :class="['admin-nav__link', { 'admin-nav__link--active': isActive(item) }]"
+        >
+          <v-icon :icon="item.icon" />
+          <span>{{ item.label }}</span>
+        </RouterLink>
+      </nav>
+
+      <div class="admin-sidebar__footer">
+        <RouterLink to="/admin_login" class="admin-logout" @click="clearCurrentUser">
+          <v-icon icon="mdi-logout" />
+          <span>ログアウト</span>
+        </RouterLink>
+        <p>防人（さきもりんちゅ）</p>
+      </div>
+    </div>
   </v-navigation-drawer>
 </template>
 
-<script setup lang="ts"></script>
-<style lang="scss" scoped></style>
+<script setup lang="ts">
+import { useRoute } from 'vue-router'
+
+import { clearCurrentUser } from '@/api/users'
+
+type AdminNavItem = {
+  label: string
+  to: string
+  icon: string
+  activePaths: string[]
+}
+
+const route = useRoute()
+
+const navItems: AdminNavItem[] = [
+  {
+    label: '概要',
+    to: '/admin_overview',
+    icon: 'mdi-chart-bar',
+    activePaths: ['/admin_overview'],
+  },
+  {
+    label: 'ユーザー管理',
+    to: '/admin_userlist',
+    icon: 'mdi-account-multiple-outline',
+    activePaths: ['/admin_userlist', '/admin_userdetail'],
+  },
+  {
+    label: '問題一覧',
+    to: '/admin_questionlist',
+    icon: 'mdi-format-list-bulleted',
+    activePaths: ['/admin_questionlist', '/admin_questiondetail', '/admin_questionview'],
+  },
+  {
+    label: '問題生成',
+    to: '/admin_makequestion',
+    icon: 'mdi-auto-fix',
+    activePaths: ['/admin_makequestion'],
+  },
+  {
+    label: '管理者設定',
+    to: '/admin_setting',
+    icon: 'mdi-cog-outline',
+    activePaths: ['/admin_setting'],
+  },
+]
+
+function isActive(item: AdminNavItem) {
+  return item.activePaths.some((path) => route.path === path || route.path.startsWith(`${path}/`))
+}
+</script>
+
+<style lang="css" scoped>
+.admin-sidebar {
+  border-right: 1px solid #28364f;
+  background: #111b2f !important;
+  color: #ffffff;
+}
+
+.admin-sidebar :deep(.v-navigation-drawer__content) {
+  overflow: hidden;
+}
+
+.admin-sidebar__inner {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  padding: 20px 16px 14px;
+}
+
+.admin-brand {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 7px;
+  color: #ffffff;
+  text-decoration: none;
+}
+
+.admin-brand__icon {
+  color: #b34aff;
+  font-size: 34px;
+}
+
+.admin-brand__text {
+  display: grid;
+  gap: 5px;
+}
+
+.admin-brand__title {
+  font-size: 17px;
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.admin-brand__title strong {
+  color: #ff4057;
+  font-weight: 900;
+}
+
+.admin-brand__subtitle {
+  color: #d7e4fb;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.admin-nav {
+  display: grid;
+  gap: 8px;
+  margin-top: 36px;
+  padding-bottom: 10px;
+}
+
+.admin-nav__link {
+  display: flex;
+  height: 46px;
+  align-items: center;
+  gap: 12px;
+  padding: 0 14px;
+  border-radius: 23px;
+  color: #d7e4fb;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.2;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.admin-nav__link :deep(.v-icon) {
+  flex: 0 0 auto;
+  font-size: 24px;
+}
+
+.admin-nav__link:hover,
+.admin-nav__link:focus-visible {
+  color: #ffffff;
+  outline: none;
+  transform: translateX(2px);
+}
+
+.admin-nav__link--active {
+  background: linear-gradient(90deg, #b815f5 0%, #a915f0 48%, #ac14ee 100%);
+  color: #ffffff;
+}
+
+.admin-sidebar__footer {
+  margin-top: auto;
+}
+
+.admin-logout {
+  display: flex;
+  height: 34px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid #d8dde8;
+  border-radius: 17px;
+  background: #ffffff;
+  color: #c7d3e3;
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.admin-logout :deep(.v-icon) {
+  font-size: 18px;
+}
+
+.admin-sidebar__footer p {
+  margin: 12px 0 0;
+  color: #7287ad;
+  font-size: 12px;
+  text-align: center;
+}
+</style>
