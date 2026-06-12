@@ -2,7 +2,7 @@
     <v-sheet class="pa-4" rounded="lg" elevation="0" border>
         <div class="page-heading">
             <h3>問題生成</h3>
-            <p class="subtitle">カテゴリを選択して1問の訓練メールを生成します。</p>
+            <p class="subtitle">カテゴリとメール種別を選択して1問の訓練メールを生成します。</p>
         </div>
 
         <div class="generate-actions mt-3">
@@ -16,6 +16,16 @@
             >
                 生成する
             </v-btn>
+            <v-switch
+                v-model="isPhishing"
+                class="phishing-toggle"
+                color="error"
+                density="compact"
+                hide-details
+                inset
+                label="詐欺メール生成"
+                :disabled="loading || saving"
+            />
         </div>
 
         <v-alert v-if="error" type="error" variant="tonal" class="mt-4">
@@ -75,6 +85,7 @@
         <AdminExplanationEditDialog
             v-model="explanationDialog"
             :explanation="selectedQuestion?.explanation ?? null"
+            :is-phishing="selectedQuestion?.is_phishing ?? true"
             :saving="false"
             :error="explanationDialogError"
             @save="saveExplanationDialog"
@@ -116,6 +127,7 @@ const generatedStore = useAdminGeneratedQuestions()
 
 const loading = ref(false)
 const saving = ref(false)
+const isPhishing = ref(true)
 const error = ref<string | null>(null)
 const saveError = ref<string | null>(null)
 const saveMessage = ref<string | null>(null)
@@ -137,6 +149,7 @@ async function generate() {
         const result = await generateQuestionExplanation({
             category: selectedCategory.value,
             count: 1,
+            isPhishing: isPhishing.value,
         })
         generatedStore.replaceQuestions(result.questions)
     } catch (e) {
@@ -205,7 +218,9 @@ function saveExplanationDialog(payload: SaveQuestionExplanationPayload) {
     if (!selectedQuestion.value) return
 
     if (!payload.why_dangerous || !payload.correct_action) {
-        explanationDialogError.value = 'なぜ危険か、正しい対処法を入力してください。'
+        explanationDialogError.value = selectedQuestion.value.is_phishing
+            ? 'なぜ危険か、正しい対処法を入力してください。'
+            : '安全と判断できる理由、安全な対応を入力してください。'
         return
     }
 
@@ -232,12 +247,19 @@ function deleteGeneratedQuestion(question: EditableGeneratedQuestion) {
 .generated-header {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     gap: 16px;
 }
 
 .generate-actions {
-    max-width: 520px;
+    flex-wrap: wrap;
+}
+
+.phishing-toggle {
+    flex: 0 0 auto;
+}
+
+.generated-header {
+    justify-content: space-between;
 }
 
 .generated-list {

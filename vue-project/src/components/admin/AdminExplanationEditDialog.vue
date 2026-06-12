@@ -4,7 +4,7 @@
             <v-card-title class="dialog-header d-flex align-center">
                 <div>
                     <div class="text-h6">解説編集</div>
-                    <div class="text-caption text-medium-emphasis">危険な理由、警告サイン、正しい対処法を編集します</div>
+                    <div class="text-caption text-medium-emphasis">{{ labels.description }}</div>
                 </div>
                 <v-spacer />
                 <v-btn icon="mdi-close" variant="text" aria-label="閉じる" @click="$emit('update:modelValue', false)" />
@@ -21,7 +21,7 @@
 
                     <v-textarea
                         v-model="form.why_dangerous"
-                        label="なぜ危険か"
+                        :label="labels.whyDangerous"
                         variant="outlined"
                         rows="4"
                         auto-grow
@@ -29,7 +29,7 @@
                     />
 
                     <div class="d-flex align-center mb-2">
-                        <div class="text-subtitle-2">警告サイン</div>
+                        <div class="text-subtitle-2">{{ labels.warningSignals }}</div>
                         <v-spacer />
                         <v-btn size="small" variant="tonal" prepend-icon="mdi-plus" @click="addWarningSignal">
                             追加
@@ -40,7 +40,7 @@
                         <div v-for="(_, index) in form.warning_signals" :key="index" class="warning-signal-row">
                             <v-text-field
                                 v-model="form.warning_signals[index]"
-                                :label="`警告サイン ${index + 1}`"
+                                :label="`${labels.warningSignals} ${index + 1}`"
                                 variant="outlined"
                                 hide-details
                             />
@@ -48,7 +48,7 @@
                                 icon="mdi-close"
                                 variant="text"
                                 color="error"
-                                aria-label="警告サインを削除"
+                                :aria-label="`${labels.warningSignals}を削除`"
                                 :disabled="form.warning_signals.length === 1"
                                 @click="removeWarningSignal(index)"
                             />
@@ -57,7 +57,7 @@
 
                     <v-textarea
                         v-model="form.correct_action"
-                        label="正しい対処法"
+                        :label="labels.correctAction"
                         variant="outlined"
                         rows="4"
                         auto-grow
@@ -77,21 +77,41 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, watch } from 'vue'
+import { computed, reactive, watch } from 'vue'
 import type { SaveQuestionExplanationPayload } from '@/api/mailApi'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
     modelValue: boolean
     explanation: SaveQuestionExplanationPayload | null
+    isPhishing?: boolean
     loading?: boolean
     saving?: boolean
     error?: string | null
-}>()
+}>(), {
+    isPhishing: true,
+    loading: false,
+    saving: false,
+    error: null,
+})
 
 const emit = defineEmits<{
     'update:modelValue': [value: boolean]
     save: [payload: SaveQuestionExplanationPayload]
 }>()
+
+const labels = computed(() => props.isPhishing
+    ? {
+        description: '危険な理由、警告サイン、正しい対処法を編集します。',
+        whyDangerous: 'なぜ危険か',
+        warningSignals: '警告サイン',
+        correctAction: '正しい対処法',
+    }
+    : {
+        description: '安全と判断できる理由、注目すべき箇所、安全な対応を編集します。',
+        whyDangerous: '安全と判断できる理由',
+        warningSignals: '注目すべき箇所',
+        correctAction: '安全な対応',
+    })
 
 const form = reactive<SaveQuestionExplanationPayload>({
     why_dangerous: '',
