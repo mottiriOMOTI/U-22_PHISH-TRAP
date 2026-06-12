@@ -16,7 +16,7 @@
     <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
   </v-row>
 
-  <!-- カードのループ処理（Supabaseからの動的データに対応） -->
+  <!-- カードのループ処理（history.stateからの動的データに対応） -->
   <v-row v-else class="margin-3">
     <v-col v-for="item in cards" :key="item.id" cols="12">
       
@@ -99,186 +99,72 @@
       </v-btn>
     </v-col>
   </v-row>
-
-  <!-- 通常ボタンレイアウト -->
-  <!-- ⚙️ 以下デバッグ用ボタン 本番に移行するときは消してね♡ -->
-  <v-col cols="12" class="text-center mt-8 mb-2">
-    <span class="text-caption text-grey font-weight-bold">⚙️ 以下デバッグ用ボタン 本番に移行するときは消してね♡</span>
-  </v-col>
-  <v-row class="mt-2 px-1" >
-    
-    <v-col cols="12" sm="3">
-      <v-btn block color="error" variant="tonal" prepend-icon="mdi-refresh" @click="setToDanger">
-        不正解解説
-      </v-btn>
-    </v-col>
-    <v-col cols="12" sm="3">
-      <v-btn block color="success" variant="flat" append-icon="mdi-arrow-right" @click="setToCorrect">
-        正解！！！！！！！
-      </v-btn>
-    </v-col>
-    <v-col cols="12" sm="3">
-      <v-btn block color="grey-darken-3" variant="elevated" prepend-icon="mdi-skull" @click="goToPage('FearEffect_Death')">
-        Deathイベントへ
-      </v-btn>
-    </v-col>
-    <v-col cols="12" sm="3">
-      <v-btn block color="amber-darken-2" variant="outlined" prepend-icon="mdi-alert" @click="goToPage('FearEffect_False')">
-        Falseイベントへ
-      </v-btn>
-    </v-col>
-  </v-row>
-
-  <!-- 🟢 デバッグ用：問題1〜3を個別に呼び出すボタンエリア -->
-  <v-row class="mt-6 px-1 justify-center" no-gutters style="border-top: 1px dashed #777; padding-top: 1.5em;">
-    <v-col cols="12" class="text-center mb-2">
-      <span class="text-caption text-grey font-weight-bold">⚙️ バックエンド・デバック用問題切替スイッチ</span>
-    </v-col>
-    <v-col cols="4" class="pa-1">
-      <v-btn block color="blue-grey-darken-2" variant="outlined" size="small" prepend-icon="mdi-database-search" @click="loadQuestionData(1)">
-        問題 ID: 1
-      </v-btn>
-    </v-col>
-    <v-col cols="4" class="pa-1">
-      <v-btn block color="blue-grey-darken-2" variant="outlined" size="small" prepend-icon="mdi-database-search" @click="loadQuestionData(2)">
-        問題 ID: 2
-      </v-btn>
-    </v-col>
-    <v-col cols="4" class="pa-1">
-      <v-btn block color="blue-grey-darken-2" variant="outlined" size="small" prepend-icon="mdi-database-search" @click="loadQuestionData(3)">
-        問題 ID: 3
-      </v-btn>
-    </v-col>
-  </v-row>
-  <!-- ⚙️ 以上デバッグ用ボタン 本番に移行するときは消してね♡ -->
-
 </template>
 
 <script setup lang="ts">
 import BaseCard from '@/components/ui/IshikawaStyle.vue'
-import { useUserInput } from '@/stores/userInput'
-import { ref, watch, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { fetchQuestion } from '@/api/QuestionApi'
 
-interface ApiDangerCard {
-  id: string | number
-  type: 'danger'
-  title?: string         
-  sender_name?: string   
-  sender_email: string
-  body: string
-  is_phishing?: boolean  // 👈 データベースから渡るフラグを受け取れるよう型を追加
-  color?: string
-  variant?: 'flat' | 'text' | 'tonal' | 'elevated' | 'outlined' | 'plain'
-}
-interface ApiExplanationCard {
-  id: string | number
-  type: 'DangerExplanation'
-  why_dangerous: string
-  color?: string
-  variant?: 'flat' | 'text' | 'tonal' | 'elevated' | 'outlined' | 'plain'
-}
-interface ApiAdviceCard {
-  id: string | number
-  type: 'advice'
-  warning_signals: string[]
-  color?: string
-  variant?: 'flat' | 'text' | 'tonal' | 'elevated' | 'outlined' | 'plain'
-}
-interface ApiActionCard {
-  id: string | number
-  type: 'correctiveAction'
-  correct_action: string[]
-  color?: string
-  variant?: 'flat' | 'text' | 'tonal' | 'elevated' | 'outlined' | 'plain'
-}
-type LocalCardItem = ApiDangerCard | ApiExplanationCard | ApiAdviceCard | ApiActionCard
-
-const userInput = useUserInput()
-const userName = ref('')
 const router = useRouter()
-
 const pageTitle = ref('フィッシング詐欺に遭遇')
 const pageSubtitle = ref('今のは危険なメールでした')
 const pageIcon = ref('mdi-close-circle-outline')
 const pageIconClass = ref('slow-pulse super-vivid-red')
 
-const cards = ref<LocalCardItem[]>([])
+const cards = ref<any[]>([])
 const isLoading = ref(true)
 
 /**
  * 💡 現在読み込まれているカードデータから、is_phishing の真偽値を安全に探すヘルパー関数
  */
 const getIsPhishingStatus = (): boolean => {
-  const dangerCard = cards.value.find(item => item.type === 'danger') as ApiDangerCard | undefined
-  // 該当カードがない、または明示的に false の場合を除き、安全のためデフォルトは true (詐欺メール扱い) とします
+  const dangerCard = cards.value.find(item => item.type === 'danger')
   return dangerCard?.is_phishing !== false
 }
 
 /**
- * APIを呼び出し、取得した成形済みデータをそのまま cards 配列にセットする関数
+ * 遷移元から history.state 経由で渡されたメールデータを使用して解説を構築
  */
-const loadQuestionData = async (targetId?: number) => {
-  try {
-    isLoading.value = true
-    cards.value = await fetchQuestion(targetId) as any
+const initializeExplanation = () => {
+  isLoading.value = true
+  const state = window.history.state
+  const mail = state?.mail // 演出元から渡されたメールオブジェクト
+  const isCorrect = !!state?.isCorrect
+
+  if (mail) {
+    const explanations = mail.question_explanations || {}
     
-    // データが切り替わったら、その問題の「is_phishing」を元に初期の不正解（初期状態）表示を自動生成
-    setToDanger()
-  } catch (err) {
-    console.error(`❌ 画面への問題データ(ID: ${targetId})の読み込みに失敗しました:`, err)
-  } finally {
-    isLoading.value = false
-  }
-}
-
-onMounted(() => {
-  loadQuestionData() // 初期表示は通常通り最新データを取得
-})
-
-/**
- * 🎯 【正解ボタン】クリック時の動的テキスト切り替え
- */
-const setToCorrect = () => {
-  const isPhishing = getIsPhishingStatus()
-  
-  pageTitle.value = '正解'
-  pageIcon.value = 'mdi-check-circle-outline'
-  pageIconClass.value = 'super-vivid-green'
-
-  if (isPhishing) {
-    // True: 詐欺メールを見破って回避した場合
-    pageSubtitle.value = '適切な判断ができました'
+    cards.value = [
+      { id: mail.id, type: 'danger', ...mail, color: 'error', variant: 'tonal' },
+      { id: 'exp', type: 'DangerExplanation', why_dangerous: explanations.why_dangerous, color: 'warning', variant: 'tonal' },
+      { id: 'adv', type: 'advice', warning_signals: explanations.warning_signals || [], color: 'info', variant: 'tonal' },
+      { id: 'act', type: 'correctiveAction', correct_action: explanations.correct_action || [], color: 'success', variant: 'tonal' }
+    ]
+    applyJudgementMode(isCorrect)
   } else {
-    // False: 安全な通常メールだと正しく見抜いた場合
-    pageSubtitle.value = '仕事をやり遂げました！'
+    console.error('データが渡されていません')
   }
+  isLoading.value = false
 }
 
-/**
- * 🎯 【不正解ボタン / 初期表示】クリック時の動的テキスト切り替え
- */
-const setToDanger = () => {
+const applyJudgementMode = (isCorrect: boolean) => {
   const isPhishing = getIsPhishingStatus()
-  
-  pageIcon.value = 'mdi-close-circle-outline'
-  pageIconClass.value = 'slow-pulse super-vivid-red'
-
-  if (isPhishing) {
-    // True: 詐欺メールに引っかかってしまった場合
-    pageTitle.value = 'フィッシング詐欺に遭遇'
-    pageSubtitle.value = '今のは詐欺でした'
+  if (isCorrect) {
+    pageTitle.value = '正解'
+    pageIcon.value = 'mdi-check-circle-outline'
+    pageIconClass.value = 'super-vivid-green'
+    pageSubtitle.value = isPhishing ? '適切な判断ができました' : '仕事をやり遂げました！'
   } else {
-    // False: 普通の業務メールなのに過剰警戒してスルー・通報してしまった場合
-    pageTitle.value = '安全なメールの確認'
-    pageSubtitle.value = '今のは正常なメールでした'
+    pageIcon.value = 'mdi-close-circle-outline'
+    pageIconClass.value = 'slow-pulse super-vivid-red'
+    pageTitle.value = isPhishing ? 'フィッシング詐欺に遭遇' : '安全なメールの確認'
+    pageSubtitle.value = isPhishing ? '今のは詐欺でした' : '今のは正常なメールでした'
   }
 }
 
+onMounted(initializeExplanation)
 const goToPage = (pageName: string) => { router.push({ name: pageName }) }
-
-watch(userName, (s) => { userInput.userName = s })
 </script>
 
 <style lang="css" scoped>

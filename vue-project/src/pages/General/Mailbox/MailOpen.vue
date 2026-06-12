@@ -54,39 +54,49 @@ function goBack() {
   router.push(ROUTE_MAILBOX)
 }
 
+/**
+ * 判定アクションの処理
+ * @param isCorrect 判定が正解かどうか（フィッシング報告なら正解、無視なら不正解など）
+ * @param nextPath 移動先のパス
+ */
+function navigateToEffect(nextPath: string, isCorrect: boolean) {
+  isJudging.value = true
+  router.push({
+    path: nextPath,
+    state: {
+      mail: mail.value, // 取得済みの詳細データを state にセット
+      isCorrect: isCorrect
+    }
+  })
+}
+
 function judgeAction(action: MailViewerAction, value?: string) {
   if (isJudging.value || !mail.value) return
   const m = mail.value
-
-  let nextRoute: string | null = null
 
   if (m.is_phishing) {
     switch (action) {
       case 'link':
         if (value && m.dangerous_links?.some((d) => d.url === value)) {
-          nextRoute = ROUTE_DEATH
+          navigateToEffect(ROUTE_DEATH, false)
         }
         break
       case 'attachment':
         if (value && m.dangerous_attachments?.some((d) => d.filename === value)) {
-          nextRoute = ROUTE_DEATH
+          navigateToEffect(ROUTE_DEATH, false)
         }
         break
       case 'reply':
-        nextRoute = ROUTE_DEATH
+        navigateToEffect(ROUTE_DEATH, false)
         break
       case 'delete':
       case 'report':
-        nextRoute = ROUTE_EXPLANATION
+        navigateToEffect(ROUTE_EXPLANATION, true)
         break
     }
   } else if (action === 'report') {
-    nextRoute = ROUTE_FALSE
-  }
-
-  if (nextRoute) {
-    isJudging.value = true
-    router.push({ path: nextRoute, query: { id: m.id } })
+    // 安全なメールを報告するのは「不正解」判定とみなす場合
+    navigateToEffect(ROUTE_FALSE, false)
   }
 }
 
