@@ -31,7 +31,7 @@
     </v-row>
 
     <v-btn color="error" variant="flat" size="large" prepend-icon="mdi-arrow-left" @click="goBack">
-      解説を読んでリトライする
+      演出の閲覧を終わる
     </v-btn>
 
     <!-- 疑似デスクトップ通知スタック固定コンテナ -->

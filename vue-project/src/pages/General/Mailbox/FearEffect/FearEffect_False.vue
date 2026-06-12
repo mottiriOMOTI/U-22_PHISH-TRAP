@@ -122,7 +122,7 @@
       prepend-icon="mdi-arrow-left"
       @click="goBack"
     >
-      もう一度解説を確認する
+      演出の閲覧を終わる
     </v-btn>
 
     <!-- 疑似通知スタック固定コンテナ -->
