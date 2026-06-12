@@ -1,17 +1,4 @@
 <template>
-<<<<<<< HEAD
-  <MailDetailViewer
-    :mail="mail"
-    :loading="loading"
-    :error="error"
-    :busy="isJudging"
-    show-actions
-    back-label="受信トレイへ戻る"
-    @back="goBack"
-    @retry="load"
-    @action="judgeAction"
-  />
-=======
   <main class="mail-open-page" :aria-busy="loading ? 'true' : 'false'">
     <header class="mail-open-hero">
       <button class="back-button" type="button" aria-label="受信トレイへ戻る" title="受信トレイへ戻る" @click="goBack">
@@ -102,14 +89,15 @@
       </section>
     </template>
   </main>
->>>>>>> yuta
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import DOMPurify from 'dompurify'
 import { fetchMail, type MailDetail } from '@/api/mailApi'
-import MailDetailViewer, { type MailViewerAction } from '@/components/mail/MailDetailViewer.vue'
+
+type ActionType = 'link' | 'attachment' | 'reply' | 'delete' | 'report'
 
 const ROUTE_DEATH = '/feareffect_death'
 const ROUTE_FALSE = '/feareffect_false'
@@ -123,8 +111,6 @@ const mail = ref<MailDetail | null>(null)
 const loading = ref(true)
 const error = ref<string | null>(null)
 const isJudging = ref(false)
-<<<<<<< HEAD
-=======
 const bodyEl = ref<HTMLElement | null>(null)
 
 const sanitizedBody = computed(() =>
@@ -140,7 +126,6 @@ const attachments = computed<string[]>(() => [
   ...(mail.value?.dangerous_attachments ?? []).map(a => a.filename),
   ...(mail.value?.safe_attachments ?? []).map(a => a.filename),
 ])
->>>>>>> yuta
 
 async function load() {
   const id = route.query.id
@@ -165,7 +150,18 @@ function goBack() {
   router.push(ROUTE_MAILBOX)
 }
 
-function judgeAction(action: MailViewerAction, value?: string) {
+function formatDate(iso: string): string {
+  const d = new Date(iso)
+  return d.toLocaleString('ja-JP', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+function judgeAction(action: ActionType, value?: string) {
   if (isJudging.value || !mail.value) return
   const m = mail.value
 
@@ -201,12 +197,37 @@ function judgeAction(action: MailViewerAction, value?: string) {
   }
 }
 
-onMounted(() => {
-  void load()
+function handleBodyLinkClick(e: MouseEvent) {
+  const target = (e.target as HTMLElement | null)?.closest('a') as HTMLAnchorElement | null
+  if (!target) return
+  e.preventDefault()
+  judgeAction('link', target.href)
+}
+
+function attachLinkHandler() {
+  void nextTick(() => {
+    bodyEl.value?.addEventListener('click', handleBodyLinkClick)
+  })
+}
+
+function detachLinkHandler() {
+  bodyEl.value?.removeEventListener('click', handleBodyLinkClick)
+}
+
+watch(sanitizedBody, () => {
+  detachLinkHandler()
+  attachLinkHandler()
+})
+
+onMounted(async () => {
+  await load()
+  attachLinkHandler()
+})
+
+onBeforeUnmount(() => {
+  detachLinkHandler()
 })
 </script>
-<<<<<<< HEAD
-=======
 
 <style lang="css" scoped>
 .mail-open-page {
@@ -617,4 +638,3 @@ onMounted(() => {
   }
 }
 </style>
->>>>>>> yuta
