@@ -1,15 +1,13 @@
 <template>
   <v-app>
-
-    <!--サイドバー　isで切り替え-->
     <component :is="sidebarComponent" />
+    <component :is="headerComponent" />
 
-    <!--ヘッダー：必要に応じてサイドバー同様に v-if で制御可能です-->
-    <component :is="headerComponent"/>
-
-    <!--メインコンテンツ（サイドバーがない時はVuetifyが自動で全幅にしてくれます）-->
-    <v-main>
-      <v-container class="mt-6">
+    <v-main :class="['app-main', { 'app-main--dark': route.meta.shell === 'dark' }]">
+      <v-container
+        :fluid="route.meta.fluid === true"
+        :class="['app-container', { 'app-container--flush': route.meta.flush === true }]"
+      >
         <router-view />
       </v-container>
     </v-main>
@@ -19,67 +17,75 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import AppHeader from './components/layout/AppHeader.vue'
 
-// 新しい2つのサイドバーをインポート
-import AppSidebar_General from './components/layout/AppSidebar_General.vue'
-import AppSidebar_Admin from './components/layout/AppSidebar_Admin.vue'
+import AppSidebarAdmin from './components/layout/AppSidebar_Admin.vue'
+import AppSidebarGeneral from './components/layout/AppSidebar_General.vue'
 
-//ヘッダー（ユーザー）
-import Header_Account from './components/layout/userHeader/Header_Account.vue'
-import Header_MailboxList from './components/layout/userHeader/Header_MailboxList.vue'
-import Header_Score from './components/layout/userHeader/Header_Score.vue'
-import Header_Setting from './components/layout/userHeader/Header_Setting.vue'
-import Header_Situation from './components/layout/userHeader/Header_Situation.vue'
-//ヘッダー（管理者）
-import Header_Admin_Makequestion from './components/layout/adminHeader/Header_Admin_Makequestion.vue'
-import Header_Admin_Overview from './components/layout/adminHeader/Header_Admin_Overview.vue'
-import Header_Admin_QuestionList from './components/layout/adminHeader/Header_Admin_QuestionList.vue'
-import Header_Admin_Setting from './components/layout/adminHeader/Header_Admin_Setting.vue'
-import Header_Admin_UserList from './components/layout/adminHeader/Header_Admin_UserList.vue'
+import HeaderAccount from './components/layout/userHeader/Header_Account.vue'
+import HeaderMailboxList from './components/layout/userHeader/Header_MailboxList.vue'
+import HeaderScore from './components/layout/userHeader/Header_Score.vue'
+import HeaderSetting from './components/layout/userHeader/Header_Setting.vue'
+import HeaderSituation from './components/layout/userHeader/Header_Situation.vue'
 
+import HeaderAdminMakequestion from './components/layout/adminHeader/Header_Admin_Makequestion.vue'
+import HeaderAdminOverview from './components/layout/adminHeader/Header_Admin_Overview.vue'
+import HeaderAdminQuestionList from './components/layout/adminHeader/Header_Admin_QuestionList.vue'
+import HeaderAdminSetting from './components/layout/adminHeader/Header_Admin_Setting.vue'
+import HeaderAdminUserList from './components/layout/adminHeader/Header_Admin_UserList.vue'
 
 const route = useRoute()
 
-// 現在のページの meta.layout を取得（設定がない場合はサイドバーなし 'none' にする）
 const sidebarComponent = computed(() => {
   switch (route.meta.sidebar) {
     case 'user':
-      return AppSidebar_General
+      return AppSidebarGeneral
     case 'admin':
-      return AppSidebar_Admin
+      return AppSidebarAdmin
     default:
       return null
   }
 })
 
-const headerComponent = computed(()=>{
-  switch (route.meta.header){
+const headerComponent = computed(() => {
+  switch (route.meta.header) {
     case 'situation':
-      return Header_Situation
+      return HeaderSituation
     case 'account':
-      return Header_Account
+      return HeaderAccount
     case 'score':
-      return Header_Score
+      return HeaderScore
     case 'setting':
-      return Header_Setting
+      return HeaderSetting
     case 'mailboxList':
-      return Header_MailboxList
+      return HeaderMailboxList
     case 'admin_overview':
-      return Header_Admin_Overview
+      return HeaderAdminOverview
     case 'admin_makequestion':
-      return Header_Admin_Makequestion 
+      return HeaderAdminMakequestion
     case 'admin_setting':
-      return Header_Admin_Setting
+      return HeaderAdminSetting
     case 'admin_userList':
-      return Header_Admin_UserList
+      return HeaderAdminUserList
     case 'admin_questionList':
-      return Header_Admin_QuestionList
-    
+      return HeaderAdminQuestionList
+    default:
+      return null
   }
 })
-
-const currentLayout = computed(() => route.meta.layout || 'none')
 </script>
 
-<style scoped></style>
+<style scoped>
+.app-main--dark {
+  background: #172337;
+}
+
+.app-container {
+  margin-top: 24px;
+}
+
+.app-container--flush {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+</style>

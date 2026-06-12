@@ -99,7 +99,10 @@ const router = createRouter({
       component: Situation,
       meta: {
         sidebar: 'user',
-        header: 'situation'
+        header: null,
+        shell: 'dark',
+        fluid: true,
+        flush: true,
       }
     },
     {
@@ -108,7 +111,10 @@ const router = createRouter({
       component: Account,
       meta: {
         sidebar: 'user',
-        header: 'account'
+        header: null,
+        shell: 'dark',
+        fluid: true,
+        flush: true,
       }
     },
     {
@@ -117,7 +123,10 @@ const router = createRouter({
       component: AccountSetting,
       meta: {
         sidebar: 'user',
-        header: 'account',
+        header: null,
+        shell: 'dark',
+        fluid: true,
+        flush: true,
       }
     },
     {
@@ -135,7 +144,10 @@ const router = createRouter({
       component: Setting,
       meta: {
         sidebar: 'user',
-        header: 'setting',
+        header: null,
+        shell: 'dark',
+        fluid: true,
+        flush: true,
       }
     },
     {

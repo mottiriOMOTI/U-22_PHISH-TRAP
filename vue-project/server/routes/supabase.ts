@@ -7,6 +7,9 @@ import { supabaseAdmin } from '../lib/supabase'
 
 const router = Router()
 
+const USER_COLUMNS =
+  'id, email, password_hash, name, role, current_scenario, created_at, last_active_at, is_active'
+
 function validateDisplayName(displayName: unknown, res: Response): displayName is string {
   if (!displayName || typeof displayName !== 'string') {
     res.status(400).json({ error: 'display_name is required' })
@@ -15,6 +18,151 @@ function validateDisplayName(displayName: unknown, res: Response): displayName i
 
   return true
 }
+
+function validateString(value: unknown): value is string {
+  return typeof value === 'string' && value.trim().length > 0
+}
+
+function sendUnexpectedError(res: Response, error: unknown) {
+  const message = error instanceof Error ? error.message : 'Unexpected server error'
+
+  return res.status(500).json({ error: message })
+}
+
+router.post('/register', async (req, res) => {
+  try {
+    const { name, email, password_hash } = req.body ?? {}
+
+    if (!validateString(name) || !validateString(email) || !validateString(password_hash)) {
+      return res.status(400).json({ error: 'name, email, and password_hash are required' })
+    }
+
+    const normalizedEmail = email.trim().toLowerCase()
+
+    const { data: existingUser, error: existingUserError } = await supabaseAdmin
+      .from('users')
+      .select('id')
+      .eq('email', normalizedEmail)
+      .limit(1)
+      .maybeSingle()
+
+    if (existingUserError) {
+      return res.status(500).json({ error: existingUserError.message })
+    }
+
+    if (existingUser) {
+      return res.status(409).json({ error: 'このメールアドレスはすでに登録されています' })
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from('users')
+      .insert({
+        name: name.trim(),
+        email: normalizedEmail,
+        password_hash: password_hash.trim(),
+        role: 'learner',
+      })
+      .select(USER_COLUMNS)
+      .single()
+
+    if (error) {
+      if (error.code === '23505') {
+        return res.status(409).json({ error: 'このメールアドレスはすでに登録されています' })
+      }
+
+      return res.status(500).json({ error: error.message })
+    }
+
+    return res.status(201).json(data)
+  } catch (error) {
+    return sendUnexpectedError(res, error)
+  }
+})
+
+router.post('/login', async (req, res) => {
+  try {
+    const { email, password_hash } = req.body ?? {}
+
+    if (!validateString(email) || !validateString(password_hash)) {
+      return res.status(400).json({ error: 'email and password_hash are required' })
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from('users')
+      .select(USER_COLUMNS)
+      .eq('email', email.trim().toLowerCase())
+      .eq('password_hash', password_hash.trim())
+      .maybeSingle()
+
+    if (error) {
+      return res.status(500).json({ error: error.message })
+    }
+
+    if (!data || data.is_active === false) {
+      return res.status(401).json({ error: 'メールアドレスまたはパスワードが間違っています' })
+    }
+
+    return res.json(data)
+  } catch (error) {
+    return sendUnexpectedError(res, error)
+  }
+})
+
+router.put('/users/:id', async (req, res) => {
+  try {
+    const { name, email } = req.body ?? {}
+
+    if (!validateString(name) || !validateString(email)) {
+      return res.status(400).json({ error: 'name and email are required' })
+    }
+
+    const userId = req.params.id
+    const normalizedEmail = email.trim().toLowerCase()
+
+    const { data: existingUser, error: existingUserError } = await supabaseAdmin
+      .from('users')
+      .select('id')
+      .eq('email', normalizedEmail)
+      .neq('id', userId)
+      .limit(1)
+      .maybeSingle()
+
+    if (existingUserError) {
+      return res.status(500).json({ error: existingUserError.message })
+    }
+
+    if (existingUser) {
+      return res.status(409).json({ error: 'このメールアドレスはすでに登録されています' })
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from('users')
+      .update({
+        name: name.trim(),
+        email: normalizedEmail,
+        last_active_at: new Date().toISOString(),
+      })
+      .eq('id', userId)
+      .select(USER_COLUMNS)
+      .maybeSingle()
+
+    if (error) {
+      if (error.code === '23505') {
+        return res.status(409).json({ error: 'このメールアドレスはすでに登録されています' })
+      }
+
+      return res.status(500).json({ error: error.message })
+    }
+
+    if (!data) {
+      return res.status(404).json({ error: 'ユーザーが見つかりません' })
+    }
+
+    return res.json(data)
+  } catch (error) {
+    return sendUnexpectedError(res, error)
+  }
+})
 
 router.get('/', async (_req, res) => {
   const { data, error } = await supabaseAdmin
