@@ -1,68 +1,69 @@
 <template>
-  <v-container class="mailbox-list pa-4" max-width="900">
-    <h2 class="text-h5 mb-4">受信トレイ</h2>
+  <main class="mailbox-page" :aria-busy="loading ? 'true' : 'false'">
+    <header class="mailbox-hero">
+      <v-icon icon="mdi-email-outline" class="mailbox-hero__icon" />
+      <div>
+        <h1>メールボックス</h1>
+        <p>訓練メールの受信トレイ</p>
+      </div>
+    </header>
 
-    <div v-if="loading">
-      <v-skeleton-loader
-        v-for="n in 5"
-        :key="n"
-        type="list-item-three-line"
-        class="mb-2"
-      />
-    </div>
+    <section class="mailbox-panel">
+      <div class="mailbox-panel__header">
+        <h2>受信トレイ</h2>
+        <p>{{ loading ? 'メールを読み込んでいます' : `${mails.length}件のメール` }}</p>
+      </div>
 
-    <v-alert
-      v-else-if="error"
-      type="error"
-      variant="tonal"
-      class="mb-4"
-    >
-      {{ error }}
-      <template #append>
-        <v-btn size="small" variant="text" @click="load">再試行</v-btn>
-      </template>
-    </v-alert>
+      <div v-if="loading" class="mail-list" aria-label="メール読み込み中">
+        <article v-for="n in 5" :key="n" class="mail-row-skeleton">
+          <span class="mail-row-skeleton__icon" />
+          <div>
+            <span class="mail-row-skeleton__line mail-row-skeleton__line--short" />
+            <span class="mail-row-skeleton__line" />
+            <span class="mail-row-skeleton__line mail-row-skeleton__line--medium" />
+          </div>
+        </article>
+      </div>
 
-    <v-alert
-      v-else-if="mails.length === 0"
-      type="info"
-      variant="tonal"
-    >
-      表示できるメールがありません。
-    </v-alert>
+      <div v-else-if="error" class="mailbox-state mailbox-state--error" role="alert">
+        <v-icon icon="mdi-alert-circle-outline" class="mailbox-state__icon" />
+        <div>
+          <h3>メールを読み込めませんでした</h3>
+          <p>{{ error }}</p>
+        </div>
+        <button class="secondary-button" type="button" @click="load">再試行</button>
+      </div>
 
-    <v-list v-else lines="three" density="comfortable" class="rounded-lg">
-      <template v-for="(mail, i) in mails" :key="mail.id">
-        <v-list-item
-          class="mail-row"
-          @click="openMail(mail.id)"
-        >
-          <template #prepend>
-            <v-icon icon="mdi-email-outline" />
-          </template>
+      <div v-else-if="mails.length === 0" class="mailbox-state" role="status">
+        <v-icon icon="mdi-email-open-outline" class="mailbox-state__icon" />
+        <div>
+          <h3>表示できるメールがありません</h3>
+          <p>シチュエーションを変更すると、新しい訓練メールが表示される場合があります。</p>
+        </div>
+      </div>
 
-          <v-list-item-title class="font-weight-medium">
-            {{ mail.sender_name }}
-          </v-list-item-title>
-
-          <v-list-item-subtitle class="text-body-1 text-black">
-            {{ mail.title }}
-          </v-list-item-subtitle>
-
-          <v-list-item-subtitle class="text-caption">
-            {{ preview(mail.body) }}
-          </v-list-item-subtitle>
-
-          <template #append>
-            <span class="text-caption text-grey">
-              {{ formatDate(mail.created_at) }}
+      <div v-else class="mail-list">
+        <article v-for="mail in mails" :key="mail.id" class="mail-row">
+          <button class="mail-row__button" type="button" @click="openMail(mail.id)">
+            <span class="mail-row__icon">
+              <v-icon icon="mdi-email-outline" />
             </span>
-          </template>
-        </v-list-item>
-        <v-divider v-if="i < mails.length - 1" />
-      </template>
-    </v-list>
-  </v-container>
+
+            <span class="mail-row__content">
+              <span class="mail-row__sender">{{ mail.sender_name }}</span>
+              <span class="mail-row__title">{{ mail.title }}</span>
+              <span class="mail-row__preview">{{ preview(mail.body) }}</span>
+            </span>
+
+            <span class="mail-row__meta">
+              <span>{{ formatDate(mail.created_at) }}</span>
+              <v-icon icon="mdi-chevron-right" />
+            </span>
+          </button>
+        </article>
+      </div>
+    </section>
+  </main>
 </template>
 
 <script setup lang="ts">
@@ -112,11 +113,305 @@ function formatDate(iso: string): string {
 onMounted(load)
 </script>
 
-<style scoped>
+<style lang="css" scoped>
+.mailbox-page {
+  position: relative;
+  box-sizing: border-box;
+  min-height: 100vh;
+  padding: 18px 22px 14px;
+  background: #172337;
+  color: #ffffff;
+}
+
+.mailbox-hero {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.mailbox-hero__icon {
+  color: #45a4ff;
+  font-size: 42px;
+}
+
+.mailbox-hero h1 {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.mailbox-hero p,
+.mailbox-panel__header p,
+.mail-row__preview,
+.mail-row__meta,
+.mailbox-state p {
+  margin: 0;
+  color: #9fbbe0;
+}
+
+.mailbox-hero p {
+  margin-top: 6px;
+  font-size: 16px;
+}
+
+.mailbox-panel {
+  width: min(100%, 1040px);
+  padding: 18px 22px 20px;
+  border: 1px solid #34465f;
+  border-radius: 12px;
+  background: #172337;
+}
+
+.mailbox-panel__header {
+  margin-bottom: 18px;
+}
+
+.mailbox-panel__header h2 {
+  margin: 0 0 4px;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.mailbox-panel__header p {
+  font-size: 14px;
+}
+
+.mail-list {
+  display: grid;
+  gap: 10px;
+}
+
 .mail-row {
+  min-width: 0;
+}
+
+.mail-row__button {
+  display: grid;
+  width: 100%;
+  min-height: 88px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: #111a2f;
+  color: #ffffff;
+  cursor: pointer;
+  text-align: left;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease;
+}
+
+.mail-row__button:hover,
+.mail-row__button:focus-visible {
+  border-color: #45a4ff;
+  background: #162444;
+  outline: none;
+}
+
+.mail-row__icon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 8px;
+  background: #1c3574;
+  color: #5da2ff;
+}
+
+.mail-row__icon :deep(.v-icon) {
+  font-size: 24px;
+}
+
+.mail-row__content {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.mail-row__sender,
+.mail-row__title,
+.mail-row__preview {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mail-row__sender {
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.mail-row__title {
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.mail-row__preview {
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.mail-row__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.mail-row__meta :deep(.v-icon) {
+  color: #ffffff;
+  font-size: 20px;
+}
+
+.mailbox-state {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 92px;
+  padding: 18px;
+  border-radius: 8px;
+  background: #111a2f;
+}
+
+.mailbox-state__icon {
+  flex: 0 0 auto;
+  color: #45a4ff;
+  font-size: 34px;
+}
+
+.mailbox-state--error .mailbox-state__icon {
+  color: #ff7382;
+}
+
+.mailbox-state h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.mailbox-state p {
+  margin-top: 4px;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.secondary-button {
+  min-height: 38px;
+  margin-left: auto;
+  padding: 0 18px;
+  border: 1px solid #4d6079;
+  border-radius: 8px;
+  background: transparent;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 800;
   cursor: pointer;
 }
-.mail-row:hover {
-  background-color: rgba(0, 0, 0, 0.04);
+
+.secondary-button:hover,
+.secondary-button:focus-visible {
+  background: #172337;
+  outline: none;
+}
+
+.mail-row-skeleton {
+  display: grid;
+  min-height: 88px;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 8px;
+  background: #111a2f;
+}
+
+.mail-row-skeleton__icon,
+.mail-row-skeleton__line {
+  display: block;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #26334a, #34465f, #26334a);
+  background-size: 220% 100%;
+  animation: mailbox-loading 1200ms ease-in-out infinite;
+}
+
+.mail-row-skeleton__icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 8px;
+}
+
+.mail-row-skeleton__line {
+  width: 100%;
+  height: 10px;
+  margin-top: 9px;
+}
+
+.mail-row-skeleton__line:first-child {
+  margin-top: 0;
+}
+
+.mail-row-skeleton__line--short {
+  width: 32%;
+}
+
+.mail-row-skeleton__line--medium {
+  width: 64%;
+}
+
+@keyframes mailbox-loading {
+  to {
+    background-position: -220% 0;
+  }
+}
+
+@media (max-width: 900px) {
+  .mailbox-page {
+    padding: 18px 14px 16px;
+  }
+
+  .mailbox-panel {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 640px) {
+  .mailbox-hero {
+    align-items: flex-start;
+  }
+
+  .mailbox-hero h1 {
+    font-size: 28px;
+  }
+
+  .mail-row__button {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .mail-row__meta {
+    grid-column: 2;
+    justify-content: space-between;
+  }
+
+  .mailbox-state {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .secondary-button {
+    width: 100%;
+    margin-left: 0;
+  }
 }
 </style>

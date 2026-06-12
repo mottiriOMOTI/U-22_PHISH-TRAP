@@ -30,7 +30,6 @@ const handleLogin = async () => {
     const user = await loginUser(email.value, password.value)   //API呼び出し
     // ログイン成功時の処理
     console.log('ログイン成功!', user)
-    alert('ようこそ、' + user.name + 'さん！')  //ユーザー名を表示
     } catch (error: any) {
     console.error('ログインエラー:', error)
     errorMessage.value =

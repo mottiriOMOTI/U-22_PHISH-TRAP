@@ -135,7 +135,10 @@ const router = createRouter({
       component: Score,
       meta: {
         sidebar: 'user',
-        header: 'score',
+        header: null,
+        shell: 'dark',
+        fluid: true,
+        flush: true,
       }
     },
     {
@@ -156,7 +159,10 @@ const router = createRouter({
       component: MailboxList,
       meta: {
         sidebar: 'user',
-        header: 'mailboxList',
+        header: null,
+        shell: 'dark',
+        fluid: true,
+        flush: true,
       }
     },
     {
@@ -164,8 +170,11 @@ const router = createRouter({
       name: 'MailOpen',
       component: MailOpen,
       meta: {
-        sidebar: null,
+        sidebar: 'user',
         header: null,
+        shell: 'dark',
+        fluid: true,
+        flush: true,
       }
     },
     {

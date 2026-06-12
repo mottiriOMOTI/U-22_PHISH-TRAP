@@ -3,6 +3,7 @@ import express from 'express';
 import apiroutes from './routes/apiRoutes';
 import supabaseroutes from './routes/supabase';
 import mailroutes from './routes/mail';
+import generateroutes from './routes/generate';
 import scoreroutes from './routes/score';
 const app = express();
 const port = Number(process.env.API_PORT) || 3000;
@@ -21,6 +22,7 @@ app.use((req, res, next) => {
 app.use('/api', apiroutes);
 app.use('/api/supabasetest', supabaseroutes);
 app.use('/api/mail', mailroutes);
+app.use('/api/generate', generateroutes);
 app.use('/api/score', scoreroutes);
 // サーバー起動
 app.listen(port, () => {

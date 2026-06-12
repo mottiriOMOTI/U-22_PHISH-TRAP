@@ -73,7 +73,6 @@ errorMessage.value = ''
 
 const user = await loginUser(email.value, password.value)
 console.log('ログイン成功!', user)
-alert('ようこそ、' + user.name + 'さん！')
 await router.push('/mailbox')
 } catch (error: any) {
 console.error('ログインエラー:', error)
