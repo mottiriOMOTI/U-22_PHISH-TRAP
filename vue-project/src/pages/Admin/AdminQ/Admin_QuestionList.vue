@@ -30,6 +30,7 @@
                 :busy="questionStore.saving || questionStore.explanationLoading || questionStore.explanationSaving"
                 :delete-loading="questionStore.deletingId === question.id"
                 show-explanation-action
+                @open="openQuestionDetail"
                 @edit-question="openQuestionDialog"
                 @edit-explanation="openExplanationDialog"
                 @delete="openDeleteDialog"
@@ -83,6 +84,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import AdminExplanationEditDialog from '@/components/admin/AdminExplanationEditDialog.vue'
 import AdminQuestionCard from '@/components/admin/AdminQuestionCard.vue'
 import AdminQuestionEditDialog from '@/components/admin/AdminQuestionEditDialog.vue'
@@ -92,6 +94,7 @@ import {
     scenarioSelectItems,
 } from '@/stores/admin_questionList'
 
+const router = useRouter()
 const questionStore = question_scenario()
 
 const selectedQuestion = ref<MailListItem | null>(null)
@@ -110,6 +113,16 @@ const questionListTitle = computed(() => {
 
     return `${selectedScenario?.title ?? ''}の問題一覧`
 })
+
+function openQuestionDetail(question: MailListItem) {
+    router.push({
+        path: '/admin_questiondetail',
+        query: {
+            source: 'db',
+            id: question.id,
+        },
+    })
+}
 
 function openQuestionDialog(question: MailListItem) {
     selectedQuestion.value = question
@@ -157,7 +170,7 @@ async function saveExplanationDialog(payload: SaveQuestionExplanationPayload) {
     if (!selectedQuestion.value) return
 
     if (!payload.why_dangerous || !payload.correct_action) {
-        explanationDialogError.value = '危険な理由と正しい対処法を入力してください。'
+        explanationDialogError.value = 'なぜ危険か、正しい対処法を入力してください。'
         return
     }
 
