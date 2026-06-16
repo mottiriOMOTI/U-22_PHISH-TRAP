@@ -15,13 +15,44 @@
       </div>
 
       <div class="profile-preview">
-        <div class="profile-avatar">{{ avatarInitial }}</div>
+        <button
+          class="profile-avatar profile-avatar--button"
+          type="button"
+          aria-label="アイコン画像を変更"
+          :disabled="isLoading || isSaving"
+          @click="openAvatarFilePicker"
+        >
+          <img
+            v-if="profileImageUrl"
+            :src="profileImageUrl"
+            alt=""
+            class="profile-avatar__image"
+            @error="handleAvatarImageError"
+          />
+          <span v-else>{{ avatarInitial }}</span>
+          <span class="profile-avatar__overlay" aria-hidden="true">
+            <v-icon icon="mdi-camera-outline" />
+          </span>
+        </button>
+        <input
+          ref="avatarFileInput"
+          class="avatar-file-input"
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/gif"
+          :disabled="isLoading || isSaving"
+          @change="handleAvatarFileChange"
+        />
         <div class="profile-summary">
           <strong>{{ form.name || 'ユーザー' }}</strong>
           <span>
             <v-icon icon="mdi-email-outline" />
             {{ form.email || 'メールアドレス未設定' }}
           </span>
+          <div v-if="selectedAvatarFile" class="profile-image-actions">
+            <span class="selected-image-name">
+              {{ selectedAvatarFile.name }}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -97,13 +128,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { fetchAccountSummary } from '@/api/account'
 import {
+  fetchCurrentUserById,
   getCurrentUser,
+  updateCurrentUserImage,
   updateCurrentUserProfile,
+  validateUserImageFile,
   type CurrentUser,
 } from '@/api/users'
 
@@ -129,6 +163,19 @@ const isLoading = ref(true)
 const isSaving = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
+const avatarImageError = ref(false)
+const avatarFileInput = ref<HTMLInputElement | null>(null)
+const selectedAvatarFile = ref<File | null>(null)
+const selectedAvatarPreview = ref('')
+
+const profileImageUrl = computed(() => {
+  if (selectedAvatarPreview.value) {
+    return selectedAvatarPreview.value
+  }
+
+  const image = currentUser.value?.image?.trim()
+  return image && !avatarImageError.value ? image : ''
+})
 
 const avatarInitial = computed(() => {
   const initial = form.name.trim().charAt(0) || form.email.trim().charAt(0)
@@ -153,17 +200,68 @@ const formattedJoinedAt = computed(() => {
   }).format(date)
 })
 
-const hasChanges = computed(() => {
+const hasProfileChanges = computed(() => {
   return form.name.trim() !== original.name || form.email.trim() !== original.email
 })
 
+const hasChanges = computed(() => hasProfileChanges.value || selectedAvatarFile.value !== null)
+
 function applyUser(user: CurrentUser) {
   currentUser.value = user
+  avatarImageError.value = false
   form.name = user.name.trim() || 'ユーザー'
   form.email = user.email
   original.name = form.name
   original.email = form.email
   profile.joinedAt = user.created_at
+}
+
+function handleAvatarImageError() {
+  avatarImageError.value = true
+}
+
+function openAvatarFilePicker() {
+  avatarFileInput.value?.click()
+}
+
+function clearSelectedAvatarFile() {
+  if (selectedAvatarPreview.value) {
+    URL.revokeObjectURL(selectedAvatarPreview.value)
+  }
+
+  selectedAvatarFile.value = null
+  selectedAvatarPreview.value = ''
+
+  if (avatarFileInput.value) {
+    avatarFileInput.value.value = ''
+  }
+}
+
+function handleAvatarFileChange(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+
+  if (!file) {
+    return
+  }
+
+  const validationError = validateUserImageFile(file)
+
+  if (validationError) {
+    showError(validationError)
+    input.value = ''
+    return
+  }
+
+  if (selectedAvatarPreview.value) {
+    URL.revokeObjectURL(selectedAvatarPreview.value)
+  }
+
+  selectedAvatarFile.value = file
+  selectedAvatarPreview.value = URL.createObjectURL(file)
+  avatarImageError.value = false
+  errorMessage.value = ''
+  successMessage.value = ''
 }
 
 function showSuccess(message: string) {
@@ -211,6 +309,11 @@ async function loadAccountSetting() {
 
   if (user) {
     applyUser(user)
+    try {
+      applyUser(await fetchCurrentUserById(user.id))
+    } catch (error) {
+      console.error(error)
+    }
   } else {
     showError('ログイン中のユーザー情報が見つかりません')
   }
@@ -228,13 +331,27 @@ async function handleSave() {
   successMessage.value = ''
 
   try {
-    const updatedUser = await updateCurrentUserProfile({
-      id: currentUser.value.id,
-      name: form.name.trim(),
-      email: form.email.trim(),
-    })
+    let updatedUser: CurrentUser | null = null
 
-    applyUser(updatedUser)
+    if (hasProfileChanges.value) {
+      updatedUser = await updateCurrentUserProfile({
+        id: currentUser.value.id,
+        name: form.name.trim(),
+        email: form.email.trim(),
+      })
+
+      applyUser(updatedUser)
+    }
+
+    if (selectedAvatarFile.value) {
+      updatedUser = await updateCurrentUserImage(
+        updatedUser?.id ?? currentUser.value.id,
+        selectedAvatarFile.value,
+      )
+      clearSelectedAvatarFile()
+      applyUser(updatedUser)
+    }
+
     showSuccess('アカウント情報を保存しました')
     await router.push({ name: 'Account' })
   } catch (error) {
@@ -246,6 +363,7 @@ async function handleSave() {
 }
 
 onMounted(loadAccountSetting)
+onBeforeUnmount(clearSelectedAvatarFile)
 </script>
 
 <style lang="css" scoped>
@@ -280,7 +398,7 @@ onMounted(loadAccountSetting)
 
 .account-setting-hero p,
 .account-setting-panel__header p,
-.profile-summary span,
+.profile-summary > span,
 .readonly-card span {
   margin: 0;
   color: #9fbbe0;
@@ -322,22 +440,95 @@ onMounted(loadAccountSetting)
 }
 
 .profile-avatar {
+  position: relative;
   display: grid;
   width: 58px;
   height: 58px;
   flex: 0 0 auto;
   place-items: center;
+  padding: 0;
+  border: 2px solid #45a4ff;
   border-radius: 50%;
   background: #00bf56;
   color: #ffffff;
   font-size: 24px;
   font-weight: 800;
+  box-shadow: 0 0 0 3px rgba(69, 164, 255, 0.14);
+  overflow: hidden;
+}
+
+.profile-avatar--button {
+  cursor: pointer;
+  transition:
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.profile-avatar--button:hover:not(:disabled),
+.profile-avatar--button:focus-visible {
+  box-shadow:
+    0 0 0 3px rgba(69, 164, 255, 0.42),
+    0 8px 20px rgba(0, 0, 0, 0.28);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.profile-avatar--button:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+.profile-avatar__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-avatar__overlay {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border: 2px solid #111a2f;
+  border-radius: 50%;
+  background: #2265f4;
+  color: #ffffff;
+}
+
+.profile-avatar__overlay :deep(.v-icon) {
+  font-size: 14px;
 }
 
 .profile-summary {
   display: grid;
   gap: 5px;
   min-width: 0;
+}
+
+.profile-image-actions {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.selected-image-name {
+  min-width: 0;
+  overflow: hidden;
+  color: #9fbbe0;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.avatar-file-input {
+  display: none;
 }
 
 .profile-summary strong {
@@ -347,7 +538,7 @@ onMounted(loadAccountSetting)
   line-height: 1.2;
 }
 
-.profile-summary span,
+.profile-summary > span,
 .readonly-card span {
   display: inline-flex;
   align-items: center;

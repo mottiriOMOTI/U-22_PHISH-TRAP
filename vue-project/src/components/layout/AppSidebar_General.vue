@@ -9,7 +9,14 @@
 
       <div class="profile-score-row">
         <RouterLink to="/account" class="sidebar-profile-avatar" aria-label="プロフィール">
-          {{ profileInitial }}
+          <img
+            v-if="profileImageUrl"
+            :src="profileImageUrl"
+            alt=""
+            class="sidebar-profile-avatar__image"
+            @error="handleAvatarImageError"
+          />
+          <span v-else>{{ profileInitial }}</span>
         </RouterLink>
 
         <div class="score-card">
@@ -46,18 +53,31 @@
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
-import { clearCurrentUser, getCurrentUser } from '@/api/users'
+import { clearCurrentUser, fetchCurrentUserById, getCurrentUser } from '@/api/users'
 
 const route = useRoute()
 const currentUser = ref(getCurrentUser())
+const avatarImageError = ref(false)
 
 watch(
   () => route.fullPath,
   () => {
-    currentUser.value = getCurrentUser()
+    void syncCurrentUser()
   },
   { immediate: true },
 )
+
+watch(
+  () => currentUser.value?.image,
+  () => {
+    avatarImageError.value = false
+  },
+)
+
+const profileImageUrl = computed(() => {
+  const image = currentUser.value?.image?.trim()
+  return image && !avatarImageError.value ? image : ''
+})
 
 const profileInitial = computed(() => {
   const user = currentUser.value
@@ -65,6 +85,25 @@ const profileInitial = computed(() => {
 
   return initial ? initial.toUpperCase() : 'U'
 })
+
+function handleAvatarImageError() {
+  avatarImageError.value = true
+}
+
+async function syncCurrentUser() {
+  const user = getCurrentUser()
+  currentUser.value = user
+
+  if (!user) {
+    return
+  }
+
+  try {
+    currentUser.value = await fetchCurrentUserById(user.id)
+  } catch (error) {
+    console.error(error)
+  }
+}
 
 const navItems = [
   {
@@ -171,10 +210,17 @@ function isActive(path: string) {
   font-size: 16px;
   font-weight: 900;
   line-height: 1;
+  overflow: hidden;
   text-decoration: none;
   transition:
     background-color 160ms ease,
     transform 160ms ease;
+}
+
+.sidebar-profile-avatar__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .sidebar-profile-avatar:hover,

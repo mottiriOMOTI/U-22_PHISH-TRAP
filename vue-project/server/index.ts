@@ -11,7 +11,7 @@ import scoreroutes from './routes/score'
 
 const app = express();
 const port = Number(process.env.API_PORT) || 3000;
-app.use(express.json())
+app.use(express.json({ limit: '5mb' }))
 
 // CORSヘッダー設定
 app.use((req, res, next) => {

@@ -13,6 +13,7 @@ current_scenario: scenario | null
 created_at: string
 last_active_at: string | null
 is_active: boolean
+image: string | null
 }
 
 export type CurrentUser = Omit<User, 'password_hash'>
@@ -70,6 +71,7 @@ try {
     created_at: user.created_at,
     last_active_at: user.last_active_at ?? null,
     is_active: user.is_active !== false,
+    image: typeof user.image === 'string' ? user.image : null,
   }
 } catch {
   return null
@@ -87,6 +89,9 @@ id: string
 name: string
 email: string
 }
+
+const MAX_USER_IMAGE_BYTES = 2 * 1024 * 1024
+const ALLOWED_USER_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 
 async function throwApiError(res: Response, fallbackMessage: string): Promise<never> {
 const textBody = await res
@@ -114,6 +119,39 @@ const hashBuffer = await crypto.subtle.digest('SHA-256', data)
 const hashArray = Array.from(new Uint8Array(hashBuffer))
 
 return hashArray.map((byte) => byte.toString(16).padStart(2, '0')).join('')
+}
+
+function readFileAsDataUrl(file: File): Promise<string> {
+return new Promise((resolve, reject) => {
+  const reader = new FileReader()
+
+  reader.addEventListener('load', () => {
+    if (typeof reader.result === 'string') {
+      resolve(reader.result)
+      return
+    }
+
+    reject(new Error('画像ファイルの読み込みに失敗しました'))
+  })
+
+  reader.addEventListener('error', () => {
+    reject(new Error('画像ファイルの読み込みに失敗しました'))
+  })
+
+  reader.readAsDataURL(file)
+})
+}
+
+export function validateUserImageFile(file: File): string | null {
+if (!ALLOWED_USER_IMAGE_TYPES.includes(file.type)) {
+  return '画像は JPEG / PNG / WebP / GIF を選択してください'
+}
+
+if (file.size > MAX_USER_IMAGE_BYTES) {
+  return '画像は 2MB 以下にしてください'
+}
+
+return null
 }
 
 export async function loginUser(email: string, password: string): Promise<User> {
@@ -154,6 +192,44 @@ const user = (await res.json()) as User
 saveCurrentUser(user)
 
 return user
+}
+
+export async function fetchCurrentUserById(id: string): Promise<CurrentUser> {
+const res = await fetch(`${API_BASE_URL}/users/${encodeURIComponent(id)}`)
+
+if (!res.ok) {
+  return throwApiError(res, 'ユーザー情報の取得に失敗しました')
+}
+
+const user = (await res.json()) as User
+return saveCurrentUser(user)
+}
+
+export async function updateCurrentUserImage(id: string, file: File): Promise<CurrentUser> {
+const validationError = validateUserImageFile(file)
+
+if (validationError) {
+  throw new Error(validationError)
+}
+
+const dataUrl = await readFileAsDataUrl(file)
+const res = await fetch(`${API_BASE_URL}/users/${encodeURIComponent(id)}/image`, {
+  method: 'PUT',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    contentType: file.type,
+    dataUrl,
+  }),
+})
+
+if (!res.ok) {
+  return throwApiError(res, 'アイコン画像のアップロードに失敗しました')
+}
+
+const user = (await res.json()) as User
+return saveCurrentUser(user)
 }
 
 export async function updateCurrentUserProfile({
