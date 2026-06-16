@@ -24,7 +24,7 @@
       <BaseCard
         v-if="item.type === 'danger'"
         :type="item.type"
-        :title="item.title || (getIsPhishingStatus() ? 'フィッシングメール本文' : '通常メール本文')" 
+        :title="item.title || (isPhishing ? 'フィッシングメール本文' : '通常メール本文')" 
         :subTitle="item.sender_name ? `${item.sender_name} <${item.sender_email}>` : item.sender_email" 
         :text="item.body" 
         :color="item.color"
@@ -35,7 +35,7 @@
       <BaseCard
         v-else-if="item.type === 'DangerExplanation'"
         :type="item.type"
-        :title="getIsPhishingStatus() ? 'なぜ危険なのか（解説）' : '安全と判断できる理由'"
+        :title="isPhishing ? 'なぜ危険なのか（解説）' : '安全と判断できる理由'"
         :text="item.why_dangerous"
         :color="item.color"
         :variant="item.variant"
@@ -45,7 +45,7 @@
       <BaseCard
         v-else-if="item.type === 'advice'"
         :type="item.type"
-        :title="getIsPhishingStatus() ? '安全に見破るチェックリスト' : '注目すべき箇所のリスト'"
+        :title="isPhishing ? '安全に見破るチェックリスト' : '注目すべき箇所のリスト'"
         :textList="item.warning_signals"
         :color="item.color"
         :variant="item.variant"
@@ -55,7 +55,7 @@
       <BaseCard
         v-else-if="item.type === 'correctiveAction'"
         :type="item.type"
-        :title="getIsPhishingStatus() ? '正しい対処法' : '類似した詐欺'"
+        :title="isPhishing ? '正しい対処法' : '類似した詐欺'"
         :textList="item.correct_action"
         :color="item.color"
         :variant="item.variant"
@@ -103,7 +103,7 @@
 
 <script setup lang="ts">
 import BaseCard from '@/components/ui/IshikawaStyle.vue'
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -116,12 +116,12 @@ const cards = ref<any[]>([])
 const isLoading = ref(true)
 
 /**
- * 💡 現在読み込まれているカードデータから、is_phishing の真偽値を安全に探すヘルパー関数
+ * 💡 現在読み込まれているカードデータから、is_phishing の真偽値を安全に判定する算出プロパティ
  */
-const getIsPhishingStatus = (): boolean => {
+const isPhishing = computed(() => {
   const dangerCard = cards.value.find(item => item.type === 'danger')
   return dangerCard?.is_phishing !== false
-}
+})
 
 /**
  * 遷移元から history.state 経由で渡されたメールデータを使用して解説を構築
@@ -149,17 +149,16 @@ const initializeExplanation = () => {
 }
 
 const applyJudgementMode = (isCorrect: boolean) => {
-  const isPhishing = getIsPhishingStatus()
   if (isCorrect) {
     pageTitle.value = '正解'
     pageIcon.value = 'mdi-check-circle-outline'
     pageIconClass.value = 'super-vivid-green'
-    pageSubtitle.value = isPhishing ? '適切な判断ができました' : '仕事をやり遂げました！'
+    pageSubtitle.value = isPhishing.value ? '適切な判断ができました' : '仕事をやり遂げました！'
   } else {
     pageIcon.value = 'mdi-close-circle-outline'
     pageIconClass.value = 'slow-pulse super-vivid-red'
-    pageTitle.value = isPhishing ? 'フィッシング詐欺に遭遇' : '安全なメールの確認'
-    pageSubtitle.value = isPhishing ? '今のは詐欺でした' : '今のは正常なメールでした'
+    pageTitle.value = isPhishing.value ? 'フィッシング詐欺に遭遇' : '安全なメールの確認'
+    pageSubtitle.value = isPhishing.value ? '今のは詐欺でした' : '今のは正常なメールでした'
   }
 }
 

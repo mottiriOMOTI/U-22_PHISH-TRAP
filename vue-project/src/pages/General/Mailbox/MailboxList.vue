@@ -1,5 +1,5 @@
 <template>
-  <main class="mailbox-page" :aria-busy="loading ? 'true' : 'false'">
+  <main class="mailbox-page" :aria-busy="loading ? 'true' : 'false'" :class="{ 'is-shaking': debugTimer !== null }">
     <header class="mailbox-hero">
       <v-icon icon="mdi-email-outline" class="mailbox-hero__icon" />
       <div>
@@ -7,6 +7,18 @@
         <p>訓練メールの受信トレイ</p>
       </div>
     </header>
+
+    <!-- 🛠 ポップアップを最前面に配置 & オプショナルチェイニングでエラー防止 -->
+    <div v-if="debugTimer !== null" class="debug-popup-overlay">
+      <div class="debug-popup-content">
+        <v-icon icon="mdi-alert-decagram" color="error" size="large" />
+        <div class="ms-3">
+          <div class="text-caption font-weight-bold">DEBUG: まもなくイベント発生</div>
+          <div class="text-h3 font-weight-black">{{ debugTimer?.toFixed(1) }}s</div>
+          <div class="text-overline text-error">REDIRECT_ON_COUNTDOWN_ZERO</div>
+        </div>
+      </div>
+    </div>
 
     <section class="mailbox-panel">
       <div class="mailbox-panel__header">
@@ -76,6 +88,8 @@ const router = useRouter()
 const mails = ref<MailListItem[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
+let timerId: number | null = null
+const debugTimer = ref<number | null>(null)
 
 async function load() {
   loading.value = true
@@ -88,6 +102,49 @@ async function load() {
   } finally {
     loading.value = false
   }
+}
+
+function checkDeathSequence() {
+  const state = window.history.state
+  if (!state) return
+
+  // 💀 潜伏期間をランダムにして緊張感を高める (1.5秒〜3.5秒)
+  const delay = Math.floor(Math.random() * 2000) + 1500
+
+  if (state.triggerDeath) {
+    startDebugTimer(delay, () => {
+      router.push({ path: '/feareffect_death', state: { mail: state.mail } })
+    })
+  } else if (state.triggerSocialDeath) {
+    startDebugTimer(delay, () => {
+      router.push({ 
+        path: '/feareffect_false', 
+        state: { mail: state.mail, isCorrect: false } 
+      })
+    })
+  } else if (state.triggerSuccess) {
+    startDebugTimer(delay, () => {
+      router.push({ path: '/explanation', state: { mail: state.mail, isCorrect: true } })
+    })
+  }
+}
+
+/**
+ * 🛠 デバッグ用タイマーを回して遷移する共通関数
+ */
+function startDebugTimer(ms: number, callback: () => void) {
+  debugTimer.value = ms / 1000
+  const interval = setInterval(() => {
+    if (debugTimer.value !== null) {
+      debugTimer.value = Math.max(0, debugTimer.value - 0.1)
+    }
+  }, 100)
+
+  setTimeout(() => {
+    clearInterval(interval)
+    debugTimer.value = null
+    callback()
+  }, ms)
 }
 
 function openMail(id: string) {
@@ -110,10 +167,55 @@ function formatDate(iso: string): string {
   })
 }
 
-onMounted(load)
+onMounted(() => {
+  // 💀 画面が開いた瞬間にフラグをチェック（API通信を待たない）
+  checkDeathSequence()
+  load()
+})
 </script>
 
 <style lang="css" scoped>
+/* 🛠 デバッグ用ポップアップスタイル（一箇所に統合） */
+.debug-popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000; /* 全ての要素より前面に */
+  background: rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+}
+
+.debug-popup-content {
+  background: #2a1212;
+  border: 1px solid white;
+  border-radius: 12px;
+  padding: 20px 40px;
+  display: flex;
+  align-items: center;
+  font-family: monospace;
+  color: white;
+  box-shadow: 0 0 40px rgba(255, 0, 0, 0.3);
+}
+
+/* ⚡ 画面をガタガタ揺らすアニメーション */
+.is-shaking {
+  animation: shake 0.1s infinite;
+  pointer-events: none; /* 揺れている間は操作不能感を出す */
+}
+
+@keyframes shake {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(2px, 2px) rotate(0.5deg); }
+  50% { transform: translate(-2px, -2px) rotate(-0.5deg); }
+  75% { transform: translate(-2px, 2px) rotate(0.5deg); }
+  100% { transform: translate(2px, -2px) rotate(0deg); }
+}
+
 .mailbox-page {
   position: relative;
   box-sizing: border-box;

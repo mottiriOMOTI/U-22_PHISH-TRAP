@@ -110,6 +110,8 @@ const router = useRouter()
 const mail = ref<MailDetail | null>(null)
 const loading = ref(true)
 const error = ref<string | null>(null)
+const isDeathFlag = ref(false) // 💀 死フラグ
+const isSocialDeathFlag = ref(false) // 👔 社会的死フラグ
 const isJudging = ref(false)
 const bodyEl = ref<HTMLElement | null>(null)
 
@@ -165,36 +167,41 @@ function judgeAction(action: ActionType, value?: string) {
   if (isJudging.value || !mail.value) return
   const m = mail.value
 
-  let nextRoute: string | null = null
+  isJudging.value = true
+  let stateToPass: any = { mail: m }
 
   if (m.is_phishing) {
     switch (action) {
       case 'link':
-        if (value && m.dangerous_links?.some((d) => d.url === value)) {
-          nextRoute = ROUTE_DEATH
-        }
-        break
       case 'attachment':
-        if (value && m.dangerous_attachments?.some((d) => d.filename === value)) {
-          nextRoute = ROUTE_DEATH
-        }
-        break
       case 'reply':
-        nextRoute = ROUTE_DEATH
+        // 💀 フィッシングに引っかかった（死フラグ）
+        isDeathFlag.value = true
+        stateToPass.triggerDeath = true
         break
       case 'delete':
       case 'report':
-        nextRoute = ROUTE_EXPLANATION
+        // ✨ 正解（後で解説へ）
+        stateToPass.triggerSuccess = true
         break
     }
-  } else if (action === 'report') {
-    nextRoute = ROUTE_FALSE
+  } else {
+    // 安全なメールに対する操作
+    if (action === 'report') {
+      // 👔 安全なメールを誤報告（社会的死フラグ）
+      isSocialDeathFlag.value = true
+      stateToPass.triggerSocialDeath = true
+    } else {
+      // ✨ 妥当な操作（返信・削除など）
+      stateToPass.triggerSuccess = true
+    }
   }
 
-  if (nextRoute) {
-    isJudging.value = true
-    router.push({ path: nextRoute, query: { id: m.id } })
-  }
+  // フラグ操作のみ行い、即座にリストへ戻る（演出はリスト側で実行）
+  router.push({ 
+    path: ROUTE_MAILBOX, 
+    state: stateToPass 
+  })
 }
 
 function handleBodyLinkClick(e: MouseEvent) {
