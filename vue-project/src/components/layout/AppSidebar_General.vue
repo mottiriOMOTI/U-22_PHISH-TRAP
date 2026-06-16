@@ -78,6 +78,11 @@ const navItems = [
     icon: 'mdi-trophy-outline',
   },
   {
+    label: '全体統計',
+    to: '/avg_score',
+    icon: 'mdi-chart-bar',
+  },
+  {
     label: 'シチュエーション',
     to: '/situation',
     icon: 'mdi-movie-open-outline',
@@ -206,7 +211,7 @@ function isActive(path: string) {
 .sidebar-nav {
   display: grid;
   gap: 8px;
-  margin-top: 36px;
+  margin-top: 16px;
   padding-bottom: 10px;
 }
 
