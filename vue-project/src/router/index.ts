@@ -12,7 +12,9 @@ import Situation from '@/pages/General/Main/Situation.vue'
 import Account from '@/pages/General/Main/Account.vue'  
 import AccountSetting from '@/pages/General/Main/AccountSetting.vue'
 import Score from '@/pages/General/Main/Score.vue'
+import AVG_score from '@/pages/General/Main/AVG_score.vue'
 import Setting from '@/pages/General/Main/Setting.vue'
+
 
 import MailboxList from '@/pages/General/Mailbox/MailboxList.vue'
 import MailOpen from '@/pages/General/Mailbox/MailOpen.vue'
@@ -133,6 +135,18 @@ const router = createRouter({
       path: '/score',
       name: 'Score',
       component: Score,
+      meta: {
+        sidebar: 'user',
+        header: null,
+        shell: 'dark',
+        fluid: true,
+        flush: true,
+      }
+    },
+    {
+      path: '/avg_score',
+      name: 'AVG_score',
+      component: AVG_score,
       meta: {
         sidebar: 'user',
         header: null,
