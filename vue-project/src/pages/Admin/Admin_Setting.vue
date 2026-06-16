@@ -144,7 +144,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+
+import { ref, watch, onMounted } from 'vue'
 import {
   Settings,
   Bell,
@@ -157,6 +158,51 @@ const emailNotifications = ref(true)
 const autoGenerate = ref(false)
 const fearEffect = ref(true)
 const dataCollection = ref(true)
+
+
+
+import axios from 'axios' // npm install axios が必要
+
+
+// APIのベースURL（環境に合わせて変更してください）
+const API_BASE_URL = 'http://localhost:3000'
+
+// 1. 設定をサーバーから読み込む関数
+const fetchSettings = async () => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/settings`)
+    const data = response.data
+    
+    // 取得した値を各refに反映
+    emailNotifications.value = data.emailNotifications
+    autoGenerate.value = data.autoGenerate
+    fearEffect.value = data.fearEffect
+    dataCollection.value = data.dataCollection
+  } catch (error) {
+    console.error('設定の取得に失敗しました:', error)
+  }
+}
+
+// 2. 設定をサーバーに保存する関数
+const updateSetting = async (key: string, value: boolean) => {
+  try {
+    await axios.patch(`${API_BASE_URL}/settings`, { [key]: value })
+  } catch (error) {
+    console.error(`${key} の更新に失敗しました:`, error)
+  }
+}
+
+// ページ読み込み時にデータを取得
+onMounted(() => {
+  fetchSettings()
+})
+
+// 各スイッチの変更を監視して、個別に保存処理を呼ぶ
+watch(emailNotifications, (val) => updateSetting('emailNotifications', val))
+watch(autoGenerate, (val) => updateSetting('autoGenerate', val))
+watch(fearEffect, (val) => updateSetting('fearEffect', val))
+watch(dataCollection, (val) => updateSetting('dataCollection', val))
+
 
 
 </script>
