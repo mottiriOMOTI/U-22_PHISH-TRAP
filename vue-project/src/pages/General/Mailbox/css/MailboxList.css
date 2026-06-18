@@ -1,0 +1,266 @@
+
+/* Base layout (page/hero/panel) moved to Main.css; keep mailbox-specific rules below */
+
+.mailbox-hero__icon {
+  color: #45a4ff;
+  font-size: 42px;
+}
+
+.mailbox-hero p,
+.mailbox-panel__header p,
+.mail-row__preview,
+.mail-row__meta,
+.mailbox-state p {
+  color: #9fbbe0;
+}
+
+.mailbox-panel__header {
+  margin-bottom: 18px;
+}
+
+.mailbox-panel__header h2 {
+  margin: 0 0 4px;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.mailbox-panel__header p {
+  font-size: 14px;
+}
+
+.mail-list {
+  display: grid;
+  gap: 10px;
+}
+
+.mail-row {
+  min-width: 0;
+}
+
+.mail-row__button {
+  display: grid;
+  width: 100%;
+  min-height: 88px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: #111a2f;
+  color: #ffffff;
+  cursor: pointer;
+  text-align: left;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease;
+}
+
+.mail-row__button:hover,
+.mail-row__button:focus-visible {
+  border-color: #45a4ff;
+  background: #162444;
+  outline: none;
+}
+
+.mail-row__icon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 8px;
+  background: #1c3574;
+  color: #5da2ff;
+}
+
+.mail-row__icon :deep(.v-icon) {
+  font-size: 24px;
+}
+
+.mail-row__content {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.mail-row__sender,
+.mail-row__title,
+.mail-row__preview {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mail-row__sender {
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.mail-row__title {
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.mail-row__preview {
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.mail-row__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.mail-row__meta :deep(.v-icon) {
+  color: #ffffff;
+  font-size: 20px;
+}
+
+.mailbox-state {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 92px;
+  padding: 18px;
+  border-radius: 8px;
+  background: #111a2f;
+}
+
+.mailbox-state__icon {
+  flex: 0 0 auto;
+  color: #45a4ff;
+  font-size: 34px;
+}
+
+.mailbox-state--error .mailbox-state__icon {
+  color: #ff7382;
+}
+
+.mailbox-state h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.mailbox-state p {
+  margin-top: 4px;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.secondary-button {
+  min-height: 38px;
+  margin-left: auto;
+  padding: 0 18px;
+  border: 1px solid #4d6079;
+  border-radius: 8px;
+  background: transparent;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.secondary-button:hover,
+.secondary-button:focus-visible {
+  background: #172337;
+  outline: none;
+}
+
+.mail-row-skeleton {
+  display: grid;
+  min-height: 88px;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 8px;
+  background: #111a2f;
+}
+
+.mail-row-skeleton__icon,
+.mail-row-skeleton__line {
+  display: block;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #26334a, #34465f, #26334a);
+  background-size: 220% 100%;
+  animation: mailbox-loading 1200ms ease-in-out infinite;
+}
+
+.mail-row-skeleton__icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 8px;
+}
+
+.mail-row-skeleton__line {
+  width: 100%;
+  height: 10px;
+  margin-top: 9px;
+}
+
+.mail-row-skeleton__line:first-child {
+  margin-top: 0;
+}
+
+.mail-row-skeleton__line--short {
+  width: 32%;
+}
+
+.mail-row-skeleton__line--medium {
+  width: 64%;
+}
+
+@keyframes mailbox-loading {
+  to {
+    background-position: -220% 0;
+  }
+}
+
+@media (max-width: 900px) {
+  .mailbox-page {
+    padding: 18px 14px 16px;
+  }
+
+  .mailbox-panel {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 640px) {
+  .mailbox-hero {
+    align-items: flex-start;
+  }
+
+  .mailbox-hero h1 {
+    font-size: 28px;
+  }
+
+  .mail-row__button {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .mail-row__meta {
+    grid-column: 2;
+    justify-content: space-between;
+  }
+
+  .mailbox-state {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .secondary-button {
+    width: 100%;
+    margin-left: 0;
+  }
+}
