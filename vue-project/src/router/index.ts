@@ -197,7 +197,7 @@ const router = createRouter({
     },
     {
       //path: '/explanation',
-      path: '/',
+      path: '/explanation',
       name: 'Explanation',
       component: Explanation,
       meta: {

@@ -1,5 +1,5 @@
 <template>
-  <main class="mailbox-page" :aria-busy="loading ? 'true' : 'false'" :class="{ 'is-shaking': debugTimer !== null }">
+  <main class="mailbox-page" :aria-busy="loading ? 'true' : 'false'">
     <header class="mailbox-hero">
       <v-icon icon="mdi-email-outline" class="mailbox-hero__icon" />
       <div>
@@ -7,18 +7,6 @@
         <p>訓練メールの受信トレイ</p>
       </div>
     </header>
-
-    <!-- 🛠 ポップアップを最前面に配置 & オプショナルチェイニングでエラー防止 -->
-    <div v-if="debugTimer !== null" class="debug-popup-overlay">
-      <div class="debug-popup-content">
-        <v-icon icon="mdi-alert-decagram" color="error" size="large" />
-        <div class="ms-3">
-          <div class="text-caption font-weight-bold">DEBUG: まもなくイベント発生</div>
-          <div class="text-h3 font-weight-black">{{ debugTimer?.toFixed(1) }}s</div>
-          <div class="text-overline text-error">REDIRECT_ON_COUNTDOWN_ZERO</div>
-        </div>
-      </div>
-    </div>
 
     <section class="mailbox-panel">
       <div class="mailbox-panel__header">
@@ -75,6 +63,85 @@
         </article>
       </div>
     </section>
+
+    <!-- ==========================================
+         🚨 【メールボックス画面】本格恐怖・バッドエンド演出用オーバーレイ群 
+         ========================================== -->
+    
+    <!-- 疑似デスクトップ通知スタック固定コンテナ -->
+    <div class="custom-notification-stack">
+      <transition-group name="list">
+        <v-card
+          v-for="item in notifications"
+          :key="item.id"
+          color="#1e1e1e"
+          elevation="24"
+          :class="['mb-2 pa-4 d-flex align-center custom-toast-card', item.borderClass]"
+          style="width: 340px;"
+        >
+          <v-icon :icon="item.icon" :color="item.color" class="me-3" size="large"></v-icon>
+          <div>
+            <div class="text-subtitle-2 font-weight-bold" :style="{ color: item.color }">{{ item.title }}</div>
+            <div class="text-caption text-white" style="line-height: 1.3;">{{ item.text }}</div>
+          </div>
+        </v-card>
+      </transition-group>
+    </div>
+
+    <!-- 画面ノイズ用オーバーレイ -->
+    <div v-if="showNoise" class="vivid-noise-overlay"></div>
+
+    <!-- ブルースクリーン全画面（BSOD）オーバーレイ -->
+    <div v-if="showBsod" class="bsod-screen">
+      <div class="bsod-content">
+        <div class="bsod-smiley">:(</div>
+        <h1 class="bsod-title">PC で問題が発生したため、再起動する必要があります。</h1>
+        <p class="bsod-text">エラー情報を収集しています。自動的に再起動します。</p>
+        <p class="bsod-percent">{{ bsodPercent }}% 完了</p>
+        
+        <div class="bsod-footer d-flex gap-4 mt-8">
+          <v-icon icon="mdi-qrcode" size="80" color="white" class="me-4"></v-icon>
+          <div>
+            <p class="text-caption text-white">この問題＋解決策の詳細：</p>
+            <p class="text-caption font-weight-bold text-white">https://windows.com</p>
+            <p class="text-caption text-white mt-2">停止コード: CRITICAL_PROCESS_DIED (FEAR_EFFECT_ATTACK)</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 最前面の暗号化警告ダイアログ -->
+    <v-dialog v-model="showEncrypt" persistent width="600">
+      <v-card color="#150505" variant="flat" :style="{ border: `1px solid ${popupColor}`, boxShadow: `0 0 15px ${popupColor}66` }" class="pa-6 rounded-lg text-left">
+        <div class="d-flex align-center mb-4">
+          <v-icon :icon="popupIcon" :color="popupColor" size="40" class="blink-fast me-3"></v-icon>
+          <h2 class="text-h5 font-weight-bold" :style="{ color: popupColor }">{{ popupTitle }}</h2>
+        </div>
+        <v-card-text class="px-0 py-0 mb-4 text-body-1 text-white font-weight-bold" style="line-height: 1.5;">{{ encryptMainText }}</v-card-text>
+        <div class="mb-4">
+          <div class="d-flex align-center justify-space-between mb-1">
+            <span class="text-caption text-grey-lighten-1 font-mono">>> {{ encryptStatusText }}</span>
+            <span class="text-h6 font-weight-bold font-mono" :style="{ color: popupColor }">{{ encryptProgress.toFixed(1) }}%</span>
+          </div>
+          <v-progress-linear v-model="encryptProgress" :color="popupColor" height="16" striped class="rounded-pill"></v-progress-linear>
+        </div>
+        <v-divider :color="popupColor" class="border-opacity-30 my-4"></v-divider>
+        <div class="text-body-2 text-grey-lighten-2" style="line-height: 1.6;">
+          <p class="font-weight-bold text-grey-lighten-1 mb-2">■ 以下のステータスを確認してください：</p>
+          <v-list bg-color="transparent" density="compact" class="py-0">
+            <v-list-item v-for="(text, index) in encryptChecklist" :key="index" class="px-0 min-height-zero mb-1">
+              <template v-slot:prepend>
+                <v-icon icon="mdi-radiobox-marked" :color="popupColor" size="16" class="me-2"></v-icon>
+              </template>
+              <v-list-item-title class="text-wrap text-body-2 text-grey-lighten-2">{{ text }}</v-list-item-title>
+            </v-list-item>
+          </v-list>
+        </div>
+      </v-card>
+    </v-dialog>
+
+    <!-- 完全シャットダウン（暗転）用オーバーレイ -->
+    <div :class="['blackout-screen', { 'active': showBlackout }]"></div>
   </main>
 </template>
 
@@ -83,19 +150,43 @@ import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { fetchMails, type MailListItem } from '@/api/mailApi'
 
+// ==========================================
+// 🚨 本格演出用の外部ユーティリティ群をインポート
+// ==========================================
+import { triggerNotificationEffect } from '@/pages/General/Mailbox/FearEffect/FearEffect_Death_Attack/notificationEffect'
+import { triggerNoiseEffect } from '@/pages/General/Mailbox/FearEffect/FearEffect_Death_Attack/noiseEffect'
+import { triggerBsodEffect } from '@/pages/General/Mailbox/FearEffect/FearEffect_Death_Attack/bsodEffect'
+import { 
+  triggerEncryptEffect, 
+  resetEncryptEffect, 
+  showEncrypt, 
+  encryptProgress, 
+  encryptStatusText, 
+  encryptMainText, 
+  encryptChecklist, 
+  popupTitle, 
+  popupIcon, 
+  popupColor 
+} from '@/pages/General/Mailbox/FearEffect/FearEffect_Death_Attack/encryptEffect'
+import { triggerSequenceEffect } from '@/pages/General/Mailbox/FearEffect/FearEffect_Death_Attack/sequenceController'
+
 const router = useRouter()
 
 const mails = ref<MailListItem[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
-let timerId: number | null = null
-const debugTimer = ref<number | null>(null)
+
+// 🚨 演出コントロール用リアクティブ変数群
+const notifications = ref<any[]>([])
+const showNoise = ref(false)
+const showBsod = ref(false)
+const bsodPercent = ref(0)
+const showBlackout = ref(false)
 
 async function load() {
   loading.value = true
   error.value = null
   try {
-    // TODO: 認証ストア完成後に currentUser.current_scenario を渡す
     mails.value = await fetchMails()
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'メールの取得に失敗しました'
@@ -104,47 +195,105 @@ async function load() {
   }
 }
 
+/**
+ * 🚨 すべての演出状態をリセットするクリーンアップ処理
+ */
+const resetAllEffects = () => {
+  showBsod.value = false
+  showNoise.value = false
+  showBlackout.value = false
+  bsodPercent.value = 0
+  resetEncryptEffect()
+}
+
+/**
+ * 🎬 フィッシング詐欺バッドエンドの本格ホラー自動演出シーケンス
+ * 演出完了後、自動的に解説ページ（Explanation）に状態を引き継ぎながら遷移します。
+ * 🛠 修正：引数 scenarioType の型を 'business' | 'school' | 'daily' に厳密化
+ */
+const startBadEndSequence = (state: any, scenarioType: 'business' | 'school' | 'daily' = 'business') => {
+  console.log(`💀 バッドエンド演出を開始。対象メール: ${state.mail.title}`)
+  
+  // 2. 0.5秒後に警告通知ログの送信開始
+  setTimeout(() => {
+    triggerNotificationEffect(notifications, scenarioType, 1)
+  }, 500)
+
+  // 3. 1.5秒後にさらなる重大ログを追加
+  setTimeout(() => {
+    triggerNotificationEffect(notifications, scenarioType, 2)
+  }, 1500)
+
+  // 4. 2.5秒後にフラッシュとともに最前面に暗号化ランサム警告ポップアップを出現させる
+  setTimeout(() => {
+    triggerEncryptEffect(scenarioType)
+  }, 2500)
+
+  // 5. 6.5秒後にランサム警告を消去し、不気味な砂嵐ノイズを発生
+  setTimeout(() => {
+    resetEncryptEffect()
+    triggerNoiseEffect(showNoise)
+  }, 6500)
+
+  // 6. 8.0秒後にノイズからブルースクリーンへと雪崩れ込み、カウントが完了したらブラックアウト（暗転）
+  //    そして、暗転完了時に「解説ページ」へと自動的に遷移させます！
+  setTimeout(() => {
+    triggerSequenceEffect(
+      notifications,
+      showNoise,
+      () => triggerBsodEffect({ 
+        show: showBsod, 
+        percent: bsodPercent, 
+        isBlackout: showBlackout, 
+        onComplete: () => {
+          // すべての演出が完全完了（画面暗転完了）した後の処理
+          resetAllEffects()
+          
+          // ✨ 自動的に解説ページ（Explanation）へ
+          // 騙されてバッドエンドになったため、isCorrect: false で送ります。
+          // 🛠 追加：解説ページにブラックアウト状態のまま入ってもらうため `needFadeIn: true` を渡します。
+          router.push({ 
+            path: '/explanation', 
+            state: { mail: state.mail, isCorrect: false, needFadeIn: true } 
+          })
+        } 
+      })
+    )
+  }, 8000)
+}
+
 function checkDeathSequence() {
   const state = window.history.state
   if (!state) return
 
-  // 💀 潜伏期間をランダムにして緊張感を高める (1.5秒〜3.5秒)
-  const delay = Math.floor(Math.random() * 2000) + 1500
-
   if (state.triggerDeath) {
-    startDebugTimer(delay, () => {
-      router.push({ path: '/feareffect_death', state: { mail: state.mail } })
-    })
+    // 💀 フィッシングに引っかかった（実機ホラーフルコンボ演出➔演出終了後に解説ページへ自動遷移）
+    // 🛠 修正：代入する変数 scenarioType も明示的にリテラルユニオン型で定義します
+    let scenarioType: 'business' | 'school' | 'daily' = 'business'
+    const senderEmail = state.mail?.sender_email?.toLowerCase() || ''
+    if (senderEmail.includes('.ac.jp') || senderEmail.includes('school') || senderEmail.includes('univ')) {
+      scenarioType = 'school'
+    } else if (senderEmail.includes('daily') || senderEmail.includes('gmail') || senderEmail.includes('payment')) {
+      scenarioType = 'daily'
+    }
+    
+    // ホラー演出シーケンス開始
+    startBadEndSequence(state, scenarioType)
+
   } else if (state.triggerSocialDeath) {
-    startDebugTimer(delay, () => {
-      router.push({ 
-        path: '/feareffect_false', 
-        state: { mail: state.mail, isCorrect: false } 
-      })
+    // 👔 安全なメールを誤報告した（今回は即時解説へ移行。必要に応じて専用演出を追加可能）
+    router.push({ 
+      path: '/explanation', 
+      state: { mail: state.mail, isCorrect: false } 
     })
   } else if (state.triggerSuccess) {
-    startDebugTimer(delay, () => {
-      router.push({ path: '/explanation', state: { mail: state.mail, isCorrect: true } })
+    // ✨ 正しい対処（即座に解説ページへ！）
+    // 正解時は `needFadeIn` を渡さないため、通常の即時遷移になります。
+    router.push({ 
+      path: '/explanation', 
+      state: { mail: state.mail, isCorrect: true } 
     })
   }
-}
-
-/**
- * 🛠 デバッグ用タイマーを回して遷移する共通関数
- */
-function startDebugTimer(ms: number, callback: () => void) {
-  debugTimer.value = ms / 1000
-  const interval = setInterval(() => {
-    if (debugTimer.value !== null) {
-      debugTimer.value = Math.max(0, debugTimer.value - 0.1)
-    }
-  }, 100)
-
-  setTimeout(() => {
-    clearInterval(interval)
-    debugTimer.value = null
-    callback()
-  }, ms)
 }
 
 function openMail(id: string) {
@@ -168,54 +317,13 @@ function formatDate(iso: string): string {
 }
 
 onMounted(() => {
-  // 💀 画面が開いた瞬間にフラグをチェック（API通信を待たない）
+  // 💀 受信トレイに戻った瞬間にフラグ判定
   checkDeathSequence()
   load()
 })
 </script>
 
 <style lang="css" scoped>
-/* 🛠 デバッグ用ポップアップスタイル（一箇所に統合） */
-.debug-popup-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10000; /* 全ての要素より前面に */
-  background: rgba(0, 0, 0, 0.4);
-  pointer-events: none;
-}
-
-.debug-popup-content {
-  background: #2a1212;
-  border: 1px solid white;
-  border-radius: 12px;
-  padding: 20px 40px;
-  display: flex;
-  align-items: center;
-  font-family: monospace;
-  color: white;
-  box-shadow: 0 0 40px rgba(255, 0, 0, 0.3);
-}
-
-/* ⚡ 画面をガタガタ揺らすアニメーション */
-.is-shaking {
-  animation: shake 0.1s infinite;
-  pointer-events: none; /* 揺れている間は操作不能感を出す */
-}
-
-@keyframes shake {
-  0% { transform: translate(0, 0) rotate(0deg); }
-  25% { transform: translate(2px, 2px) rotate(0.5deg); }
-  50% { transform: translate(-2px, -2px) rotate(-0.5deg); }
-  75% { transform: translate(-2px, 2px) rotate(0.5deg); }
-  100% { transform: translate(2px, -2px) rotate(0deg); }
-}
-
 .mailbox-page {
   position: relative;
   box-sizing: border-box;
@@ -478,11 +586,94 @@ onMounted(() => {
   }
 }
 
+/* ==========================================
+     🚨 【演出用】恐怖・ウイルス感染演出CSS
+   ========================================== */
+.font-mono { font-family: 'Courier New', Courier, monospace; }
+.min-height-zero { min-height: unset !important; }
+
+/* 通知スタック用 */
+.custom-notification-stack { 
+  position: fixed; 
+  bottom: 16px; 
+  right: 16px; 
+  z-index: 9000; 
+  display: flex; 
+  flex-direction: column-reverse; 
+  pointer-events: none; 
+}
+.custom-toast-card { pointer-events: auto; }
+.border-red { border-left: 4px solid #ff5252 !important; border-radius: 4px; }
+.border-orange { border-left: 4px solid #ff9800 !important; border-radius: 4px; }
+.border-green { border-left: 4px solid #00c853 !important; border-radius: 4px; }
+.list-enter-active, .list-leave-active { transition: all 0.4s ease; }
+.list-enter-from { opacity: 0; transform: translateX(100px); }
+.list-leave-to { opacity: 0; transform: translateY(-20px); }
+
+/* ポップアップ点滅 */
+.blink-fast { animation: blink-fast-anim 0.4s infinite alternate; }
+@keyframes blink-fast-anim { 0% { opacity: 1; } 100% { opacity: 0.3; } }
+
+/* 砂嵐ノイズ */
+.vivid-noise-overlay { 
+  position: fixed; 
+  top: 0; 
+  left: 0; 
+  width: 100vw; 
+  height: 100vh; 
+  z-index: 9998; 
+  pointer-events: none; 
+  background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.15) 1px, transparent 1px, transparent 2px), 
+              repeating-linear-gradient(90deg, rgba(255, 0, 0, 0.1), rgba(0, 255, 0, 0.1) 2px, rgba(0, 0, 255, 0.1) 3px); 
+  background-size: 100% 4px, 6px 100%; 
+  animation: glitch-flicker 0.15s infinite; 
+}
+@keyframes glitch-flicker { 
+  0% { transform: translate(2px, 1px) skewX(1deg); filter: invert(0); background-color: rgba(255, 255, 255, 0.05); } 
+  50% { transform: translate(-1px, -1px) skewX(-2deg); filter: invert(0.1); background-color: rgba(0, 0, 0, 0.1); } 
+  100% { transform: translate(1px, 2px) skewX(0deg); filter: invert(0); background-color: rgba(255, 255, 255, 0.05); } 
+}
+
+/* ブルースクリーン */
+.bsod-screen { 
+  position: fixed; 
+  top: 0; 
+  left: 0; 
+  width: 100vw; 
+  height: 100vh; 
+  background-color: #0078d7 !important; 
+  color: #ffffff !important; 
+  z-index: 9999; 
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif; 
+}
+.bsod-content { padding: 10% 12%; text-align: left; }
+.bsod-smiley { font-size: 120px; line-height: 1; margin-bottom: 20px; }
+.bsod-title { font-size: 28px; font-weight: 300; margin-bottom: 20px; line-height: 1.4; }
+.bsod-text, .bsod-percent { font-size: 20px; font-weight: 300; margin-bottom: 10px; }
+
+/* 完全暗転（シャットダウン） */
+.blackout-screen {
+  position: fixed;
+  top: 0; 
+  left: 0; 
+  width: 100vw; 
+  height: 100vh;
+  background-color: #000000 !important;
+  z-index: 99999;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 2.0s ease-in-out;
+}
+.blackout-screen.active {
+  opacity: 1;
+  pointer-events: auto;
+  transition: opacity 0s !important;
+}
+
 @media (max-width: 900px) {
   .mailbox-page {
     padding: 18px 14px 16px;
   }
-
   .mailbox-panel {
     padding: 16px;
   }
@@ -492,25 +683,20 @@ onMounted(() => {
   .mailbox-hero {
     align-items: flex-start;
   }
-
   .mailbox-hero h1 {
     font-size: 28px;
   }
-
   .mail-row__button {
     grid-template-columns: auto minmax(0, 1fr);
   }
-
   .mail-row__meta {
     grid-column: 2;
     justify-content: space-between;
   }
-
   .mailbox-state {
     align-items: flex-start;
     flex-direction: column;
   }
-
   .secondary-button {
     width: 100%;
     margin-left: 0;

@@ -165,7 +165,10 @@ function formatDate(iso: string): string {
 
 function judgeAction(action: ActionType, value?: string) {
   if (isJudging.value || !mail.value) return
-  const m = mail.value
+  
+  // 🛠 修正: Proxyオブジェクトを純粋なオブジェクトに変換する
+  // JSONの変換を通すことで、Vueの監視対象(Proxy)から完全に切り離します
+  const m = JSON.parse(JSON.stringify(mail.value))
 
   isJudging.value = true
   let stateToPass: any = { mail: m }
@@ -175,34 +178,30 @@ function judgeAction(action: ActionType, value?: string) {
       case 'link':
       case 'attachment':
       case 'reply':
-        // 💀 フィッシングに引っかかった（死フラグ）
         isDeathFlag.value = true
         stateToPass.triggerDeath = true
         break
       case 'delete':
       case 'report':
-        // ✨ 正解（後で解説へ）
         stateToPass.triggerSuccess = true
         break
     }
   } else {
-    // 安全なメールに対する操作
     if (action === 'report') {
-      // 👔 安全なメールを誤報告（社会的死フラグ）
       isSocialDeathFlag.value = true
       stateToPass.triggerSocialDeath = true
     } else {
-      // ✨ 妥当な操作（返信・削除など）
       stateToPass.triggerSuccess = true
     }
   }
 
-  // フラグ操作のみ行い、即座にリストへ戻る（演出はリスト側で実行）
+  // 純粋なオブジェクトになったのでエラーなく遷移できるようになります
   router.push({ 
     path: ROUTE_MAILBOX, 
     state: stateToPass 
   })
 }
+
 
 function handleBodyLinkClick(e: MouseEvent) {
   const target = (e.target as HTMLElement | null)?.closest('a') as HTMLAnchorElement | null
