@@ -1,6 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import Home from '@/pages/Home.vue'
-import About from '@/pages/About.vue'
 
 import Login from '@/pages/General/Login/Login.vue'
 import MakeAccount from '@/pages/General/Login/MakeAccount.vue'
@@ -40,16 +38,6 @@ const router = createRouter({
 
   //ここにページを配置
   routes: [
-    {
-      path: '/home',
-      name: 'Home',
-      component: Home,
-    },
-    {
-      path: '/about',
-      name: 'About',
-      component: About,
-    },
     {
       path: '/',
       name: 'Login',
