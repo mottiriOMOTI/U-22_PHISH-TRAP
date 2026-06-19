@@ -12,6 +12,9 @@ function toScoreCounts(session) {
         unanswered: Math.max(total - correct - wrong, 0),
     };
 }
+function formatUserLabel(user) {
+    return user.name?.trim() || user.email?.trim() || 'Unknown user';
+}
 // GET /api/score/average
 router.get('/average', async (_req, res) => {
     const { data, error } = await supabaseAdmin
@@ -22,21 +25,41 @@ router.get('/average', async (_req, res) => {
         return res.status(500).json({ error: error.message });
     }
     const sessions = data ?? [];
+    const sessionUserIds = Array.from(new Set(sessions.map((session) => session.user_id).filter((userId) => Boolean(userId))));
+    const { data: scoreUsers, error: usersError } = sessionUserIds.length > 0
+        ? await supabaseAdmin
+            .from('users')
+            .select('id, name, email')
+            .in('id', sessionUserIds)
+            .eq('role', 'learner')
+            .eq('is_active', true)
+        : { data: [], error: null };
+    if (usersError) {
+        return res.status(500).json({ error: usersError.message });
+    }
+    const userProfiles = new Map((scoreUsers ?? []).map((user) => [user.id, user]));
     const users = new Map();
     let totalCorrect = 0;
     let totalWrong = 0;
     let totalUnanswered = 0;
     let totalQuestions = 0;
+    let sessionCount = 0;
     for (const session of sessions) {
+        if (!session.user_id) {
+            continue;
+        }
+        const profile = userProfiles.get(session.user_id);
+        if (!profile) {
+            continue;
+        }
         const counts = toScoreCounts(session);
         totalCorrect += counts.correct;
         totalWrong += counts.wrong;
         totalUnanswered += counts.unanswered;
         totalQuestions += counts.total;
-        if (!session.user_id) {
-            continue;
-        }
+        sessionCount += 1;
         const current = users.get(session.user_id) ?? {
+            userId: session.user_id,
             totalCorrect: 0,
             totalWrong: 0,
             totalUnanswered: 0,
@@ -52,6 +75,8 @@ router.get('/average', async (_req, res) => {
     }
     const userSummaries = Array.from(users.values())
         .map((user) => ({
+        userId: user.userId,
+        label: formatUserLabel(userProfiles.get(user.userId)),
         total_correct: user.totalCorrect,
         total_wrong: user.totalWrong,
         total_unanswered: user.totalUnanswered,
@@ -62,7 +87,6 @@ router.get('/average', async (_req, res) => {
         .sort((a, b) => b.accuracy - a.accuracy || b.total_questions - a.total_questions)
         .map((user, index) => ({
         rank: index + 1,
-        label: `User ${index + 1}`,
         ...user,
     }));
     const averageUserAccuracy = userSummaries.length > 0
@@ -82,7 +106,7 @@ router.get('/average', async (_req, res) => {
     }, { excellent: 0, good: 0, needs_review: 0 });
     return res.json({
         total_users: userSummaries.length,
-        session_count: sessions.length,
+        session_count: sessionCount,
         total_correct: totalCorrect,
         total_wrong: totalWrong,
         total_unanswered: totalUnanswered,
