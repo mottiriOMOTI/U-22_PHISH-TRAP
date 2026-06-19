@@ -3,7 +3,7 @@
     <!-- タイトル -->
     <div class="mb-6">
       <div class="d-flex align-center ga-3">
-        <Settings :size="40" color="#a855f7" />
+        <v-icon icon="mdi-cog-outline" size="40" color="#a855f7" />
         <h1 class="text-h4 font-weight-bold">設定</h1>
       </div>
       <p class="text-medium-emphasis">システム管理設定</p>
@@ -22,7 +22,7 @@
           color="grey-darken-4"
         >
           <div class="d-flex align-center ga-3">
-            <Bell :size="20" color="#60a5fa" />
+            <v-icon icon="mdi-bell-outline" size="20" color="#60a5fa" />
 
             <div>
               <div class="font-weight-medium">メール通知</div>
@@ -54,7 +54,7 @@
           color="grey-darken-4"
         >
           <div class="d-flex align-center ga-3">
-            <Shield :size="20" color="#f87171" />
+            <v-icon icon="mdi-shield-outline" size="20" color="#f87171" />
 
             <div>
               <div class="font-weight-medium">恐怖演出</div>
@@ -76,7 +76,7 @@
           color="grey-darken-4"
         >
           <div class="d-flex align-center ga-3">
-            <Mail :size="20" color="#c084fc" />
+            <v-icon icon="mdi-email-outline" size="20" color="#c084fc" />
 
             <div>
               <div class="font-weight-medium">自動問題生成</div>
@@ -108,7 +108,7 @@
           color="grey-darken-4"
         >
           <div class="d-flex align-center ga-3">
-            <Database :size="20" color="#4ade80" />
+            <v-icon icon="mdi-database-outline" size="20" color="#4ade80" />
 
             <div>
               <div class="font-weight-medium">
@@ -146,14 +146,6 @@
 <script setup lang="ts">
 
 import { ref, watch, onMounted } from 'vue'
-import {
-  Settings,
-  Bell,
-  Shield,
-  Database,
-  Mail
-} from 'lucide-vue-next'
-
 const emailNotifications = ref(true)
 const autoGenerate = ref(false)
 const fearEffect = ref(true)
@@ -161,7 +153,6 @@ const dataCollection = ref(true)
 
 
 
-import axios from 'axios' // npm install axios が必要
 
 
 // APIのベースURL（環境に合わせて変更してください）
@@ -170,8 +161,11 @@ const API_BASE_URL = 'http://localhost:3000'
 // 1. 設定をサーバーから読み込む関数
 const fetchSettings = async () => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/settings`)
-    const data = response.data
+    const response = await fetch(`${API_BASE_URL}/settings`)
+    if (!response.ok) {
+      throw new Error(`Failed to fetch settings: ${response.status}`)
+    }
+    const data = await response.json()
     
     // 取得した値を各refに反映
     emailNotifications.value = data.emailNotifications
@@ -186,7 +180,16 @@ const fetchSettings = async () => {
 // 2. 設定をサーバーに保存する関数
 const updateSetting = async (key: string, value: boolean) => {
   try {
-    await axios.patch(`${API_BASE_URL}/settings`, { [key]: value })
+    const response = await fetch(`${API_BASE_URL}/settings`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ [key]: value }),
+    })
+    if (!response.ok) {
+      throw new Error(`Failed to update ${key}: ${response.status}`)
+    }
   } catch (error) {
     console.error(`${key} の更新に失敗しました:`, error)
   }
@@ -213,4 +216,3 @@ watch(dataCollection, (val) => updateSetting('dataCollection', val))
 }
 
 </style>
-
