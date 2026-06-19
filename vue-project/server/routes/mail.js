@@ -6,7 +6,7 @@ const SCENARIO_TO_CATEGORY = {
     school: 'student',
     daily: 'general',
 };
-const QUESTION_LIST_SELECT = 'id, category, title, sender_name, sender_email, body, is_phishing, phishing_type, has_link, has_attachment, created_at';
+const QUESTION_LIST_SELECT = 'id, category, title, sender_name, sender_email, body, is_phishing, phishing_type, has_link, has_attachment, question_image_url, created_at';
 function pickQuestionUpdates(body) {
     const updates = {};
     if (typeof body.title === 'string')

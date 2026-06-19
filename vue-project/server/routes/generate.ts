@@ -452,8 +452,8 @@ router.post('/', async (req, res) => {
     return res.status(400).json({ error: 'category must be student, company, or general' })
   }
 
-  if (count !== 1) {
-    return res.status(400).json({ error: 'count must be 1' })
+  if (typeof count !== 'number' || !Number.isInteger(count) || count < 1 || count > 10) {
+    return res.status(400).json({ error: 'count must be an integer from 1 to 10' })
   }
 
   if (typeof isPhishing !== 'boolean') {

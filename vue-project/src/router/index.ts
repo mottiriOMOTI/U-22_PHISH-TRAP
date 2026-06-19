@@ -230,7 +230,10 @@ const router = createRouter({
       component: Admin_Makequestion,
       meta: {
         sidebar: 'admin',
-        header: 'admin_makequestion',
+        header: null,
+        shell: 'dark',
+        fluid: true,
+        flush: true,
       }
     },
     {
@@ -266,7 +269,10 @@ const router = createRouter({
       component: Admin_QuestionList,
       meta: {
         sidebar: 'admin',
-        header: 'admin_questionList',
+        header: null,
+        shell: 'dark',
+        fluid: true,
+        flush: true,
       }
     },
     {

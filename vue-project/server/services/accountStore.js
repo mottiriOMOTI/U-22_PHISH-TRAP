@@ -88,7 +88,7 @@ export async function getAccountSummary(userId) {
     if (sessionsError) {
         throw sessionsError;
     }
-    const completedSessions = sessions ?? [];
+    const completedSessions = (sessions ?? []);
     const completedTrainings = completedSessions.length;
     const averageAccuracy = calculateAverageAccuracy(completedSessions);
     const totalLearningMinutes = calculateTotalLearningMinutes(completedSessions);

@@ -133,10 +133,10 @@ const props = defineProps<{
 }>()
 
 defineEmits<{
-    open: [question: AdminQuestionCardItem]
-    'edit-question': [question: AdminQuestionCardItem]
-    'edit-explanation': [question: AdminQuestionCardItem]
-    delete: [question: AdminQuestionCardItem]
+    open: [question: any]
+    'edit-question': [question: any]
+    'edit-explanation': [question: any]
+    delete: [question: any]
 }>()
 
 const imageSrc = computed(() =>

@@ -25,6 +25,7 @@ router.get('/', async (req, res) => {
         .from('training_sessions')
         .select('user_id, scenario, correct_count, total_questions, started_at')
         .in('user_id', userIds)
+        .eq('is_completed', true)
         .order('started_at', { ascending: false });
     if (sessErr) {
         return res.status(500).json({ error: sessErr.message });
