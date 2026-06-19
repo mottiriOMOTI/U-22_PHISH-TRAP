@@ -105,6 +105,7 @@
 }
 
 .settings-panel--data {
+  margin-top: 24px;
   padding-bottom: 20px;
 }
 
@@ -153,10 +154,10 @@
   bottom: 12px;
   width: 34px;
   height: 34px;
-  border: 1px solid #d7dce7;
+  border: 1px solid #4d6079;
   border-radius: 50%;
-  background: #ffffff;
-  color: #1e2430;
+  background: #111a2f;
+  color: #ffffff;
   font-size: 22px;
   line-height: 1;
   cursor: pointer;
