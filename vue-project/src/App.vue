@@ -31,7 +31,6 @@ import HeaderAdminMakequestion from './components/layout/adminHeader/Header_Admi
 import HeaderAdminOverview from './components/layout/adminHeader/Header_Admin_Overview.vue'
 import HeaderAdminQuestionList from './components/layout/adminHeader/Header_Admin_QuestionList.vue'
 import HeaderAdminSetting from './components/layout/adminHeader/Header_Admin_Setting.vue'
-import HeaderAdminUserList from './components/layout/adminHeader/Header_Admin_UserList.vue'
 
 const route = useRoute()
 
@@ -64,8 +63,6 @@ const headerComponent = computed(() => {
       return HeaderAdminMakequestion
     case 'admin_setting':
       return HeaderAdminSetting
-    case 'admin_userList':
-      return HeaderAdminUserList
     case 'admin_questionList':
       return HeaderAdminQuestionList
     default:

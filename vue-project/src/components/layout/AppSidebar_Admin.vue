@@ -55,12 +55,6 @@ const navItems: AdminNavItem[] = [
     activePaths: ['/admin_overview'],
   },
   {
-    label: 'ユーザー管理',
-    to: '/admin_userlist',
-    icon: 'mdi-account-multiple-outline',
-    activePaths: ['/admin_userlist', '/admin_userdetail'],
-  },
-  {
     label: '問題一覧',
     to: '/admin_questionlist',
     icon: 'mdi-format-list-bulleted',

@@ -26,7 +26,6 @@ import Admin_Overview from '@/pages/Admin/Admin_Overview.vue'
 import Admin_Makequestion from '@/pages/Admin/Admin_Makequestion.vue'
 import Admin_Setting from '@/pages/Admin/Admin_Setting.vue'
 
-import Admin_UserList from '@/pages/Admin/AdminUser/Admin_UserList.vue'
 import Admin_Userdetail from '@/pages/Admin/AdminUser/Admin_Userdetail.vue'
 
 import Admin_QuestionList from '@/pages/Admin/AdminQ/Admin_QuestionList.vue'
@@ -246,15 +245,6 @@ const router = createRouter({
         shell: 'dark',
         fluid: true,
         flush: true,
-      }
-    },
-    {
-      path: '/admin_userlist',
-      name: 'Admin_UserList',
-      component: Admin_UserList,
-      meta: {
-        sidebar: 'admin',
-        header: 'admin_userList',
       }
     },
     {
