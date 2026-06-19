@@ -27,8 +27,15 @@ async function throwApiError(res: Response, fallbackMessage: string): Promise<ne
   throw new Error(body?.error ?? fallbackMessage)
 }
 
-export async function fetchAccountSummary(): Promise<AccountSummary> {
-  const res = await fetch(`${API_BASE}/api/account`)
+export async function fetchAccountSummary(userId?: string): Promise<AccountSummary> {
+  const params = new URLSearchParams()
+
+  if (userId) {
+    params.set('userId', userId)
+  }
+
+  const query = params.toString()
+  const res = await fetch(`${API_BASE}/api/account${query ? `?${query}` : ''}`)
 
   if (!res.ok) {
     return throwApiError(res, 'Failed to fetch account')

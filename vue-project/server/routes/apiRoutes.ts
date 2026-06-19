@@ -30,9 +30,10 @@ router.get('/settings', async (_req, res) => {
   }
 })
 
-router.get('/account', async (_req, res) => {
+router.get('/account', async (req, res) => {
   try {
-    const account = await getAccountSummary()
+    const userId = typeof req.query.userId === 'string' ? req.query.userId : undefined
+    const account = await getAccountSummary(userId)
     return res.json({ ok: true, account })
   } catch (error) {
     console.error('account get server error:', error)

@@ -297,20 +297,21 @@ async function loadAccountSetting() {
   errorMessage.value = ''
   successMessage.value = ''
 
-  try {
-    const account = await fetchAccountSummary()
-    profile.rank = account.profile.rank
-    profile.joinedAt = account.profile.joinedAt
-  } catch (error) {
-    console.error(error)
-  }
-
   const user = getCurrentUser()
 
   if (user) {
     applyUser(user)
     try {
-      applyUser(await fetchCurrentUserById(user.id))
+      const refreshedUser = await fetchCurrentUserById(user.id)
+      applyUser(refreshedUser)
+    } catch (error) {
+      console.error(error)
+    }
+
+    try {
+      const account = await fetchAccountSummary(currentUser.value?.id ?? user.id)
+      profile.rank = account.profile.rank
+      profile.joinedAt = account.profile.joinedAt
     } catch (error) {
       console.error(error)
     }
@@ -369,4 +370,3 @@ onBeforeUnmount(clearSelectedAvatarFile)
 
 <style src="../../Main.css"></style>
 <style lang="css" scoped src="../css/AccountSetting.css"></style>
-

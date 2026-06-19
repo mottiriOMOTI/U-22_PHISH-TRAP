@@ -109,7 +109,7 @@ const account = reactive<AccountView>({
     image: null,
   },
   stats: {
-    completedTrainings: 1,
+    completedTrainings: 0,
     totalLearningMinutes: null,
     averageAccuracy: null,
   },
@@ -181,14 +181,27 @@ async function loadAccountSummary() {
   errorMessage.value = ''
 
   try {
-    const nextAccount = await fetchAccountSummary()
-    applyAccountSummary(nextAccount)
-
     const currentUser = getCurrentUser()
+
     if (currentUser) {
       applyCurrentUser(currentUser)
-      applyCurrentUser(await fetchCurrentUserById(currentUser.id))
+      let resolvedUser = currentUser
+
+      try {
+        resolvedUser = await fetchCurrentUserById(currentUser.id)
+        applyCurrentUser(resolvedUser)
+      } catch (error) {
+        console.error(error)
+      }
+
+      const nextAccount = await fetchAccountSummary(resolvedUser.id)
+      applyAccountSummary(nextAccount)
+      applyCurrentUser(resolvedUser)
+      return
     }
+
+    const nextAccount = await fetchAccountSummary()
+    applyAccountSummary(nextAccount)
   } catch (error) {
     console.error(error)
 
@@ -210,4 +223,3 @@ onMounted(loadAccountSummary)
 
 <style src="../../Main.css"></style>
 <style lang="css" scoped src="../css/Account.css"></style>
-
