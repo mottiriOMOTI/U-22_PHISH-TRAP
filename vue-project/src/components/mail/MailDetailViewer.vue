@@ -74,6 +74,14 @@
 
       <v-divider class="mb-4" />
 
+      <v-img
+        v-if="imageSrc"
+        class="mail-image mb-4"
+        :src="imageSrc"
+        :alt="`${mail.title} の画像`"
+        cover
+      />
+
       <article
         ref="bodyEl"
         class="mail-body"
@@ -125,6 +133,8 @@ export type MailViewerItem = {
   dangerous_links?: MailViewerDangerousLink[] | null
   dangerous_attachments?: MailViewerAttachment[] | null
   safe_attachments?: MailViewerAttachment[] | null
+  question_image_url?: string | null
+  question_image_data_url?: string | null
 }
 
 const props = withDefaults(defineProps<{
@@ -154,6 +164,10 @@ const bodyEl = ref<HTMLElement | null>(null)
 
 const sanitizedBody = computed(() =>
   DOMPurify.sanitize(props.mail?.body ?? ''),
+)
+
+const imageSrc = computed(() =>
+  props.mail?.question_image_data_url ?? props.mail?.question_image_url ?? null,
 )
 
 const attachments = computed<string[]>(() => [
@@ -200,6 +214,12 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+.mail-image {
+  width: 100%;
+  max-height: 420px;
+  border-radius: 10px;
+}
+
 .mail-body {
   line-height: 1.7;
   word-break: break-word;

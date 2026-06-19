@@ -10,7 +10,16 @@
     >
         <v-card-text class="pa-4">
             <v-row align="start">
-                <v-col cols="12" md="9">
+                <v-col v-if="imageSrc" cols="12" md="2">
+                    <v-img
+                        class="question-image"
+                        :src="imageSrc"
+                        :alt="`${question.title} の画像`"
+                        cover
+                    />
+                </v-col>
+
+                <v-col cols="12" :md="imageSrc ? 7 : 9">
                     <div class="question-heading d-flex align-center flex-wrap ga-2 mb-2">
                         <div class="question-title text-subtitle-1 font-weight-medium">
                             {{ question.title }}
@@ -29,6 +38,9 @@
                             </v-chip>
                             <v-chip v-if="question.has_attachment" color="info" size="small" variant="tonal">
                                 添付あり
+                            </v-chip>
+                            <v-chip v-if="imageSrc" color="secondary" size="small" variant="tonal">
+                                画像あり
                             </v-chip>
                         </div>
                     </div>
@@ -97,6 +109,8 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
+
 export type AdminQuestionCardItem = {
     id: string
     title: string
@@ -107,9 +121,11 @@ export type AdminQuestionCardItem = {
     phishing_type: string | null
     has_link: boolean
     has_attachment: boolean
+    question_image_url?: string | null
+    question_image_data_url?: string | null
 }
 
-defineProps<{
+const props = defineProps<{
     question: AdminQuestionCardItem
     busy?: boolean
     deleteLoading?: boolean
@@ -122,6 +138,10 @@ defineEmits<{
     'edit-explanation': [question: AdminQuestionCardItem]
     delete: [question: AdminQuestionCardItem]
 }>()
+
+const imageSrc = computed(() =>
+    props.question.question_image_data_url ?? props.question.question_image_url ?? null,
+)
 
 function previewBody(body: string): string {
     return body.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim()
@@ -143,6 +163,12 @@ function previewBody(body: string): string {
     border-color: rgba(var(--v-theme-primary), 0.35);
     box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
     outline: none;
+}
+
+.question-image {
+    width: 100%;
+    min-height: 96px;
+    border-radius: 8px;
 }
 
 .question-heading,
