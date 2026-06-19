@@ -145,12 +145,12 @@
 .action-button--warning {
   margin-left: auto;
   border: 0;
-  background: #ffd400;
-  color: #1f2635;
+  background: #b88400;
+  color: #ffffff;
 }
 
 .action-button--warning:hover:not(:disabled) {
-  background: #e9bf00;
+  background: #9f7200;
 }
 
 .action-button:disabled,
@@ -248,8 +248,8 @@
   min-height: 220px;
   padding: 22px;
   border-radius: 8px;
-  background: #f8fbff;
-  color: #1e2430;
+  background: #111a2f;
+  color: #ffffff;
   line-height: 1.7;
   word-break: break-word;
 }

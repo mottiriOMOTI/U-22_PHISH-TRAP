@@ -13,6 +13,7 @@
 /* Page layout */
 [class$="-page"]{
   padding: var(--page-padding-vertical) var(--page-padding-horizontal) 24px;
+  color: #ffffff;
 }
 
 /* Hero sections (e.g. account-hero, settings-hero) */
@@ -30,6 +31,7 @@
 
 [class$="-hero"] h1{
   margin:0;
+  color: #ffffff;
   font-size:30px;
   font-weight:800;
   line-height:1.1;
@@ -48,6 +50,7 @@
   border: 1px solid var(--panel-border);
   border-radius: 12px;
   background: var(--panel-bg);
+  color: #ffffff;
 }
 
 [class$="-panel"] + [class$="-panel"]{
@@ -57,6 +60,7 @@
 /* Panel header styles (target headings inside panel blocks) */
 [class$="-panel"] h2{
   margin:0 0 4px 0;
+  color: #ffffff;
   font-size:18px;
   font-weight:800;
   line-height:1.3;
@@ -74,10 +78,10 @@
   bottom: 12px;
   width: 34px;
   height: 34px;
-  border: 1px solid #d7dce7;
+  border: 1px solid #4d6079;
   border-radius: 50%;
-  background: #ffffff;
-  color: #1e2430;
+  background: #111a2f;
+  color: #ffffff;
   font-size: 22px;
   line-height: 1;
   cursor: pointer;
