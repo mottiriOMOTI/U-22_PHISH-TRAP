@@ -2,7 +2,7 @@
     <v-sheet class="pa-4" rounded="lg" elevation="0" border>
         <div class="page-heading">
             <h3>問題生成</h3>
-            <p class="subtitle">カテゴリとメール種別を選択して1問の訓練メールを生成します。</p>
+            <p class="subtitle">カテゴリ、メール種別、画像の有無を選択して1問の訓練メールを生成します。</p>
         </div>
 
         <div class="generate-actions mt-3">
@@ -18,12 +18,22 @@
             </v-btn>
             <v-switch
                 v-model="isPhishing"
-                class="phishing-toggle"
+                class="generate-toggle"
                 color="error"
                 density="compact"
                 hide-details
                 inset
                 label="詐欺メール生成"
+                :disabled="loading || saving"
+            />
+            <v-switch
+                v-model="includeImage"
+                class="generate-toggle"
+                color="secondary"
+                density="compact"
+                hide-details
+                inset
+                label="画像追加"
                 :disabled="loading || saving"
             />
         </div>
@@ -128,6 +138,7 @@ const generatedStore = useAdminGeneratedQuestions()
 const loading = ref(false)
 const saving = ref(false)
 const isPhishing = ref(true)
+const includeImage = ref(false)
 const error = ref<string | null>(null)
 const saveError = ref<string | null>(null)
 const saveMessage = ref<string | null>(null)
@@ -150,6 +161,7 @@ async function generate() {
             category: selectedCategory.value,
             count: 1,
             isPhishing: isPhishing.value,
+            includeImage: includeImage.value,
         })
         generatedStore.replaceQuestions(result.questions)
     } catch (e) {
@@ -254,7 +266,7 @@ function deleteGeneratedQuestion(question: EditableGeneratedQuestion) {
     flex-wrap: wrap;
 }
 
-.phishing-toggle {
+.generate-toggle {
     flex: 0 0 auto;
 }
 
