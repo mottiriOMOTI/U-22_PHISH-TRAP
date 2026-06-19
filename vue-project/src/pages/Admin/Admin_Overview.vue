@@ -253,7 +253,7 @@ onMounted(() => {
 
 watch(selectedCategory, () => {
   loadAccuracy()
-  loadQuestionAccuracy()
+  load()
 })
 
 const questionAccuracyMap = computed(() => {
@@ -288,7 +288,9 @@ async function load() {
   error.value = null
 
   try {
-    users.value = await fetchUsers()
+    const scenario = categoryMap[selectedCategory.value].scenario
+
+    users.value = await fetchUsers(scenario)
   } catch (e) {
     error.value =
       e instanceof Error
