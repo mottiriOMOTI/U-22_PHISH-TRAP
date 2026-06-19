@@ -62,12 +62,15 @@ function parseSavePayload(body) {
     };
 }
 router.post('/', async (req, res) => {
-    const { category, count } = req.body;
+    const { category, count, isPhishing } = req.body;
     if (!category || !categories.includes(category)) {
         return res.status(400).json({ error: 'category must be student, company, or general' });
     }
     if (count !== 1) {
         return res.status(400).json({ error: 'count must be 1' });
+    }
+    if (typeof isPhishing !== 'boolean') {
+        return res.status(400).json({ error: 'isPhishing must be boolean' });
     }
     const generationCount = count;
     const child = spawn(PYTHON_COMMAND, [PYTHON_SCRIPT], {
@@ -95,7 +98,7 @@ router.post('/', async (req, res) => {
     child.stderr.on('data', (chunk) => {
         stderr += chunk;
     });
-    child.stdin.write(JSON.stringify({ category, count: generationCount }));
+    child.stdin.write(JSON.stringify({ category, count: generationCount, isPhishing }));
     child.stdin.end();
     child.on('error', (error) => {
         if (responded)

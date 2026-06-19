@@ -5,7 +5,7 @@ create table public.users (
   password_hash text not null,
   name text not null,
   role text not null default 'learner' check (role in ('admin', 'learner')),
-  current_scenario text check (current_scenario in ('school', 'student', 'adult', 'general')),
+  current_scenario text default 'school' check (current_scenario in ('business', 'school', 'daily')),
   created_at timestamptz not null default now(),
   last_active_at timestamptz,
   is_active boolean not null default true
