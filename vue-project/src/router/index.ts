@@ -1,10 +1,10 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
-import Login from '@/pages/General/Login/Login.vue'
-import MakeAccount from '@/pages/General/Login/MakeAccount.vue'
-import ForgotAccount from '@/pages/General/Login/ForgotAccount.vue'
-import Privacypolicy from '@/pages/General/Login/Privacypolicy.vue'
-import TermsOfService from '@/pages/General/Login/TermsOfService.vue'
+import Login from '@/pages/General/Login/vue/Login.vue'
+import MakeAccount from '@/pages/General/Login/vue/MakeAccount.vue'
+import ForgotAccount from '@/pages/General/Login/vue/ForgotAccount.vue'
+import Privacypolicy from '@/pages/General/Login/vue/Privacypolicy.vue'
+import TermsOfService from '@/pages/General/Login/vue/TermsOfService.vue'
 
 import Situation from '@/pages/General/Main/vue/Situation.vue'
 import Account from '@/pages/General/Main/vue/Account.vue'
