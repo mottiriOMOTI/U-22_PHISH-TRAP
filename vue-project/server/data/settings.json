@@ -2,7 +2,9 @@
   "settings": {
     "soundEnabled": true,
     "notificationsEnabled": true,
-    "fearEffectEnabled": true
+    "fearEffectEnabled": true,
+    "autoGenerateEnabled": true,
+    "dataCollectionEnabled": true
   },
   "learningHistory": [],
   "lastResetAt": "2026-06-19T02:21:39.919Z"

@@ -77,7 +77,7 @@ import {
   type AppSettings,
 } from '@/api/settings'
 
-type SettingKey = keyof AppSettings
+type SettingKey = 'soundEnabled' | 'notificationsEnabled' | 'fearEffectEnabled'
 
 type SettingItem = {
   key: SettingKey

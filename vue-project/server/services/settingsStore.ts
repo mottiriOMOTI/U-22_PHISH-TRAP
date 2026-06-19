@@ -6,6 +6,8 @@ export type AppSettings = {
   soundEnabled: boolean
   notificationsEnabled: boolean
   fearEffectEnabled: boolean
+  autoGenerateEnabled?: boolean
+  dataCollectionEnabled?: boolean
 }
 
 type LearningHistoryItem = {
@@ -23,6 +25,8 @@ const defaultSettings: AppSettings = {
   soundEnabled: true,
   notificationsEnabled: true,
   fearEffectEnabled: true,
+  autoGenerateEnabled: false,
+  dataCollectionEnabled: true,
 }
 
 const defaultStore: SettingsStore = {
@@ -47,6 +51,14 @@ function normalizeSettings(input: Partial<AppSettings> | undefined): AppSettings
       typeof input?.fearEffectEnabled === 'boolean'
         ? input.fearEffectEnabled
         : defaultSettings.fearEffectEnabled,
+    autoGenerateEnabled:
+      typeof input?.autoGenerateEnabled === 'boolean'
+        ? input.autoGenerateEnabled
+        : defaultSettings.autoGenerateEnabled,
+    dataCollectionEnabled:
+      typeof input?.dataCollectionEnabled === 'boolean'
+        ? input.dataCollectionEnabled
+        : defaultSettings.dataCollectionEnabled,
   }
 }
 

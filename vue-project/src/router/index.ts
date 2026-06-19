@@ -242,7 +242,10 @@ const router = createRouter({
       component: Admin_Setting,
       meta: {
         sidebar: 'admin',
-        header: 'admin_setting',
+        header: null,
+        shell: 'dark',
+        fluid: true,
+        flush: true,
       }
     },
     {

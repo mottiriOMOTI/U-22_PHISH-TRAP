@@ -5,6 +5,8 @@ const defaultSettings = {
     soundEnabled: true,
     notificationsEnabled: true,
     fearEffectEnabled: true,
+    autoGenerateEnabled: false,
+    dataCollectionEnabled: true,
 };
 const defaultStore = {
     settings: defaultSettings,
@@ -23,6 +25,12 @@ function normalizeSettings(input) {
         fearEffectEnabled: typeof input?.fearEffectEnabled === 'boolean'
             ? input.fearEffectEnabled
             : defaultSettings.fearEffectEnabled,
+        autoGenerateEnabled: typeof input?.autoGenerateEnabled === 'boolean'
+            ? input.autoGenerateEnabled
+            : defaultSettings.autoGenerateEnabled,
+        dataCollectionEnabled: typeof input?.dataCollectionEnabled === 'boolean'
+            ? input.dataCollectionEnabled
+            : defaultSettings.dataCollectionEnabled,
     };
 }
 function normalizeStore(input) {

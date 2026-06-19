@@ -4,6 +4,8 @@ export type AppSettings = {
   soundEnabled: boolean
   notificationsEnabled: boolean
   fearEffectEnabled: boolean
+  autoGenerateEnabled?: boolean
+  dataCollectionEnabled?: boolean
 }
 
 type SettingsResponse = {
