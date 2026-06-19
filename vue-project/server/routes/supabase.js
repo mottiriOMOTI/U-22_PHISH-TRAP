@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { supabaseAdmin } from '../lib/supabase';
 const router = Router();
 const USER_COLUMNS = 'id, email, password_hash, name, role, current_scenario, created_at, last_active_at, is_active, image';
+const USER_SCENARIOS = new Set(['business', 'school', 'daily']);
 const AVATAR_BUCKET = 'user-icons';
 const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
 const ALLOWED_AVATAR_TYPES = {
@@ -168,6 +169,33 @@ router.put('/users/:id', async (req, res) => {
         }
         if (!data) {
             return res.status(404).json({ error: 'ユーザーが見つかりません' });
+        }
+        return res.json(data);
+    }
+    catch (error) {
+        return sendUnexpectedError(res, error);
+    }
+});
+router.put('/users/:id/scenario', async (req, res) => {
+    try {
+        const { current_scenario } = req.body ?? {};
+        if (typeof current_scenario !== 'string' || !USER_SCENARIOS.has(current_scenario)) {
+            return res.status(400).json({ error: 'current_scenario must be business, school, or daily' });
+        }
+        const { data, error } = await supabaseAdmin
+            .from('users')
+            .update({
+            current_scenario,
+            last_active_at: new Date().toISOString(),
+        })
+            .eq('id', req.params.id)
+            .select(USER_COLUMNS)
+            .maybeSingle();
+        if (error) {
+            return res.status(500).json({ error: error.message });
+        }
+        if (!data || data.is_active === false) {
+            return res.status(404).json({ error: 'User not found' });
         }
         return res.json(data);
     }

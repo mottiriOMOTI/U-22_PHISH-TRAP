@@ -112,6 +112,11 @@ import {
   type SituationId,
   type SituationOption,
 } from '@/api/situation'
+import {
+  fetchCurrentUserById,
+  getCurrentUser,
+  updateCurrentUserScenario,
+} from '@/api/users'
 
 const scenarios: SituationOption[] = [
   {
@@ -148,6 +153,11 @@ const isLoading = ref(true)
 const savingScenarioId = ref<SituationId | null>(null)
 const errorMessage = ref('')
 const successMessage = ref('')
+const validScenarioIds = new Set<SituationId>(['business', 'school', 'daily'])
+
+function isSituationId(value: unknown): value is SituationId {
+  return typeof value === 'string' && validScenarioIds.has(value as SituationId)
+}
 
 function showSuccess(message: string) {
   successMessage.value = message
@@ -162,6 +172,17 @@ function showError(message: string) {
 async function loadSituation() {
   isLoading.value = true
   try {
+    const currentUser = getCurrentUser()
+
+    if (currentUser) {
+      const refreshedUser = await fetchCurrentUserById(currentUser.id)
+
+      if (isSituationId(refreshedUser.current_scenario)) {
+        selectedScenarioId.value = refreshedUser.current_scenario
+        return
+      }
+    }
+
     const situation = await fetchSituation()
     selectedScenarioId.value = situation.selectedScenarioId
   } catch (error) {
@@ -180,8 +201,22 @@ async function selectScenario(scenarioId: SituationId) {
   savingScenarioId.value = scenarioId
 
   try {
-    const situation = await saveSituation(scenarioId)
-    selectedScenarioId.value = situation.selectedScenarioId
+    const currentUser = getCurrentUser()
+
+    if (currentUser) {
+      const updatedUser = await updateCurrentUserScenario(currentUser.id, scenarioId)
+      selectedScenarioId.value = isSituationId(updatedUser.current_scenario)
+        ? updatedUser.current_scenario
+        : scenarioId
+
+      saveSituation(selectedScenarioId.value).catch((error) => {
+        console.error(error)
+      })
+    } else {
+      const situation = await saveSituation(scenarioId)
+      selectedScenarioId.value = situation.selectedScenarioId
+    }
+
     showSuccess('シチュエーションを保存しました')
   } catch (error) {
     console.error(error)
@@ -197,4 +232,3 @@ onMounted(loadSituation)
 
 <style src="../../Main.css"></style>
 <style lang="css" scoped src="../css/Situation.css"></style>
-

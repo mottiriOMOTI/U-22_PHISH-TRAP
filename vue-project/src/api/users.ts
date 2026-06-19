@@ -1,7 +1,7 @@
 const API_BASE_URL = '/api/supabasetest'
 
 export type user_role = 'admin' | 'learner'
-export type scenario = 'school' | 'student' | 'business' | 'general'
+export type scenario = 'business' | 'school' | 'daily'
 
 export type User = {
 id: string
@@ -247,6 +247,26 @@ const res = await fetch(`${API_BASE_URL}/users/${encodeURIComponent(id)}`, {
 
 if (!res.ok) {
   return throwApiError(res, 'アカウント情報の更新に失敗しました')
+}
+
+const user = (await res.json()) as User
+return saveCurrentUser(user)
+}
+
+export async function updateCurrentUserScenario(
+id: string,
+current_scenario: scenario,
+): Promise<CurrentUser> {
+const res = await fetch(`${API_BASE_URL}/users/${encodeURIComponent(id)}/scenario`, {
+  method: 'PUT',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({ current_scenario }),
+})
+
+if (!res.ok) {
+  return throwApiError(res, 'シチュエーションの更新に失敗しました')
 }
 
 const user = (await res.json()) as User
