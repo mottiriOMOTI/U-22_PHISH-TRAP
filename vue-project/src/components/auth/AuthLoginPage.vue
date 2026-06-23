@@ -8,7 +8,10 @@
           />
         </svg>
         <svg class="alert-icon" viewBox="0 0 48 48" role="img">
-          <path v-if="admin" d="M24 7a8 8 0 0 1 8 8v4h3a3 3 0 0 1 3 3v16a3 3 0 0 1-3 3H13a3 3 0 0 1-3-3V22a3 3 0 0 1 3-3h3v-4a8 8 0 0 1 8-8Z" />
+          <path
+            v-if="admin"
+            d="M24 7a8 8 0 0 1 8 8v4h3a3 3 0 0 1 3 3v16a3 3 0 0 1-3 3H13a3 3 0 0 1-3-3V22a3 3 0 0 1 3-3h3v-4a8 8 0 0 1 8-8Z"
+          />
           <path v-if="admin" d="M18 19v-4a6 6 0 0 1 12 0v4" />
           <circle v-if="admin" cx="24" cy="30" r="2" />
           <path v-if="!admin" d="M24 6 44 40H4L24 6Z" />
@@ -21,7 +24,9 @@
         <span>管理者専用</span>
       </div>
 
-      <h1>{{ brandTitle }} <span>{{ brandAccent }}</span></h1>
+      <h1>
+        {{ brandTitle }} <span>{{ brandAccent }}</span>
+      </h1>
       <p v-html="brandCopy" />
     </section>
 
@@ -34,7 +39,17 @@
 
         <div class="input-group">
           <label for="email">メールアドレス</label>
-          <input id="email" v-model="email" type="email" required placeholder="user@example.com" autocomplete="email" />
+          <input
+            id="email"
+            v-model.trim="email"
+            type="email"
+            required
+            maxlength="254"
+            placeholder="user@example.com"
+            autocomplete="email"
+            autocapitalize="none"
+            spellcheck="false"
+          />
         </div>
 
         <div class="input-group">
@@ -44,6 +59,7 @@
             v-model="password"
             type="password"
             required
+            maxlength="128"
             placeholder="••••••••"
             autocomplete="current-password"
           />
@@ -73,30 +89,33 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-withDefaults(defineProps<{
-  admin?: boolean
-  brandTitle?: string
-  brandAccent?: string
-  brandCopy?: string
-  title: string
-  description?: string
-  submitLabel?: string
-  showForgotLink?: boolean
-  showRegisterLink?: boolean
-  loading?: boolean
-  errorMessage?: string
-}>(), {
-  admin: false,
-  brandTitle: 'PHISH-TRAP',
-  brandAccent: '防御',
-  brandCopy: '知識だけでは防げない、<strong>判断力</strong>を体験しよう',
-  description: '',
-  submitLabel: 'ログイン',
-  showForgotLink: false,
-  showRegisterLink: false,
-  loading: false,
-  errorMessage: '',
-})
+withDefaults(
+  defineProps<{
+    admin?: boolean
+    brandTitle?: string
+    brandAccent?: string
+    brandCopy?: string
+    title: string
+    description?: string
+    submitLabel?: string
+    showForgotLink?: boolean
+    showRegisterLink?: boolean
+    loading?: boolean
+    errorMessage?: string
+  }>(),
+  {
+    admin: false,
+    brandTitle: 'PHISH-TRAP',
+    brandAccent: '防御',
+    brandCopy: '知識だけでは防げない、<strong>判断力</strong>を体験しよう',
+    description: '',
+    submitLabel: 'ログイン',
+    showForgotLink: false,
+    showRegisterLink: false,
+    loading: false,
+    errorMessage: '',
+  },
+)
 
 const emit = defineEmits<{
   submit: [credentials: { email: string; password: string }]
@@ -123,16 +142,12 @@ function submit() {
   align-items: center;
   margin: -40px calc(50% - 50vw) -16px;
   padding: 48px 20px 26px;
-  background:
-    radial-gradient(circle at 50% 0%, rgba(52, 83, 130, 0.16), transparent 32%),
-    #142238;
+  background: radial-gradient(circle at 50% 0%, rgba(52, 83, 130, 0.16), transparent 32%), #142238;
   color: #f8fbff;
 }
 
 .auth-page--admin {
-  background:
-    radial-gradient(circle at 50% 0%, rgba(214, 70, 84, 0.18), transparent 34%),
-    #172033;
+  background: radial-gradient(circle at 50% 0%, rgba(214, 70, 84, 0.18), transparent 34%), #172033;
 }
 
 .auth-page,
@@ -205,7 +220,7 @@ h1 {
 }
 
 h1 span,
- .brand-area :deep(strong) {
+.brand-area :deep(strong) {
   color: #ff3948;
 }
 
