@@ -11,7 +11,7 @@
     <section class="generator-panel">
       <div class="generator-panel__copy">
         <h2>問題生成</h2>
-        <p>カテゴリを選択して10問の訓練メールを生成します</p>
+        <p>カテゴリ、メール種別、画像の有無を選択して1問の訓練メールを生成します。</p>
       </div>
 
       <div class="generator-controls">
@@ -33,8 +33,30 @@
         >
           <v-progress-circular v-if="loading" indeterminate size="18" width="2" />
           <v-icon v-else icon="mdi-auto-fix" />
-          <span>{{ loading ? '生成中...' : '10問生成' }}</span>
+          <span>{{ loading ? '生成中...' : '生成する' }}</span>
         </button>
+
+        <v-switch
+          v-model="isPhishing"
+          class="generate-toggle"
+          color="error"
+          density="compact"
+          hide-details
+          inset
+          :label="isPhishing ? '詐欺メール' : '安全メール'"
+          :disabled="loading || saving"
+        />
+
+        <v-switch
+          v-model="includeImage"
+          class="generate-toggle"
+          color="secondary"
+          density="compact"
+          hide-details
+          inset
+          label="画像追加"
+          :disabled="loading || saving"
+        />
       </div>
 
       <p v-if="error" class="panel-message panel-message--error" role="alert">
@@ -82,7 +104,7 @@
       <div v-else class="empty-state">
         <v-progress-circular v-if="loading" indeterminate size="56" width="4" />
         <v-icon v-else icon="mdi-email-outline" class="empty-state__icon" />
-        <p>{{ loading ? '訓練メールを生成しています' : 'カテゴリを選択して「10問生成」ボタンをクリックしてください' }}</p>
+        <p>{{ loading ? '訓練メールを生成しています' : 'カテゴリを選択して「生成する」をクリックしてください' }}</p>
       </div>
     </section>
 
@@ -117,7 +139,7 @@ import AdminQuestionEditDialog from '@/components/admin/AdminQuestionEditDialog.
 import { useAdminGeneratedQuestions, type EditableGeneratedQuestion } from '@/stores/admin_generatedQuestions'
 import { question_scenario, scenarioSelectItems, type Scenario } from '@/stores/admin_questionList'
 
-const GENERATE_COUNT = 10
+const GENERATE_COUNT = 1
 
 const scenarioToCategory: Record<Scenario, GenerateCategory> = {
   school: 'student',
@@ -131,6 +153,8 @@ const generatedStore = useAdminGeneratedQuestions()
 
 const loading = ref(false)
 const saving = ref(false)
+const isPhishing = ref(true)
+const includeImage = ref(false)
 const error = ref<string | null>(null)
 const saveError = ref<string | null>(null)
 const saveMessage = ref<string | null>(null)
@@ -159,8 +183,8 @@ async function generate() {
     const result = await generateQuestionExplanation({
       category: selectedCategory.value,
       count: GENERATE_COUNT,
-      isPhishing: true,
-      includeImage: false,
+      isPhishing: isPhishing.value,
+      includeImage: includeImage.value,
     })
     generatedStore.replaceQuestions(result.questions)
   } catch (e) {
@@ -310,6 +334,7 @@ function deleteGeneratedQuestion(question: EditableGeneratedQuestion) {
 .generator-controls {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 20px;
   margin-top: 32px;
 }
@@ -384,10 +409,6 @@ function deleteGeneratedQuestion(question: EditableGeneratedQuestion) {
   font-size: 16px;
 }
 
-.generate-button :deep(.v-icon) {
-  font-size: 24px;
-}
-
 .save-generated-button {
   min-height: 40px;
   padding: 0 16px;
@@ -407,6 +428,12 @@ function deleteGeneratedQuestion(question: EditableGeneratedQuestion) {
   cursor: default;
   opacity: 0.62;
   transform: none;
+}
+
+.generate-toggle {
+  flex: 0 0 auto;
+  color: #dbeafe;
+  font-weight: 900;
 }
 
 .panel-message {
@@ -528,8 +555,14 @@ function deleteGeneratedQuestion(question: EditableGeneratedQuestion) {
   }
 
   .category-field,
-  .generate-button {
+  .generate-button,
+  .save-generated-button {
     width: 100%;
+  }
+
+  .generate-toggle {
+    width: 100%;
+    justify-content: space-between;
   }
 }
 </style>
