@@ -1,17 +1,29 @@
 import { randomUUID } from 'node:crypto';
 import { Router } from 'express';
 import { supabaseAdmin } from '../lib/supabase';
+import { createPasswordResetToken, hashPassword, hashPasswordResetToken, isValidPasswordResetToken, normalizeEmail, validatePasswordStrength, verifyPassword, } from '../services/authSecurity';
 const router = Router();
-const USER_COLUMNS = 'id, email, password_hash, name, role, current_scenario, created_at, last_active_at, is_active, image';
+const USER_COLUMNS = 'id, email, name, role, current_scenario, created_at, last_active_at, is_active, image';
+const INTERNAL_USER_COLUMNS = `${USER_COLUMNS}, password_hash, failed_login_count, locked_until, password_reset_expires_at, password_reset_used_at`;
 const USER_SCENARIOS = new Set(['business', 'school', 'daily']);
 const AVATAR_BUCKET = 'user-icons';
 const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
+const LOGIN_RATE_LIMIT = { limit: 10, windowMs: 10 * 60 * 1000 };
+const REGISTER_RATE_LIMIT = { limit: 5, windowMs: 60 * 60 * 1000 };
+const RESET_REQUEST_RATE_LIMIT = { limit: 5, windowMs: 60 * 60 * 1000 };
+const RESET_CONFIRM_RATE_LIMIT = { limit: 10, windowMs: 15 * 60 * 1000 };
+const FAILED_LOGIN_LOCK_THRESHOLD = 5;
+const FAILED_LOGIN_LOCK_MS = 15 * 60 * 1000;
+const GENERIC_LOGIN_ERROR = 'メールアドレスまたはパスワードが間違っています。';
+const GENERIC_RESET_REQUEST_MESSAGE = '登録済みのメールアドレスの場合、パスワード再設定用の案内を送信しました。';
+const GENERIC_RESET_CONFIRM_ERROR = 'パスワード再設定リンクが無効、または期限切れです。';
 const ALLOWED_AVATAR_TYPES = {
     'image/jpeg': 'jpg',
     'image/png': 'png',
     'image/webp': 'webp',
     'image/gif': 'gif',
 };
+const rateLimitBuckets = new Map();
 function validateDisplayName(displayName, res) {
     if (!displayName || typeof displayName !== 'string') {
         res.status(400).json({ error: 'display_name is required' });
@@ -22,9 +34,128 @@ function validateDisplayName(displayName, res) {
 function validateString(value) {
     return typeof value === 'string' && value.trim().length > 0;
 }
+function isPasswordInput(value) {
+    return typeof value === 'string' && value.length > 0 && value.length <= 128;
+}
+function getClientIp(req) {
+    return req.ip || req.socket.remoteAddress || 'unknown';
+}
+function consumeRateLimit(req, action, subject, limit, windowMs) {
+    const now = Date.now();
+    const key = `${action}:${getClientIp(req)}:${subject}`;
+    const current = rateLimitBuckets.get(key);
+    if (!current || current.resetAt <= now) {
+        rateLimitBuckets.set(key, { count: 1, resetAt: now + windowMs });
+        return { limited: false, retryAfterSeconds: 0 };
+    }
+    current.count += 1;
+    if (current.count <= limit) {
+        return { limited: false, retryAfterSeconds: 0 };
+    }
+    return {
+        limited: true,
+        retryAfterSeconds: Math.max(1, Math.ceil((current.resetAt - now) / 1000)),
+    };
+}
+function sendRateLimitIfNeeded(req, res, action, subject, limit, windowMs) {
+    const result = consumeRateLimit(req, action, subject, limit, windowMs);
+    if (!result.limited) {
+        return false;
+    }
+    res.setHeader('Retry-After', String(result.retryAfterSeconds));
+    res.status(429).json({ error: '試行回数が多すぎます。しばらくしてから再度お試しください。' });
+    return true;
+}
+function publicUser(user) {
+    const { password_hash: _passwordHash, failed_login_count: _failedLoginCount, locked_until: _lockedUntil, password_reset_token_hash: _passwordResetTokenHash, password_reset_expires_at: _passwordResetExpiresAt, password_reset_requested_at: _passwordResetRequestedAt, password_reset_used_at: _passwordResetUsedAt, password_changed_at: _passwordChangedAt, ...safeUser } = user;
+    return safeUser;
+}
+function isAccountLocked(lockedUntil) {
+    return typeof lockedUntil === 'string' && new Date(lockedUntil).getTime() > Date.now();
+}
+async function waitAtLeast(startedAt, minimumMs = 250) {
+    const remainingMs = minimumMs - (Date.now() - startedAt);
+    if (remainingMs > 0) {
+        await new Promise((resolve) => setTimeout(resolve, remainingMs));
+    }
+}
+async function recordFailedLogin(user) {
+    const failedLoginCount = Number(user.failed_login_count ?? 0) + 1;
+    const updatePayload = {
+        failed_login_count: failedLoginCount,
+    };
+    if (failedLoginCount >= FAILED_LOGIN_LOCK_THRESHOLD) {
+        updatePayload.locked_until = new Date(Date.now() + FAILED_LOGIN_LOCK_MS).toISOString();
+    }
+    const { error } = await supabaseAdmin.from('users').update(updatePayload).eq('id', user.id);
+    if (error) {
+        console.error('failed login update error:', error);
+    }
+}
+function getPasswordResetBaseUrl(req) {
+    const configuredBaseUrl = process.env.PASSWORD_RESET_BASE_URL?.trim();
+    if (configuredBaseUrl) {
+        return configuredBaseUrl.replace(/\/$/, '');
+    }
+    const origin = req.get('origin')?.trim();
+    return (origin || 'http://localhost:5173').replace(/\/$/, '');
+}
+function createPasswordResetUrl(req, token) {
+    const resetUrl = `${getPasswordResetBaseUrl(req)}/forgotaccount?token=${encodeURIComponent(token)}`;
+    return resetUrl;
+}
+async function deliverPasswordResetLink(req, email, token) {
+    const resetUrl = createPasswordResetUrl(req, token);
+    const webhookUrl = process.env.PASSWORD_RESET_WEBHOOK_URL?.trim();
+    if (webhookUrl) {
+        const headers = {
+            'Content-Type': 'application/json',
+        };
+        const webhookSecret = process.env.PASSWORD_RESET_WEBHOOK_SECRET?.trim();
+        if (webhookSecret) {
+            headers.Authorization = `Bearer ${webhookSecret}`;
+        }
+        const response = await fetch(webhookUrl, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ email, resetUrl }),
+            signal: AbortSignal.timeout(5000),
+        });
+        if (!response.ok) {
+            throw new Error(`Password reset webhook failed: ${response.status} ${response.statusText}`);
+        }
+        return;
+    }
+    if (process.env.NODE_ENV === 'production' && process.env.LOG_PASSWORD_RESET_LINKS !== 'true') {
+        console.warn('PASSWORD_RESET_WEBHOOK_URL is not configured; password reset link was not sent.');
+        return;
+    }
+    console.info(`Password reset link for ${email}: ${resetUrl}`);
+}
 function sendUnexpectedError(res, error) {
-    const message = error instanceof Error ? error.message : 'Unexpected server error';
-    return res.status(500).json({ error: message });
+    console.error('supabase route unexpected error:', error);
+    return res.status(500).json({
+        error: '認証サーバーに接続できませんでした。環境設定とネットワーク接続を確認してください。',
+    });
+}
+function sendAuthServiceError(res, error) {
+    console.error('auth service error:', error);
+    const code = typeof error === 'object' && error !== null && 'code' in error
+        ? error.code
+        : undefined;
+    if (code === '42703') {
+        return res.status(500).json({
+            error: '認証用DBカラムが不足しています。Supabaseに最新マイグレーションを反映してください。',
+        });
+    }
+    if (code === 'PGRST204') {
+        return res.status(500).json({
+            error: '認証用DBカラムがSupabaseのスキーマキャッシュに反映されていません。最新マイグレーション適用後、スキーマキャッシュをリロードしてください。',
+        });
+    }
+    return res.status(500).json({
+        error: '認証サーバーに接続できませんでした。環境設定とネットワーク接続を確認してください。',
+    });
 }
 async function ensureAvatarBucket() {
     const { data: buckets, error: listError } = await supabaseAdmin.storage.listBuckets();
@@ -67,11 +198,23 @@ function parseAvatarDataUrl(dataUrl, contentType) {
 }
 router.post('/register', async (req, res) => {
     try {
-        const { name, email, password_hash } = req.body ?? {};
-        if (!validateString(name) || !validateString(email) || !validateString(password_hash)) {
-            return res.status(400).json({ error: 'name, email, and password_hash are required' });
+        const { name, email, password } = req.body ?? {};
+        const normalizedEmail = normalizeEmail(email);
+        if (sendRateLimitIfNeeded(req, res, 'register', normalizedEmail ?? getClientIp(req), REGISTER_RATE_LIMIT.limit, REGISTER_RATE_LIMIT.windowMs)) {
+            return;
         }
-        const normalizedEmail = email.trim().toLowerCase();
+        if (!validateString(name) || !normalizedEmail || typeof password !== 'string') {
+            return res
+                .status(400)
+                .json({ error: '名前、メールアドレス、パスワードを正しく入力してください。' });
+        }
+        const passwordValidationError = validatePasswordStrength(password, {
+            email: normalizedEmail,
+            name,
+        });
+        if (passwordValidationError) {
+            return res.status(400).json({ error: passwordValidationError });
+        }
         const { data: existingUser, error: existingUserError } = await supabaseAdmin
             .from('users')
             .select('id')
@@ -79,26 +222,31 @@ router.post('/register', async (req, res) => {
             .limit(1)
             .maybeSingle();
         if (existingUserError) {
-            return res.status(500).json({ error: existingUserError.message });
+            return sendAuthServiceError(res, existingUserError);
         }
         if (existingUser) {
-            return res.status(409).json({ error: 'このメールアドレスはすでに登録されています' });
+            return res
+                .status(409)
+                .json({ error: 'アカウントを作成できませんでした。入力内容を確認してください。' });
         }
+        const passwordHash = await hashPassword(password);
         const { data, error } = await supabaseAdmin
             .from('users')
             .insert({
             name: name.trim(),
             email: normalizedEmail,
-            password_hash: password_hash.trim(),
+            password_hash: passwordHash,
             role: 'learner',
         })
             .select(USER_COLUMNS)
             .single();
         if (error) {
             if (error.code === '23505') {
-                return res.status(409).json({ error: 'このメールアドレスはすでに登録されています' });
+                return res
+                    .status(409)
+                    .json({ error: 'アカウントを作成できませんでした。入力内容を確認してください。' });
             }
-            return res.status(500).json({ error: error.message });
+            return sendAuthServiceError(res, error);
         }
         return res.status(201).json(data);
     }
@@ -108,23 +256,160 @@ router.post('/register', async (req, res) => {
 });
 router.post('/login', async (req, res) => {
     try {
-        const { email, password_hash } = req.body ?? {};
-        if (!validateString(email) || !validateString(password_hash)) {
-            return res.status(400).json({ error: 'email and password_hash are required' });
+        const startedAt = Date.now();
+        const { email, password } = req.body ?? {};
+        const normalizedEmail = normalizeEmail(email);
+        if (sendRateLimitIfNeeded(req, res, 'login', normalizedEmail ?? getClientIp(req), LOGIN_RATE_LIMIT.limit, LOGIN_RATE_LIMIT.windowMs)) {
+            return;
+        }
+        if (!normalizedEmail || !isPasswordInput(password)) {
+            await waitAtLeast(startedAt);
+            return res.status(401).json({ error: GENERIC_LOGIN_ERROR });
         }
         const { data, error } = await supabaseAdmin
             .from('users')
-            .select(USER_COLUMNS)
-            .eq('email', email.trim().toLowerCase())
-            .eq('password_hash', password_hash.trim())
+            .select(INTERNAL_USER_COLUMNS)
+            .eq('email', normalizedEmail)
             .maybeSingle();
         if (error) {
-            return res.status(500).json({ error: error.message });
+            return sendAuthServiceError(res, error);
         }
         if (!data || data.is_active === false) {
-            return res.status(401).json({ error: 'メールアドレスまたはパスワードが間違っています' });
+            await waitAtLeast(startedAt);
+            return res.status(401).json({ error: GENERIC_LOGIN_ERROR });
         }
-        return res.json(data);
+        if (isAccountLocked(data.locked_until)) {
+            return res
+                .status(429)
+                .json({ error: 'ログイン試行回数が多すぎます。しばらくしてから再度お試しください。' });
+        }
+        const passwordResult = await verifyPassword(password, data.password_hash);
+        if (!passwordResult.ok) {
+            await recordFailedLogin(data);
+            await waitAtLeast(startedAt);
+            return res.status(401).json({ error: GENERIC_LOGIN_ERROR });
+        }
+        const updatePayload = {
+            failed_login_count: 0,
+            locked_until: null,
+            last_active_at: new Date().toISOString(),
+        };
+        if (passwordResult.needsRehash) {
+            updatePayload.password_hash = await hashPassword(password);
+        }
+        const { data: updatedUser, error: updateError } = await supabaseAdmin
+            .from('users')
+            .update(updatePayload)
+            .eq('id', data.id)
+            .select(USER_COLUMNS)
+            .single();
+        if (updateError) {
+            return sendAuthServiceError(res, updateError);
+        }
+        return res.json(updatedUser);
+    }
+    catch (error) {
+        return sendUnexpectedError(res, error);
+    }
+});
+router.post('/password-reset/request', async (req, res) => {
+    try {
+        const normalizedEmail = normalizeEmail(req.body?.email);
+        if (sendRateLimitIfNeeded(req, res, 'password-reset-request', normalizedEmail ?? getClientIp(req), RESET_REQUEST_RATE_LIMIT.limit, RESET_REQUEST_RATE_LIMIT.windowMs)) {
+            return;
+        }
+        const responseBody = { ok: true, message: GENERIC_RESET_REQUEST_MESSAGE };
+        if (!normalizedEmail) {
+            return res.json(responseBody);
+        }
+        const { data: user, error } = await supabaseAdmin
+            .from('users')
+            .select('id, email, is_active')
+            .eq('email', normalizedEmail)
+            .maybeSingle();
+        if (error) {
+            console.error('password reset lookup error:', error);
+            return res.json(responseBody);
+        }
+        if (user && user.is_active !== false) {
+            const resetToken = createPasswordResetToken();
+            const { error: updateError } = await supabaseAdmin
+                .from('users')
+                .update({
+                password_reset_token_hash: resetToken.tokenHash,
+                password_reset_expires_at: resetToken.expiresAt,
+                password_reset_requested_at: new Date().toISOString(),
+                password_reset_used_at: null,
+            })
+                .eq('id', user.id);
+            if (updateError) {
+                console.error('password reset token update error:', updateError);
+            }
+            else {
+                try {
+                    await deliverPasswordResetLink(req, user.email, resetToken.token);
+                }
+                catch (deliveryError) {
+                    console.error('password reset delivery error:', deliveryError);
+                }
+            }
+        }
+        return res.json(responseBody);
+    }
+    catch (error) {
+        return sendUnexpectedError(res, error);
+    }
+});
+router.post('/password-reset/confirm', async (req, res) => {
+    try {
+        const { token, password } = req.body ?? {};
+        if (sendRateLimitIfNeeded(req, res, 'password-reset-confirm', isValidPasswordResetToken(token) ? token.slice(0, 12) : getClientIp(req), RESET_CONFIRM_RATE_LIMIT.limit, RESET_CONFIRM_RATE_LIMIT.windowMs)) {
+            return;
+        }
+        if (!isValidPasswordResetToken(token) || typeof password !== 'string') {
+            return res.status(400).json({ error: GENERIC_RESET_CONFIRM_ERROR });
+        }
+        const passwordValidationError = validatePasswordStrength(password);
+        if (passwordValidationError) {
+            return res.status(400).json({ error: passwordValidationError });
+        }
+        const tokenHash = hashPasswordResetToken(token);
+        const { data: user, error } = await supabaseAdmin
+            .from('users')
+            .select('id, is_active, password_reset_expires_at, password_reset_used_at')
+            .eq('password_reset_token_hash', tokenHash)
+            .maybeSingle();
+        if (error) {
+            return sendAuthServiceError(res, error);
+        }
+        const expiresAt = typeof user?.password_reset_expires_at === 'string'
+            ? new Date(user.password_reset_expires_at).getTime()
+            : 0;
+        if (!user ||
+            user.is_active === false ||
+            user.password_reset_used_at ||
+            !expiresAt ||
+            expiresAt <= Date.now()) {
+            return res.status(400).json({ error: GENERIC_RESET_CONFIRM_ERROR });
+        }
+        const passwordHash = await hashPassword(password);
+        const now = new Date().toISOString();
+        const { error: updateError } = await supabaseAdmin
+            .from('users')
+            .update({
+            password_hash: passwordHash,
+            password_reset_token_hash: null,
+            password_reset_expires_at: null,
+            password_reset_used_at: now,
+            failed_login_count: 0,
+            locked_until: null,
+            last_active_at: now,
+        })
+            .eq('id', user.id);
+        if (updateError) {
+            return sendAuthServiceError(res, updateError);
+        }
+        return res.json({ ok: true });
     }
     catch (error) {
         return sendUnexpectedError(res, error);
@@ -224,9 +509,7 @@ router.put('/users/:id/image', async (req, res) => {
         if (uploadError) {
             return res.status(500).json({ error: uploadError.message });
         }
-        const { data: publicUrlData } = supabaseAdmin.storage
-            .from(AVATAR_BUCKET)
-            .getPublicUrl(filePath);
+        const { data: publicUrlData } = supabaseAdmin.storage.from(AVATAR_BUCKET).getPublicUrl(filePath);
         const { data, error } = await supabaseAdmin
             .from('users')
             .update({
@@ -351,10 +634,7 @@ router.delete('/:id', async (req, res) => {
         }
         return res.json({ ok: true });
     }
-    const { error } = await supabaseAdmin
-        .from('profiles')
-        .delete()
-        .eq('id', req.params.id);
+    const { error } = await supabaseAdmin.from('profiles').delete().eq('id', req.params.id);
     if (error) {
         return res.status(500).json({ error: error.message });
     }
