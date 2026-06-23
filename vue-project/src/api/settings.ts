@@ -1,9 +1,12 @@
 const API_BASE = import.meta.env.VITE_API_URL ?? ''
 
+export type ThemeColor = 0 | 1 | 2
+
 export type AppSettings = {
   soundEnabled: boolean
   notificationsEnabled: boolean
   fearEffectEnabled: boolean
+  themeColor: ThemeColor
   autoGenerateEnabled?: boolean
   dataCollectionEnabled?: boolean
 }

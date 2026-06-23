@@ -3,6 +3,7 @@
     "soundEnabled": true,
     "notificationsEnabled": true,
     "fearEffectEnabled": true,
+    "themeColor": 0,
     "autoGenerateEnabled": true,
     "dataCollectionEnabled": true
   },

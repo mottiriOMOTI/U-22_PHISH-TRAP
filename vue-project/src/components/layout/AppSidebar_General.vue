@@ -149,9 +149,9 @@ function isActive(path: string) {
 
 <style lang="css" scoped>
 .general-sidebar {
-  border-right: 1px solid #2f3d52;
-  background: #10182b !important;
-  color: #ffffff;
+  border-right: 1px solid var(--sidebar-border);
+  background: var(--sidebar-bg) !important;
+  color: var(--sidebar-text);
 }
 
 .general-sidebar :deep(.v-navigation-drawer__content) {
@@ -169,7 +169,7 @@ function isActive(path: string) {
   display: flex;
   align-items: center;
   gap: 7px;
-  color: #ffffff;
+  color: var(--sidebar-text);
   text-decoration: none;
 }
 
@@ -238,11 +238,11 @@ function isActive(path: string) {
   align-content: center;
   padding: 7px 10px;
   border-radius: 8px;
-  background: #172238;
+  background: var(--sidebar-card-bg);
 }
 
 .score-card span {
-  color: #a7c3e6;
+  color: var(--muted);
   font-size: 14px;
   line-height: 1.1;
 }
@@ -268,7 +268,7 @@ function isActive(path: string) {
   gap: 12px;
   padding: 0 14px;
   border-radius: 23px;
-  color: #d4e0f1;
+  color: var(--sidebar-link-text);
   font-size: 16px;
   font-weight: 800;
   text-decoration: none;
@@ -284,8 +284,8 @@ function isActive(path: string) {
 
 .sidebar-nav__link:hover,
 .sidebar-nav__link--active {
-  background: #2265f4;
-  color: #ffffff;
+  background: var(--sidebar-active-bg);
+  color: var(--sidebar-active-text);
 }
 
 .sidebar-footer {
@@ -299,8 +299,8 @@ function isActive(path: string) {
   justify-content: center;
   gap: 8px;
   border-radius: 17px;
-  background: #ffffff;
-  color: #bdd0e6;
+  background: var(--sidebar-logout-bg);
+  color: var(--sidebar-logout-text);
   font-size: 13px;
   font-weight: 800;
   text-decoration: none;
@@ -312,7 +312,7 @@ function isActive(path: string) {
 
 .sidebar-footer p {
   margin: 12px 0 0;
-  color: #8aa0bd;
+  color: var(--sidebar-muted);
   font-size: 12px;
   text-align: center;
 }

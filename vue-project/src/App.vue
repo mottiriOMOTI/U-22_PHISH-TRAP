@@ -15,11 +15,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 
+import { fetchAppSettings } from './api/settings'
 import AppSidebarAdmin from './components/layout/AppSidebar_Admin.vue'
 import AppSidebarGeneral from './components/layout/AppSidebar_General.vue'
+import { applyThemeColor, DEFAULT_THEME_COLOR } from './lib/themeColor'
 
 import HeaderAccount from './components/layout/userHeader/Header_Account.vue'
 import HeaderMailboxList from './components/layout/userHeader/Header_MailboxList.vue'
@@ -33,6 +35,18 @@ import HeaderAdminQuestionList from './components/layout/adminHeader/Header_Admi
 import HeaderAdminSetting from './components/layout/adminHeader/Header_Admin_Setting.vue'
 
 const route = useRoute()
+
+applyThemeColor(DEFAULT_THEME_COLOR)
+
+async function loadThemeColor() {
+  try {
+    const settings = await fetchAppSettings()
+    applyThemeColor(settings.themeColor)
+  } catch (error) {
+    console.error(error)
+    applyThemeColor(DEFAULT_THEME_COLOR)
+  }
+}
 
 const sidebarComponent = computed(() => {
   switch (route.meta.sidebar) {
@@ -69,11 +83,14 @@ const headerComponent = computed(() => {
       return null
   }
 })
+
+onMounted(loadThemeColor)
 </script>
 
 <style scoped>
 .app-main--dark {
-  background: #172337;
+  background: var(--page-bg);
+  transition: background-color 160ms ease;
 }
 
 .app-container {

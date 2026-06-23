@@ -17,7 +17,7 @@
       <div class="settings-list">
         <article v-for="item in settingItems" :key="item.key" class="setting-row">
           <div class="setting-row__content">
-            <v-icon :icon="item.icon" :class="['setting-row__icon', item.iconClass]"/>
+            <v-icon :icon="item.icon" :class="['setting-row__icon', item.iconClass]" />
             <div>
               <h3>{{ item.title }}</h3>
               <p>{{ item.description }}</p>
@@ -28,13 +28,75 @@
             class="setting-toggle"
             type="button"
             :class="{ 'setting-toggle--active': settings[item.key] }"
-            :disabled="isLoading || savingKey === item.key"
+            :disabled="isLoading || savingKey === item.key || savingThemeColor"
             :aria-pressed="settings[item.key]"
             :aria-label="`${item.title}を${settings[item.key] ? '無効' : '有効'}にする`"
             @click="toggleSetting(item.key)"
           >
             <span />
           </button>
+        </article>
+
+        <article class="setting-row setting-row--theme">
+          <div class="setting-row__content">
+            <v-icon icon="mdi-palette-outline" class="setting-row__icon setting-row__icon--theme" />
+            <div>
+              <h3>テーマカラー</h3>
+              <p>画面の配色を選択します</p>
+            </div>
+          </div>
+
+          <div class="theme-accordion">
+            <button
+              class="theme-accordion__trigger"
+              type="button"
+              :aria-expanded="isThemeSelectorOpen"
+              aria-controls="theme-color-options"
+              :disabled="isLoading || savingKey !== null || savingThemeColor"
+              @click="toggleThemeSelector"
+            >
+              <span
+                :class="['theme-option__swatch', selectedThemeColorOption.swatchClass]"
+                aria-hidden="true"
+              />
+              <span class="theme-option__text">
+                <span class="theme-option__label">{{ selectedThemeColorOption.label }}</span>
+                <span class="theme-option__description">
+                  {{ selectedThemeColorOption.description }}
+                </span>
+              </span>
+              <v-icon
+                :icon="isThemeSelectorOpen ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+                class="theme-accordion__chevron"
+              />
+            </button>
+
+            <div
+              v-if="isThemeSelectorOpen"
+              id="theme-color-options"
+              class="theme-selector"
+              role="radiogroup"
+              aria-label="テーマカラー"
+            >
+              <button
+                v-for="option in themeColorOptions"
+                :key="option.value"
+                class="theme-option"
+                type="button"
+                role="radio"
+                :class="{ 'theme-option--active': settings.themeColor === option.value }"
+                :aria-checked="settings.themeColor === option.value"
+                :disabled="isLoading || savingKey !== null || savingThemeColor"
+                @click="selectThemeColor(option.value)"
+              >
+                <span :class="['theme-option__swatch', option.swatchClass]" aria-hidden="true" />
+                <span class="theme-option__text">
+                  <span class="theme-option__label">{{ option.label }}</span>
+                  <span class="theme-option__description">{{ option.description }}</span>
+                </span>
+              </button>
+            </div>
+          </div>
         </article>
       </div>
     </section>
@@ -62,13 +124,11 @@
     <p v-else-if="successMessage" class="settings-message settings-message--success" role="status">
       {{ successMessage }}
     </p>
-
-
   </main>
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 
 import {
   fetchAppSettings,
@@ -76,6 +136,7 @@ import {
   saveAppSettings,
   type AppSettings,
 } from '@/api/settings'
+import { applyThemeColor, normalizeThemeColor, type ThemeColor } from '@/lib/themeColor'
 
 type SettingKey = 'soundEnabled' | 'notificationsEnabled' | 'fearEffectEnabled'
 
@@ -87,10 +148,18 @@ type SettingItem = {
   description: string
 }
 
+type ThemeColorOption = {
+  value: ThemeColor
+  label: string
+  description: string
+  swatchClass: string
+}
+
 const settings = reactive<AppSettings>({
   soundEnabled: true,
   notificationsEnabled: true,
   fearEffectEnabled: true,
+  themeColor: 0,
 })
 
 const settingItems: SettingItem[] = [
@@ -117,16 +186,48 @@ const settingItems: SettingItem[] = [
   },
 ]
 
+const themeColorOptions: ThemeColorOption[] = [
+  {
+    value: 0,
+    label: 'デフォルト',
+    description: '現在の配色',
+    swatchClass: 'theme-option__swatch--default',
+  },
+  {
+    value: 1,
+    label: 'ホワイト',
+    description: '明るい配色',
+    swatchClass: 'theme-option__swatch--white',
+  },
+  {
+    value: 2,
+    label: 'ダーク',
+    description: '暗い配色',
+    swatchClass: 'theme-option__swatch--dark',
+  },
+]
+const defaultThemeColorOption = themeColorOptions.find((option) => option.value === 0)!
+
 const isLoading = ref(true)
 const isResetting = ref(false)
 const savingKey = ref<SettingKey | null>(null)
+const savingThemeColor = ref(false)
+const isThemeSelectorOpen = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
+
+const selectedThemeColorOption = computed<ThemeColorOption>(
+  () =>
+    themeColorOptions.find((option) => option.value === settings.themeColor) ??
+    defaultThemeColorOption,
+)
 
 function applySettings(nextSettings: AppSettings) {
   settings.soundEnabled = nextSettings.soundEnabled
   settings.notificationsEnabled = nextSettings.notificationsEnabled
   settings.fearEffectEnabled = nextSettings.fearEffectEnabled
+  settings.themeColor = normalizeThemeColor(nextSettings.themeColor)
+  applyThemeColor(settings.themeColor)
 }
 
 function showSuccess(message: string) {
@@ -153,7 +254,7 @@ async function loadSettings() {
 }
 
 async function toggleSetting(key: SettingKey) {
-  if (isLoading.value || savingKey.value) return
+  if (isLoading.value || savingKey.value || savingThemeColor.value) return
 
   const previousValue = settings[key]
   settings[key] = !previousValue
@@ -169,6 +270,41 @@ async function toggleSetting(key: SettingKey) {
     showError('設定の保存に失敗しました')
   } finally {
     savingKey.value = null
+  }
+}
+
+function toggleThemeSelector() {
+  if (isLoading.value || savingKey.value || savingThemeColor.value) return
+  isThemeSelectorOpen.value = !isThemeSelectorOpen.value
+}
+
+async function selectThemeColor(themeColor: ThemeColor) {
+  if (isLoading.value || savingKey.value || savingThemeColor.value) {
+    return
+  }
+
+  if (settings.themeColor === themeColor) {
+    isThemeSelectorOpen.value = false
+    return
+  }
+
+  const previousThemeColor = settings.themeColor
+  settings.themeColor = themeColor
+  applyThemeColor(themeColor)
+  savingThemeColor.value = true
+
+  try {
+    const nextSettings = await saveAppSettings({ ...settings })
+    applySettings(nextSettings)
+    isThemeSelectorOpen.value = false
+    showSuccess('テーマカラーを保存しました')
+  } catch (error) {
+    console.error(error)
+    settings.themeColor = previousThemeColor
+    applyThemeColor(previousThemeColor)
+    showError('テーマカラーの保存に失敗しました')
+  } finally {
+    savingThemeColor.value = false
   }
 }
 

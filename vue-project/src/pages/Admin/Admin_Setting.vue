@@ -101,12 +101,13 @@ import { defineComponent, h, onMounted, reactive, ref } from 'vue'
 import { fetchAppSettings, saveAppSettings, type AppSettings } from '@/api/settings'
 
 type AdminSettings = Required<AppSettings>
-type AdminSettingKey = keyof AdminSettings
+type AdminSettingKey = Exclude<keyof AdminSettings, 'themeColor'>
 
 const settings = reactive<AdminSettings>({
   soundEnabled: true,
   notificationsEnabled: true,
   fearEffectEnabled: true,
+  themeColor: 0,
   autoGenerateEnabled: false,
   dataCollectionEnabled: true,
 })
@@ -163,6 +164,7 @@ function applySettings(nextSettings: AppSettings) {
   settings.soundEnabled = nextSettings.soundEnabled
   settings.notificationsEnabled = nextSettings.notificationsEnabled
   settings.fearEffectEnabled = nextSettings.fearEffectEnabled
+  settings.themeColor = nextSettings.themeColor ?? 0
   settings.autoGenerateEnabled = nextSettings.autoGenerateEnabled ?? false
   settings.dataCollectionEnabled = nextSettings.dataCollectionEnabled ?? true
 }
@@ -172,6 +174,7 @@ function currentSettings(): AdminSettings {
     soundEnabled: settings.soundEnabled,
     notificationsEnabled: settings.notificationsEnabled,
     fearEffectEnabled: settings.fearEffectEnabled,
+    themeColor: settings.themeColor,
     autoGenerateEnabled: settings.autoGenerateEnabled,
     dataCollectionEnabled: settings.dataCollectionEnabled,
   }

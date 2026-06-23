@@ -6,9 +6,12 @@ export type AppSettings = {
   soundEnabled: boolean
   notificationsEnabled: boolean
   fearEffectEnabled: boolean
+  themeColor: ThemeColor
   autoGenerateEnabled?: boolean
   dataCollectionEnabled?: boolean
 }
+
+type ThemeColor = 0 | 1 | 2
 
 type LearningHistoryItem = {
   id: string
@@ -25,6 +28,7 @@ const defaultSettings: AppSettings = {
   soundEnabled: true,
   notificationsEnabled: true,
   fearEffectEnabled: true,
+  themeColor: 0,
   autoGenerateEnabled: false,
   dataCollectionEnabled: true,
 }
@@ -39,6 +43,10 @@ const currentFile = fileURLToPath(import.meta.url)
 const dataDir = path.resolve(path.dirname(currentFile), '../data')
 const dataFile = path.join(dataDir, 'settings.json')
 
+function normalizeThemeColor(value: unknown): ThemeColor {
+  return value === 1 || value === 2 ? value : defaultSettings.themeColor
+}
+
 function normalizeSettings(input: Partial<AppSettings> | undefined): AppSettings {
   return {
     soundEnabled:
@@ -51,6 +59,7 @@ function normalizeSettings(input: Partial<AppSettings> | undefined): AppSettings
       typeof input?.fearEffectEnabled === 'boolean'
         ? input.fearEffectEnabled
         : defaultSettings.fearEffectEnabled,
+    themeColor: normalizeThemeColor(input?.themeColor),
     autoGenerateEnabled:
       typeof input?.autoGenerateEnabled === 'boolean'
         ? input.autoGenerateEnabled
