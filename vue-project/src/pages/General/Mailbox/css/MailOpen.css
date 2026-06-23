@@ -6,10 +6,10 @@
   height: 42px;
   flex: 0 0 auto;
   place-items: center;
-  border: 1px solid #4d6079;
+  border: 1px solid var(--panel-border);
   border-radius: 50%;
-  background: #111a2f;
-  color: #ffffff;
+  background: var(--surface-bg);
+  color: var(--page-text);
   cursor: pointer;
   transition:
     background-color 160ms ease,
@@ -18,8 +18,8 @@
 
 .back-button:hover,
 .back-button:focus-visible {
-  border-color: #45a4ff;
-  background: #1f55ca;
+  border-color: var(--accent-strong);
+  background: var(--sidebar-active-bg);
   outline: none;
 }
 
@@ -27,13 +27,12 @@
   font-size: 22px;
 }
 
-
 .mail-open-hero p,
 .mail-open-panel--loading p,
 .mail-open-panel--message p,
 .mail-title-row p,
 .sender-summary span {
-  color: #9fbbe0;
+  color: var(--muted);
 }
 
 .mail-open-panel--loading,
@@ -58,15 +57,15 @@
   width: 42px;
   height: 42px;
   flex: 0 0 auto;
-  border: 4px solid #26334a;
-  border-top-color: #45a4ff;
+  border: 4px solid var(--toggle-bg);
+  border-top-color: var(--accent-strong);
   border-radius: 50%;
   animation: mail-open-loading 900ms linear infinite;
 }
 
 .mail-open-message-icon {
   flex: 0 0 auto;
-  color: #ff7382;
+  color: var(--danger);
   font-size: 34px;
 }
 
@@ -81,10 +80,10 @@
   min-height: 38px;
   margin-left: auto;
   padding: 0 18px;
-  border: 1px solid #4d6079;
+  border: 1px solid var(--panel-border);
   border-radius: 8px;
   background: transparent;
-  color: #ffffff;
+  color: var(--page-text);
   font-size: 14px;
   font-weight: 800;
   cursor: pointer;
@@ -92,7 +91,7 @@
 
 .secondary-button:hover,
 .secondary-button:focus-visible {
-  background: #111a2f;
+  background: var(--surface-bg);
   outline: none;
 }
 
@@ -133,13 +132,13 @@
 }
 
 .action-button--secondary {
-  border: 1px solid #4d6079;
+  border: 1px solid var(--panel-border);
   background: transparent;
-  color: #ffffff;
+  color: var(--page-text);
 }
 
 .action-button--secondary:hover:not(:disabled) {
-  background: #111a2f;
+  background: var(--surface-bg);
 }
 
 .action-button--warning {
@@ -206,7 +205,8 @@
   gap: 14px;
   padding: 12px 14px;
   border-radius: 8px;
-  background: #111a2f;
+  background: var(--surface-bg);
+  color: var(--page-text);
 }
 
 .sender-avatar {
@@ -248,8 +248,8 @@
   min-height: 220px;
   padding: 22px;
   border-radius: 8px;
-  background: #111a2f;
-  color: #ffffff;
+  background: var(--surface-bg);
+  color: var(--page-text);
   line-height: 1.7;
   word-break: break-word;
 }
@@ -289,8 +289,8 @@
   padding: 0 14px;
   border: 1px solid transparent;
   border-radius: 8px;
-  background: #111a2f;
-  color: #ffffff;
+  background: var(--surface-bg);
+  color: var(--page-text);
   cursor: pointer;
   text-align: left;
   transition:
@@ -300,8 +300,8 @@
 
 .attachment-button:hover:not(:disabled),
 .attachment-button:focus-visible:not(:disabled) {
-  border-color: #45a4ff;
-  background: #162444;
+  border-color: var(--accent-strong);
+  background: color-mix(in srgb, var(--accent-strong) 12%, var(--surface-bg));
   outline: none;
 }
 
@@ -341,7 +341,7 @@
 
   .mail-open-hero h1 {
     font-size: 28px;
-}
+  }
 
   .action-bar {
     display: grid;

@@ -16,7 +16,7 @@
 .scenario-card__block li,
 .situation-panel p,
 .situation-notes {
-  color: #9fbbe0;
+  color: var(--muted);
 }
 
 .scenario-grid {
@@ -37,10 +37,10 @@
   flex-direction: column;
   align-items: stretch;
   padding: 28px 30px 30px;
-  border: 2px solid #34465f;
+  border: 2px solid var(--panel-border);
   border-radius: 16px;
-  background: #172337;
-  color: #ffffff;
+  background: var(--panel-bg);
+  color: var(--page-text);
   cursor: pointer;
   text-align: left;
   transition:
@@ -50,7 +50,7 @@
 
 .scenario-card--selected .scenario-card__button {
   border-color: #00d66f;
-  background: #15383d;
+  background: color-mix(in srgb, var(--success) 16%, var(--panel-bg));
 }
 
 .scenario-card__head {
@@ -135,7 +135,7 @@
 .scenario-card__divider {
   height: 1px;
   margin: 16px 0;
-  background: #34465f;
+  background: var(--panel-border);
 }
 
 .scenario-card__label--danger {
@@ -192,7 +192,7 @@
 }
 
 .situation-notes strong {
-  color: #ffffff;
+  color: var(--heading-text);
 }
 
 .situation-notes__mark--business {
@@ -215,11 +215,11 @@
 }
 
 .situation-message--error {
-  color: #ff7382;
+  color: var(--danger);
 }
 
 .situation-message--success {
-  color: #77d99a;
+  color: var(--success);
 }
 
 .help-button {
@@ -228,10 +228,10 @@
   bottom: 12px;
   width: 34px;
   height: 34px;
-  border: 1px solid #4d6079;
+  border: 1px solid var(--panel-border);
   border-radius: 50%;
-  background: #111a2f;
-  color: #ffffff;
+  background: var(--surface-bg);
+  color: var(--page-text);
   font-size: 22px;
   line-height: 1;
   cursor: pointer;

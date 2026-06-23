@@ -3,8 +3,8 @@
   box-sizing: border-box;
   min-height: 100vh;
   padding: 28px 30px 30px;
-  background: #172337;
-  color: #ffffff;
+  background: var(--page-bg);
+  color: var(--page-text);
 }
 
 .score-hero {
@@ -36,7 +36,7 @@
   min-height: 174px;
   align-content: start;
   padding: 28px 30px;
-  border: 1px solid #34465f;
+  border: 1px solid var(--panel-border);
   border-radius: 8px;
 }
 
@@ -73,18 +73,19 @@
 }
 
 .score-stat-card--unanswered {
-  border-color: #34465f;
-  background: #192840;
-  color: #9fbbe0;
+  border-color: var(--panel-border);
+  background: var(--surface-bg);
+  color: var(--muted);
 }
 
 .score-total-panel {
   width: min(100%, 1040px);
   min-height: 248px;
   padding: 28px 30px 30px;
-  border: 1px solid #34465f;
+  border: 1px solid var(--panel-border);
   border-radius: 8px;
-  background: #172337;
+  background: var(--panel-bg);
+  color: var(--page-text);
 }
 
 .score-total-panel h2 {
@@ -120,7 +121,7 @@
   height: 20px;
   margin-top: 22px;
   border-radius: 999px;
-  background: #394c68;
+  background: var(--surface-border);
 }
 
 .score-progress span {
@@ -141,7 +142,7 @@
 }
 
 .score-total-footer span {
-  color: #9fbbe0;
+  color: var(--muted);
   font-size: 17px;
   line-height: 1.3;
 }
@@ -171,8 +172,8 @@
   width: 42px;
   height: 42px;
   flex: 0 0 auto;
-  border: 4px solid #26334a;
-  border-top-color: #45a4ff;
+  border: 4px solid var(--toggle-bg);
+  border-top-color: var(--accent-strong);
   border-radius: 50%;
   animation: score-loading 900ms linear infinite;
 }
@@ -189,7 +190,7 @@
 
 .score-message-icon {
   flex: 0 0 auto;
-  color: #ff7382;
+  color: var(--danger);
   font-size: 34px;
 }
 
@@ -197,10 +198,10 @@
   min-height: 38px;
   margin-left: auto;
   padding: 0 18px;
-  border: 1px solid #4d6079;
+  border: 1px solid var(--panel-border);
   border-radius: 8px;
   background: transparent;
-  color: #ffffff;
+  color: var(--page-text);
   font-size: 14px;
   font-weight: 800;
   cursor: pointer;
@@ -208,7 +209,7 @@
 
 .secondary-button:hover,
 .secondary-button:focus-visible {
-  background: #111a2f;
+  background: var(--surface-bg);
   outline: none;
 }
 
@@ -220,7 +221,7 @@
 }
 
 .score-message--info {
-  color: #77d99a;
+  color: var(--success);
 }
 
 @keyframes score-loading {
