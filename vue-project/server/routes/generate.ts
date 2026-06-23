@@ -145,17 +145,21 @@ function isCloudflareLimitError(error: unknown): error is CloudflareImageGenerat
   if (!(error instanceof CloudflareImageGenerationError)) return false
 
   const body = error.body.toLowerCase()
+  const fallbackStatuses = new Set([402, 403, 408, 409, 425, 429, 500, 502, 503, 504])
   return (
-    error.status === 402 ||
-    error.status === 403 ||
-    error.status === 429 ||
-    error.status === 503 ||
+    fallbackStatuses.has(error.status) ||
     body.includes('limit') ||
     body.includes('quota') ||
     body.includes('rate') ||
     body.includes('throttl') ||
     body.includes('capacity') ||
-    body.includes('too many')
+    body.includes('too many') ||
+    body.includes('exceed') ||
+    body.includes('unavailable') ||
+    body.includes('overload') ||
+    body.includes('temporarily') ||
+    body.includes('try again') ||
+    body.includes('resource')
   )
 }
 
@@ -366,7 +370,9 @@ async function generateQuestionImage(question: GeneratedQuestion) {
       }
 
       lastLimitError = error
-      console.warn(`Cloudflare image model limit reached. Falling back from ${error.modelId}.`)
+      console.warn(
+        `Cloudflare image model unavailable. Falling back from ${error.modelId} (${error.status}).`,
+      )
     }
   }
 

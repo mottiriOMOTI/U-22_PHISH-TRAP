@@ -14,7 +14,7 @@ import usersListRoutes from './routes/usersList'
 
 const app = express();
 const port = Number(process.env.API_PORT) || 3000;
-app.use(express.json({ limit: '5mb' }))
+app.use(express.json({ limit: '25mb' }))
 
 // CORSヘッダー設定
 app.use((req, res, next) => {
