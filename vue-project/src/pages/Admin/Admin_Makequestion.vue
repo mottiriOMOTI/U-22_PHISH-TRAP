@@ -273,8 +273,8 @@ function deleteGeneratedQuestion(question: EditableGeneratedQuestion) {
 .make-question-page {
   min-height: 100vh;
   padding: 36px 26px 40px 30px;
-  background: #172337;
-  color: #ffffff;
+  background: var(--page-bg);
+  color: var(--page-text);
 }
 
 .make-question-hero {
@@ -285,14 +285,14 @@ function deleteGeneratedQuestion(question: EditableGeneratedQuestion) {
 }
 
 .make-question-hero__icon {
-  color: #b34aff;
+  color: var(--accent);
   font-size: 48px;
   margin-top: -2px;
 }
 
 .make-question-hero h1 {
   margin: 0;
-  color: #ffffff;
+  color: var(--heading-text);
   font-size: 40px;
   font-weight: 900;
   letter-spacing: 0;
@@ -301,7 +301,7 @@ function deleteGeneratedQuestion(question: EditableGeneratedQuestion) {
 
 .make-question-hero p {
   margin: 9px 0 0;
-  color: #98b3d6;
+  color: var(--muted);
   font-size: 18px;
   font-weight: 500;
 }
@@ -311,14 +311,14 @@ function deleteGeneratedQuestion(question: EditableGeneratedQuestion) {
   max-width: 1038px;
   min-height: 466px;
   padding: 28px 30px 30px;
-  border: 1px solid #31425e;
+  border: 1px solid var(--panel-border);
   border-radius: 17px;
-  background: #1b2a40;
+  background: var(--panel-bg);
 }
 
 .generator-panel__copy h2 {
   margin: 0;
-  color: #ffffff;
+  color: var(--heading-text);
   font-size: 22px;
   font-weight: 900;
   letter-spacing: 0;
@@ -326,7 +326,7 @@ function deleteGeneratedQuestion(question: EditableGeneratedQuestion) {
 
 .generator-panel__copy p {
   margin: 10px 0 0;
-  color: #9bb4d2;
+  color: var(--muted);
   font-size: 18px;
   font-weight: 500;
 }
@@ -350,11 +350,11 @@ function deleteGeneratedQuestion(question: EditableGeneratedQuestion) {
   width: 100%;
   height: 46px;
   padding: 0 48px 0 16px;
-  border: 1px solid #344761;
+  border: 1px solid var(--surface-border);
   border-radius: 9px;
   appearance: none;
-  background: #1b293f;
-  color: #ffffff;
+  background: var(--surface-bg);
+  color: var(--page-text);
   cursor: pointer;
   font: inherit;
   font-size: 16px;
@@ -368,15 +368,15 @@ function deleteGeneratedQuestion(question: EditableGeneratedQuestion) {
 }
 
 .category-field select:focus-visible {
-  border-color: #ad18f2;
-  box-shadow: 0 0 0 3px rgba(173, 24, 242, 0.24);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 24%, transparent);
 }
 
 .category-field__icon {
   position: absolute;
   top: 50%;
   right: 15px;
-  color: #536681;
+  color: var(--muted);
   font-size: 22px;
   pointer-events: none;
   transform: translateY(-50%);
@@ -389,7 +389,7 @@ function deleteGeneratedQuestion(question: EditableGeneratedQuestion) {
   justify-content: center;
   gap: 9px;
   border: 0;
-  color: #ffffff;
+  color: var(--sidebar-active-text);
   cursor: pointer;
   font: inherit;
   font-weight: 900;
@@ -405,7 +405,7 @@ function deleteGeneratedQuestion(question: EditableGeneratedQuestion) {
   height: 45px;
   padding: 0 18px;
   border-radius: 9px;
-  background: linear-gradient(90deg, #b715f5 0%, #a516f0 100%);
+  background: var(--accent);
   font-size: 16px;
 }
 
@@ -413,7 +413,7 @@ function deleteGeneratedQuestion(question: EditableGeneratedQuestion) {
   min-height: 40px;
   padding: 0 16px;
   border-radius: 8px;
-  background: rgba(173, 24, 242, 0.24);
+  background: color-mix(in srgb, var(--accent) 24%, transparent);
   font-size: 14px;
 }
 
@@ -432,7 +432,7 @@ function deleteGeneratedQuestion(question: EditableGeneratedQuestion) {
 
 .generate-toggle {
   flex: 0 0 auto;
-  color: #dbeafe;
+  color: var(--page-text);
   font-weight: 900;
 }
 
@@ -445,15 +445,15 @@ function deleteGeneratedQuestion(question: EditableGeneratedQuestion) {
 }
 
 .panel-message--error {
-  border: 1px solid rgba(255, 92, 112, 0.42);
-  background: rgba(255, 92, 112, 0.12);
-  color: #ffd4dc;
+  border: 1px solid color-mix(in srgb, var(--danger) 42%, transparent);
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  color: var(--danger);
 }
 
 .panel-message--success {
-  border: 1px solid rgba(64, 214, 132, 0.42);
-  background: rgba(64, 214, 132, 0.12);
-  color: #d2ffe4;
+  border: 1px solid color-mix(in srgb, var(--success) 42%, transparent);
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+  color: var(--success);
 }
 
 .empty-state {
@@ -463,12 +463,12 @@ function deleteGeneratedQuestion(question: EditableGeneratedQuestion) {
   justify-content: center;
   flex-direction: column;
   gap: 30px;
-  color: #9bb4d2;
+  color: var(--muted);
   text-align: center;
 }
 
 .empty-state__icon {
-  color: #536681;
+  color: var(--muted);
   font-size: 76px;
 }
 
@@ -493,33 +493,33 @@ function deleteGeneratedQuestion(question: EditableGeneratedQuestion) {
 
 .generated-header h3 {
   margin: 0;
-  color: #ffffff;
+  color: var(--heading-text);
   font-size: 20px;
   font-weight: 900;
 }
 
 .generated-header span {
-  color: #9bb4d2;
+  color: var(--muted);
   font-size: 13px;
   font-weight: 700;
 }
 
 .generated-list :deep(.question-card) {
-  border-color: #31425e;
-  background: #172337;
-  color: #ffffff;
+  border-color: var(--surface-border);
+  background: var(--surface-bg);
+  color: var(--page-text);
 }
 
 .generated-list :deep(.question-card:hover),
 .generated-list :deep(.question-card:focus-visible) {
-  border-color: rgba(179, 74, 255, 0.68);
+  border-color: color-mix(in srgb, var(--accent) 68%, transparent);
   box-shadow: 0 14px 30px rgba(2, 8, 23, 0.22);
 }
 
 .generated-list :deep(.question-preview),
 .generated-list :deep(.question-sender),
 .generated-list :deep(.text-medium-emphasis) {
-  color: #9bb4d2 !important;
+  color: var(--muted) !important;
 }
 
 .sr-only {

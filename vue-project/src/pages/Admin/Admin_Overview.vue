@@ -339,7 +339,7 @@ function formatDate(iso: string | null): string {
 
   padding: 24px;
 
-  background-color: #f8fafc;
+  background-color: var(--page-bg);
 }
 
 /* ヘッダー */
@@ -359,14 +359,14 @@ function formatDate(iso: string | null): string {
 
   font-weight: bold;
 
-  color: #0f172a;
+  color: var(--heading-text);
 }
 
 /* サブタイトル */
 .subtitle {
   margin-top: 4px;
 
-  color: #64748b;
+  color: var(--muted);
 }
 
 
@@ -384,7 +384,8 @@ function formatDate(iso: string | null): string {
 
 /* カード */
 .card {
-  background-color: white;
+  background-color: var(--panel-bg);
+  border: 1px solid var(--panel-border);
 
   border-radius: 16px;
 
@@ -397,7 +398,7 @@ function formatDate(iso: string | null): string {
 
   font-weight: bold;
 
-  color: #0f172a;
+  color: var(--heading-text);
 
   margin-bottom: 16px;
 }
@@ -410,7 +411,7 @@ function formatDate(iso: string | null): string {
 
   border-radius: 8px;
 
-  background-color: #e2e8f0;
+  background-color: var(--surface-bg);
 }
 
 .count-box {
@@ -420,14 +421,14 @@ function formatDate(iso: string | null): string {
   min-width: 120px;
   padding: 16px;
   border-radius: 8px;
-  background-color: #e2e8f0;
-  color: #0f172a;
+  background-color: var(--surface-bg);
+  color: var(--page-text);
 }
 
 .count-display {
   font-size: 24px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--heading-text);
 }
 
 .count-row {
@@ -439,14 +440,14 @@ function formatDate(iso: string | null): string {
 }
 
 .count-row span:last-child {
-  color: #0f172a;
+  color: var(--heading-text);
 }
 
 /* 説明 */
 .description {
   margin-bottom: 24px;
 
-  color: #64748b;
+  color: var(--muted);
 }
 
 /* 問題 */
@@ -465,7 +466,7 @@ function formatDate(iso: string | null): string {
 
 /* 問題名 */
 .question-name {
-  color: #0f172a;
+  color: var(--page-text);
 }
 
 /* バー背景 */
@@ -474,7 +475,7 @@ function formatDate(iso: string | null): string {
 
   height: 8px;
 
-  background-color: #e2e8f0;
+  background-color: var(--surface-bg);
 
   border-radius: 9999px;
 
@@ -489,7 +490,7 @@ function formatDate(iso: string | null): string {
 
   border-radius: 9999px;
 
-  background-color: #22c55e;
+  background-color: var(--success);
 }
 
 /* レスポンシブ */
@@ -556,7 +557,7 @@ function formatDate(iso: string | null): string {
 }
 
 .user-card-email {
-  color: rgba(0, 0, 0, 0.65);
+  color: var(--muted);
   font-size: 0.95rem;
 }
 
