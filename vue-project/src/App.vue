@@ -32,7 +32,6 @@ import HeaderSetting from './components/layout/userHeader/Header_Setting.vue'
 import HeaderSituation from './components/layout/userHeader/Header_Situation.vue'
 
 import HeaderAdminMakequestion from './components/layout/adminHeader/Header_Admin_Makequestion.vue'
-import HeaderAdminOverview from './components/layout/adminHeader/Header_Admin_Overview.vue'
 import HeaderAdminQuestionList from './components/layout/adminHeader/Header_Admin_QuestionList.vue'
 import HeaderAdminSetting from './components/layout/adminHeader/Header_Admin_Setting.vue'
 
@@ -73,8 +72,6 @@ const headerComponent = computed(() => {
       return HeaderSetting
     case 'mailboxList':
       return HeaderMailboxList
-    case 'admin_overview':
-      return HeaderAdminOverview
     case 'admin_makequestion':
       return HeaderAdminMakequestion
     case 'admin_setting':

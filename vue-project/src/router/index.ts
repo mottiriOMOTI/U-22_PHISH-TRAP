@@ -220,7 +220,10 @@ const router = createRouter({
       component: Admin_Overview,
       meta: {
         sidebar: 'admin',
-        header: 'admin_overview',
+        header: null,
+        shell: 'dark',
+        fluid: true,
+        flush: true,
       }
     },
     {
@@ -275,6 +278,9 @@ const router = createRouter({
       meta: {
         sidebar: 'admin',
         header: null,
+        shell: 'dark',
+        fluid: true,
+        flush: true,
       }
     },
     {

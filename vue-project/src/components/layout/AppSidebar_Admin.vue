@@ -51,7 +51,7 @@ const navItems: AdminNavItem[] = [
   {
     label: '概要',
     to: '/admin_overview',
-    icon: 'mdi-chart-bar',
+    icon: 'mdi-account-group-outline',
     activePaths: ['/admin_overview'],
   },
   {
