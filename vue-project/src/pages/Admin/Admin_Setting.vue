@@ -168,6 +168,10 @@
 import { computed, defineComponent, h, onMounted, reactive, ref } from 'vue'
 
 import { fetchAppSettings, saveAppSettings, type AppSettings } from '@/api/settings'
+import {
+  ensureBrowserNotificationPermission,
+  type BrowserNotificationPermissionResult,
+} from '@/lib/notifications'
 import { applyThemeColor, normalizeThemeColor, type ThemeColor } from '@/lib/themeColor'
 
 type AdminSettings = Required<AppSettings>
@@ -298,6 +302,30 @@ function showError(message: string) {
   successMessage.value = ''
 }
 
+async function requestBrowserPermissionForNotifications(
+  key: AdminSettingKey,
+  nextValue: boolean,
+): Promise<BrowserNotificationPermissionResult | null> {
+  if (key !== 'notificationsEnabled' || !nextValue) {
+    return null
+  }
+
+  return await ensureBrowserNotificationPermission()
+}
+
+function settingsSavedMessage(permission: BrowserNotificationPermissionResult | null): string {
+  switch (permission) {
+    case 'denied':
+      return '設定を保存しました。ブラウザ通知は許可されていません。'
+    case 'unsupported':
+      return '設定を保存しました。このブラウザではブラウザ通知を使用できません。'
+    case 'default':
+      return '設定を保存しました。ブラウザ通知は許可待ちです。'
+    default:
+      return '設定を保存しました。'
+  }
+}
+
 async function loadSettings() {
   isLoading.value = true
 
@@ -319,8 +347,9 @@ async function toggleSetting(key: AdminSettingKey, nextValue: boolean) {
   savingKey.value = key
 
   try {
+    const permission = await requestBrowserPermissionForNotifications(key, nextValue)
     applySettings(await saveAppSettings(currentSettings()))
-    showSuccess('設定を保存しました。')
+    showSuccess(settingsSavedMessage(permission))
   } catch (error) {
     console.error(error)
     settings[key] = previousValue

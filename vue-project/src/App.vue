@@ -2,6 +2,7 @@
   <v-app>
     <component :is="sidebarComponent" />
     <component :is="headerComponent" />
+    <NotifyCenter />
 
     <v-main :class="['app-main', { 'app-main--dark': route.meta.shell === 'dark' }]">
       <v-container
@@ -21,6 +22,7 @@ import { useRoute } from 'vue-router'
 import { fetchAppSettings } from './api/settings'
 import AppSidebarAdmin from './components/layout/AppSidebar_Admin.vue'
 import AppSidebarGeneral from './components/layout/AppSidebar_General.vue'
+import NotifyCenter from './components/ui/NotifyCenter.vue'
 import { applyThemeColor, DEFAULT_THEME_COLOR } from './lib/themeColor'
 
 import HeaderAccount from './components/layout/userHeader/Header_Account.vue'

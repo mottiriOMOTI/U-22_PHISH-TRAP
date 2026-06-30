@@ -96,6 +96,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import DOMPurify from 'dompurify'
 import { fetchMail, type MailDetail } from '@/api/mailApi'
+import { notifyWhenEnabled } from '@/lib/notifications'
 
 type ActionType = 'link' | 'attachment' | 'reply' | 'delete' | 'report'
 
@@ -161,11 +162,23 @@ function formatDate(iso: string): string {
   })
 }
 
+function notifyJudgement(mailDetail: MailDetail, isCorrect: boolean) {
+  void notifyWhenEnabled({
+    title: isCorrect ? '正しい対応です' : '危険な対応を選択しました',
+    body: isCorrect
+      ? `「${mailDetail.title}」の判定を完了しました。`
+      : '解説を確認して、安全な対応を見直しましょう。',
+    level: isCorrect ? 'success' : 'warning',
+    tag: `mail-judgement-${mailDetail.id}`,
+  })
+}
+
 function judgeAction(action: ActionType, value?: string) {
   if (isJudging.value || !mail.value) return
   const m = mail.value
 
   let nextRoute: string | null = null
+  let isCorrect = false
 
   if (m.is_phishing) {
     switch (action) {
@@ -185,6 +198,7 @@ function judgeAction(action: ActionType, value?: string) {
       case 'delete':
       case 'report':
         nextRoute = ROUTE_EXPLANATION
+        isCorrect = true
         break
     }
   } else if (action === 'report') {
@@ -193,6 +207,7 @@ function judgeAction(action: ActionType, value?: string) {
 
   if (nextRoute) {
     isJudging.value = true
+    notifyJudgement(m, isCorrect)
     router.push({ path: nextRoute, query: { id: m.id } })
   }
 }

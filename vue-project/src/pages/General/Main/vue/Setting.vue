@@ -136,6 +136,10 @@ import {
   saveAppSettings,
   type AppSettings,
 } from '@/api/settings'
+import {
+  ensureBrowserNotificationPermission,
+  type BrowserNotificationPermissionResult,
+} from '@/lib/notifications'
 import { applyThemeColor, normalizeThemeColor, type ThemeColor } from '@/lib/themeColor'
 
 type SettingKey = 'soundEnabled' | 'notificationsEnabled' | 'fearEffectEnabled'
@@ -240,6 +244,30 @@ function showError(message: string) {
   successMessage.value = ''
 }
 
+async function requestBrowserPermissionForNotifications(
+  key: SettingKey,
+  nextValue: boolean,
+): Promise<BrowserNotificationPermissionResult | null> {
+  if (key !== 'notificationsEnabled' || !nextValue) {
+    return null
+  }
+
+  return await ensureBrowserNotificationPermission()
+}
+
+function settingsSavedMessage(permission: BrowserNotificationPermissionResult | null): string {
+  switch (permission) {
+    case 'denied':
+      return '設定を保存しました。ブラウザ通知は許可されていません。'
+    case 'unsupported':
+      return '設定を保存しました。このブラウザではブラウザ通知を使用できません。'
+    case 'default':
+      return '設定を保存しました。ブラウザ通知は許可待ちです。'
+    default:
+      return '設定を保存しました'
+  }
+}
+
 async function loadSettings() {
   isLoading.value = true
   try {
@@ -257,13 +285,15 @@ async function toggleSetting(key: SettingKey) {
   if (isLoading.value || savingKey.value || savingThemeColor.value) return
 
   const previousValue = settings[key]
-  settings[key] = !previousValue
+  const nextValue = !previousValue
+  settings[key] = nextValue
   savingKey.value = key
 
   try {
+    const permission = await requestBrowserPermissionForNotifications(key, nextValue)
     const nextSettings = await saveAppSettings({ ...settings })
     applySettings(nextSettings)
-    showSuccess('設定を保存しました')
+    showSuccess(settingsSavedMessage(permission))
   } catch (error) {
     console.error(error)
     settings[key] = previousValue
