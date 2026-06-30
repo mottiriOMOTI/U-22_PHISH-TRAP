@@ -4,7 +4,7 @@
       <RouterLink to="/admin_overview" class="admin-brand" aria-label="PHISH-TRAP 管理画面">
         <v-icon icon="mdi-shield-outline" class="admin-brand__icon" />
         <span class="admin-brand__text">
-          <span class="admin-brand__title">PHISH-TRAP <strong>死線</strong></span>
+          <span class="admin-brand__title">PHISH-TRAP <strong>防人</strong></span>
           <span class="admin-brand__subtitle">管理画面</span>
         </span>
       </RouterLink>
@@ -27,7 +27,7 @@
           <v-icon icon="mdi-logout" />
           <span>ログアウト</span>
         </RouterLink>
-        <p>防人（さきもりんちゅ）</p>
+        <p>防人 管理システム</p>
       </div>
     </div>
   </v-navigation-drawer>
@@ -81,9 +81,9 @@ function isActive(item: AdminNavItem) {
 
 <style lang="css" scoped>
 .admin-sidebar {
-  border-right: 1px solid #2f3f59;
-  background: #111b2f !important;
-  color: #ffffff;
+  border-right: 1px solid var(--sidebar-border);
+  background: var(--sidebar-bg) !important;
+  color: var(--sidebar-text);
 }
 
 .admin-sidebar :deep(.v-navigation-drawer__content) {
@@ -102,12 +102,12 @@ function isActive(item: AdminNavItem) {
   width: fit-content;
   align-items: center;
   gap: 11px;
-  color: #ffffff;
+  color: var(--sidebar-text);
   text-decoration: none;
 }
 
 .admin-brand__icon {
-  color: #b34aff;
+  color: var(--accent);
   font-size: 42px;
 }
 
@@ -118,7 +118,7 @@ function isActive(item: AdminNavItem) {
 }
 
 .admin-brand__title {
-  color: #ffffff;
+  color: var(--sidebar-text);
   font-size: 21px;
   font-weight: 900;
   letter-spacing: 0;
@@ -127,12 +127,12 @@ function isActive(item: AdminNavItem) {
 }
 
 .admin-brand__title strong {
-  color: #ff4057;
+  color: var(--danger);
   font-weight: 900;
 }
 
 .admin-brand__subtitle {
-  color: #9bb4d2;
+  color: var(--sidebar-muted);
   font-size: 13px;
   line-height: 1;
 }
@@ -152,7 +152,7 @@ function isActive(item: AdminNavItem) {
   gap: 15px;
   padding: 0 18px;
   border-radius: 28px;
-  color: #d7e4fb;
+  color: var(--sidebar-link-text);
   font-size: 19px;
   font-weight: 900;
   line-height: 1.2;
@@ -171,14 +171,14 @@ function isActive(item: AdminNavItem) {
 
 .admin-nav__link:hover,
 .admin-nav__link:focus-visible {
-  color: #ffffff;
+  color: var(--sidebar-active-text);
   outline: none;
   transform: translateX(2px);
 }
 
 .admin-nav__link--active {
-  background: linear-gradient(90deg, #b715f5 0%, #a516f0 100%);
-  color: #ffffff;
+  background: var(--sidebar-active-bg);
+  color: var(--sidebar-active-text);
 }
 
 .admin-sidebar__footer {
@@ -192,10 +192,10 @@ function isActive(item: AdminNavItem) {
   align-items: center;
   justify-content: center;
   gap: 13px;
-  border: 1px solid #d8dde8;
+  border: 1px solid var(--sidebar-border);
   border-radius: 22px;
-  background: #ffffff;
-  color: #c5d2e5;
+  background: var(--sidebar-logout-bg);
+  color: var(--sidebar-logout-text);
   font-size: 14px;
   font-weight: 900;
   text-decoration: none;
@@ -207,7 +207,7 @@ function isActive(item: AdminNavItem) {
 
 .admin-sidebar__footer p {
   margin: 22px 0 0;
-  color: #7287ad;
+  color: var(--sidebar-muted);
   font-size: 13px;
   text-align: center;
 }

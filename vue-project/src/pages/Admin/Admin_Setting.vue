@@ -11,7 +11,7 @@
     <section class="setting-panel">
       <div class="setting-panel__header">
         <h2>通知設定</h2>
-        <p>管理者への通知を管理します</p>
+        <p>管理者向けの通知を管理します</p>
       </div>
 
       <SettingToggleRow
@@ -20,10 +20,79 @@
         title="メール通知"
         description="ユーザー活動の通知を受け取る"
         :model-value="settings.notificationsEnabled"
-        :disabled="isLoading || savingKey !== null"
+        :disabled="isLoading || savingKey !== null || savingThemeColor"
         :loading="savingKey === 'notificationsEnabled'"
         @update:model-value="toggleSetting('notificationsEnabled', $event)"
       />
+    </section>
+
+    <section class="setting-panel">
+      <div class="setting-panel__header">
+        <h2>表示設定</h2>
+        <p>管理画面とアプリ全体の配色を設定します</p>
+      </div>
+
+      <article class="setting-row setting-row--theme">
+        <div class="setting-row__content">
+          <v-icon icon="mdi-palette-outline" class="setting-row__icon setting-row__icon--theme" />
+          <div class="setting-row__text">
+            <strong>テーマカラー</strong>
+            <span>画面の配色を選択します</span>
+          </div>
+        </div>
+
+        <div class="theme-accordion">
+          <button
+            class="theme-accordion__trigger"
+            type="button"
+            :aria-expanded="isThemeSelectorOpen"
+            aria-controls="admin-theme-color-options"
+            :disabled="isLoading || savingKey !== null || savingThemeColor"
+            @click="toggleThemeSelector"
+          >
+            <span
+              :class="['theme-option__swatch', selectedThemeColorOption.swatchClass]"
+              aria-hidden="true"
+            />
+            <span class="theme-option__text">
+              <span class="theme-option__label">{{ selectedThemeColorOption.label }}</span>
+              <span class="theme-option__description">
+                {{ selectedThemeColorOption.description }}
+              </span>
+            </span>
+            <v-icon
+              :icon="isThemeSelectorOpen ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+              class="theme-accordion__chevron"
+            />
+          </button>
+
+          <div
+            v-if="isThemeSelectorOpen"
+            id="admin-theme-color-options"
+            class="theme-selector"
+            role="radiogroup"
+            aria-label="テーマカラー"
+          >
+            <button
+              v-for="option in themeColorOptions"
+              :key="option.value"
+              class="theme-option"
+              type="button"
+              role="radio"
+              :class="{ 'theme-option--active': settings.themeColor === option.value }"
+              :aria-checked="settings.themeColor === option.value"
+              :disabled="isLoading || savingKey !== null || savingThemeColor"
+              @click="selectThemeColor(option.value)"
+            >
+              <span :class="['theme-option__swatch', option.swatchClass]" aria-hidden="true" />
+              <span class="theme-option__text">
+                <span class="theme-option__label">{{ option.label }}</span>
+                <span class="theme-option__description">{{ option.description }}</span>
+              </span>
+            </button>
+          </div>
+        </div>
+      </article>
     </section>
 
     <section class="setting-panel">
@@ -39,7 +108,7 @@
           title="恐怖演出"
           description="フィッシング攻撃時の演出を有効にする"
           :model-value="settings.fearEffectEnabled"
-          :disabled="isLoading || savingKey !== null"
+          :disabled="isLoading || savingKey !== null || savingThemeColor"
           :loading="savingKey === 'fearEffectEnabled'"
           @update:model-value="toggleSetting('fearEffectEnabled', $event)"
         />
@@ -48,9 +117,9 @@
           icon="mdi-email-outline"
           icon-class="setting-row__icon--generate"
           title="自動問題生成"
-          description="週次で新しい問題を自動生成"
+          description="週次で新しい問題を自動生成する"
           :model-value="settings.autoGenerateEnabled"
-          :disabled="isLoading || savingKey !== null"
+          :disabled="isLoading || savingKey !== null || savingThemeColor"
           :loading="savingKey === 'autoGenerateEnabled'"
           @update:model-value="toggleSetting('autoGenerateEnabled', $event)"
         />
@@ -60,7 +129,7 @@
     <section class="setting-panel setting-panel--data">
       <div class="setting-panel__header">
         <h2>データ管理</h2>
-        <p>学習データの収集と管理</p>
+        <p>学習データの収集と管理を設定します</p>
       </div>
 
       <div class="setting-panel__rows">
@@ -68,9 +137,9 @@
           icon="mdi-database-outline"
           icon-class="setting-row__icon--data"
           title="学習データ収集"
-          description="ユーザーの学習履歴を記録"
+          description="ユーザーの学習履歴を記録する"
           :model-value="settings.dataCollectionEnabled"
-          :disabled="isLoading || savingKey !== null"
+          :disabled="isLoading || savingKey !== null || savingThemeColor"
           :loading="savingKey === 'dataCollectionEnabled'"
           @update:model-value="toggleSetting('dataCollectionEnabled', $event)"
         />
@@ -96,12 +165,20 @@
 </template>
 
 <script setup lang="ts">
-import { defineComponent, h, onMounted, reactive, ref } from 'vue'
+import { computed, defineComponent, h, onMounted, reactive, ref } from 'vue'
 
 import { fetchAppSettings, saveAppSettings, type AppSettings } from '@/api/settings'
+import { applyThemeColor, normalizeThemeColor, type ThemeColor } from '@/lib/themeColor'
 
 type AdminSettings = Required<AppSettings>
 type AdminSettingKey = Exclude<keyof AdminSettings, 'themeColor'>
+
+type ThemeColorOption = {
+  value: ThemeColor
+  label: string
+  description: string
+  swatchClass: string
+}
 
 const settings = reactive<AdminSettings>({
   soundEnabled: true,
@@ -112,10 +189,40 @@ const settings = reactive<AdminSettings>({
   dataCollectionEnabled: true,
 })
 
+const themeColorOptions: ThemeColorOption[] = [
+  {
+    value: 0,
+    label: 'デフォルト',
+    description: '現在の標準配色',
+    swatchClass: 'theme-option__swatch--default',
+  },
+  {
+    value: 1,
+    label: 'ホワイト',
+    description: '明るい配色',
+    swatchClass: 'theme-option__swatch--white',
+  },
+  {
+    value: 2,
+    label: 'ダーク',
+    description: '暗い配色',
+    swatchClass: 'theme-option__swatch--dark',
+  },
+]
+const defaultThemeColorOption = themeColorOptions.find((option) => option.value === 0)!
+
 const isLoading = ref(true)
 const savingKey = ref<AdminSettingKey | null>(null)
+const savingThemeColor = ref(false)
+const isThemeSelectorOpen = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
+
+const selectedThemeColorOption = computed<ThemeColorOption>(
+  () =>
+    themeColorOptions.find((option) => option.value === settings.themeColor) ??
+    defaultThemeColorOption,
+)
 
 const SettingToggleRow = defineComponent({
   name: 'SettingToggleRow',
@@ -164,9 +271,10 @@ function applySettings(nextSettings: AppSettings) {
   settings.soundEnabled = nextSettings.soundEnabled
   settings.notificationsEnabled = nextSettings.notificationsEnabled
   settings.fearEffectEnabled = nextSettings.fearEffectEnabled
-  settings.themeColor = nextSettings.themeColor ?? 0
+  settings.themeColor = normalizeThemeColor(nextSettings.themeColor)
   settings.autoGenerateEnabled = nextSettings.autoGenerateEnabled ?? false
   settings.dataCollectionEnabled = nextSettings.dataCollectionEnabled ?? true
+  applyThemeColor(settings.themeColor)
 }
 
 function currentSettings(): AdminSettings {
@@ -204,7 +312,7 @@ async function loadSettings() {
 }
 
 async function toggleSetting(key: AdminSettingKey, nextValue: boolean) {
-  if (isLoading.value || savingKey.value) return
+  if (isLoading.value || savingKey.value || savingThemeColor.value) return
 
   const previousValue = settings[key]
   settings[key] = nextValue
@@ -219,6 +327,38 @@ async function toggleSetting(key: AdminSettingKey, nextValue: boolean) {
     showError('設定の保存に失敗しました。')
   } finally {
     savingKey.value = null
+  }
+}
+
+function toggleThemeSelector() {
+  if (isLoading.value || savingKey.value || savingThemeColor.value) return
+  isThemeSelectorOpen.value = !isThemeSelectorOpen.value
+}
+
+async function selectThemeColor(themeColor: ThemeColor) {
+  if (isLoading.value || savingKey.value || savingThemeColor.value) return
+
+  if (settings.themeColor === themeColor) {
+    isThemeSelectorOpen.value = false
+    return
+  }
+
+  const previousThemeColor = settings.themeColor
+  settings.themeColor = themeColor
+  applyThemeColor(themeColor)
+  savingThemeColor.value = true
+
+  try {
+    applySettings(await saveAppSettings(currentSettings()))
+    isThemeSelectorOpen.value = false
+    showSuccess('テーマカラーを保存しました。')
+  } catch (error) {
+    console.error(error)
+    settings.themeColor = previousThemeColor
+    applyThemeColor(previousThemeColor)
+    showError('テーマカラーの保存に失敗しました。')
+  } finally {
+    savingThemeColor.value = false
   }
 }
 
@@ -241,8 +381,8 @@ onMounted(loadSettings)
 .admin-setting-page {
   min-height: 100vh;
   padding: 38px 30px 64px;
-  background: #172337;
-  color: #ffffff;
+  background: var(--page-bg);
+  color: var(--page-text);
 }
 
 .admin-setting-hero {
@@ -253,14 +393,14 @@ onMounted(loadSettings)
 }
 
 .admin-setting-hero__icon {
-  color: #b34aff;
+  color: var(--accent);
   font-size: 48px;
   margin-top: -1px;
 }
 
 .admin-setting-hero h1 {
   margin: 0;
-  color: #ffffff;
+  color: var(--heading-text);
   font-size: 40px;
   font-weight: 900;
   letter-spacing: 0;
@@ -269,7 +409,7 @@ onMounted(loadSettings)
 
 .admin-setting-hero p {
   margin: 9px 0 0;
-  color: #98b3d6;
+  color: var(--muted);
   font-size: 18px;
   font-weight: 500;
 }
@@ -278,9 +418,9 @@ onMounted(loadSettings)
   width: 100%;
   max-width: 1020px;
   padding: 29px 30px 30px;
-  border: 1px solid #31425e;
+  border: 1px solid var(--panel-border);
   border-radius: 17px;
-  background: #1b2a40;
+  background: var(--panel-bg);
 }
 
 .setting-panel + .setting-panel {
@@ -289,7 +429,7 @@ onMounted(loadSettings)
 
 .setting-panel__header h2 {
   margin: 0;
-  color: #ffffff;
+  color: var(--heading-text);
   font-size: 22px;
   font-weight: 900;
   letter-spacing: 0;
@@ -297,7 +437,7 @@ onMounted(loadSettings)
 
 .setting-panel__header p {
   margin: 10px 0 0;
-  color: #9bb4d2;
+  color: var(--muted);
   font-size: 18px;
   font-weight: 500;
 }
@@ -315,8 +455,9 @@ onMounted(loadSettings)
   gap: 24px;
   margin-top: 32px;
   padding: 18px 20px;
+  border: 1px solid color-mix(in srgb, var(--surface-border) 70%, transparent);
   border-radius: 10px;
-  background: #121d31;
+  background: var(--surface-bg);
 }
 
 .setting-panel__rows .setting-row {
@@ -340,8 +481,12 @@ onMounted(loadSettings)
   color: #5aa2ff;
 }
 
+.setting-row__icon--theme {
+  color: var(--accent);
+}
+
 .setting-row__icon--fear {
-  color: #ff5b6c;
+  color: var(--danger);
 }
 
 .setting-row__icon--generate {
@@ -349,7 +494,7 @@ onMounted(loadSettings)
 }
 
 .setting-row__icon--data {
-  color: #40d684;
+  color: var(--success);
 }
 
 .setting-row__text {
@@ -359,14 +504,14 @@ onMounted(loadSettings)
 }
 
 .setting-row__text strong {
-  color: #ffffff;
+  color: var(--heading-text);
   font-size: 18px;
   font-weight: 900;
   line-height: 1.2;
 }
 
 .setting-row__text span {
-  color: #9bb4d2;
+  color: var(--muted);
   font-size: 16px;
   font-weight: 500;
   line-height: 1.25;
@@ -382,7 +527,7 @@ onMounted(loadSettings)
   flex: 0 0 auto;
   border: 0;
   border-radius: 999px;
-  background: #aab4c3;
+  background: var(--toggle-bg);
   cursor: pointer;
   transition:
     background 160ms ease,
@@ -391,7 +536,7 @@ onMounted(loadSettings)
 }
 
 .setting-switch--on {
-  background: #0b1020;
+  background: var(--toggle-active-bg);
 }
 
 .setting-switch:disabled {
@@ -415,6 +560,142 @@ onMounted(loadSettings)
   transform: translateX(17px);
 }
 
+.setting-row--theme {
+  align-items: stretch;
+  min-height: 78px;
+  padding: 12px 14px;
+}
+
+.theme-accordion {
+  display: grid;
+  width: min(100%, 300px);
+  flex: 0 0 300px;
+  gap: 8px;
+}
+
+.theme-accordion__trigger {
+  display: flex;
+  width: 100%;
+  min-height: 54px;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  background: var(--panel-bg);
+  color: var(--page-text);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    opacity 160ms ease;
+}
+
+.theme-accordion__trigger:hover:not(:disabled),
+.theme-accordion__trigger[aria-expanded='true'] {
+  border-color: var(--accent-strong);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-strong) 28%, transparent);
+}
+
+.theme-accordion__trigger:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
+.theme-accordion__chevron {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 20px;
+}
+
+.theme-selector {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.theme-option {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  min-height: 54px;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  background: var(--panel-bg);
+  color: var(--page-text);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    opacity 160ms ease;
+}
+
+.theme-option:hover:not(:disabled),
+.theme-option--active {
+  border-color: var(--accent-strong);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-strong) 28%, transparent);
+}
+
+.theme-option:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
+.theme-option__swatch {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  border: 1px solid var(--panel-border);
+  border-radius: 50%;
+}
+
+.theme-option__swatch--default {
+  background: linear-gradient(135deg, #172337 0 50%, #b449ff 50% 100%);
+}
+
+.theme-option__swatch--white {
+  background: linear-gradient(135deg, #ffffff 0 50%, #1f66e5 50% 100%);
+}
+
+.theme-option__swatch--dark {
+  background: linear-gradient(135deg, #050617 0 50%, #8b5cf6 50% 100%);
+}
+
+.theme-option__text {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+  text-align: left;
+}
+
+.theme-option__label {
+  overflow: hidden;
+  color: var(--heading-text);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.theme-option__description {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .export-button {
   display: inline-flex;
   min-height: 46px;
@@ -423,10 +704,10 @@ onMounted(loadSettings)
   gap: 10px;
   margin-top: 0;
   padding: 0 16px;
-  border: 1px solid #465a77;
+  border: 1px solid var(--surface-border);
   border-radius: 9px;
-  background: #121d31;
-  color: #d7e4fb;
+  background: var(--surface-bg);
+  color: var(--page-text);
   cursor: pointer;
   font: inherit;
   font-size: 16px;
@@ -439,8 +720,8 @@ onMounted(loadSettings)
 
 .export-button:hover:not(:disabled),
 .export-button:focus-visible {
-  border-color: rgba(179, 74, 255, 0.74);
-  color: #ffffff;
+  border-color: var(--accent);
+  color: var(--heading-text);
   outline: none;
   transform: translateY(-1px);
 }
@@ -466,15 +747,15 @@ onMounted(loadSettings)
 }
 
 .setting-message--error {
-  border: 1px solid rgba(255, 92, 112, 0.42);
-  background: rgba(255, 92, 112, 0.12);
-  color: #ffd4dc;
+  border: 1px solid color-mix(in srgb, var(--danger) 42%, transparent);
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  color: var(--danger);
 }
 
 .setting-message--success {
-  border: 1px solid rgba(64, 214, 132, 0.42);
-  background: rgba(64, 214, 132, 0.12);
-  color: #d2ffe4;
+  border: 1px solid color-mix(in srgb, var(--success) 42%, transparent);
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+  color: var(--success);
 }
 
 .help-button {
@@ -488,8 +769,8 @@ onMounted(loadSettings)
   justify-content: center;
   border: 0;
   border-radius: 50%;
-  background: #ffffff;
-  color: #111827;
+  background: var(--button-bg);
+  color: var(--button-text);
   cursor: pointer;
   font-size: 27px;
   line-height: 1;
@@ -513,8 +794,27 @@ onMounted(loadSettings)
     flex-direction: column;
   }
 
+  .setting-row--theme {
+    align-items: flex-start;
+  }
+
   .setting-switch {
     align-self: flex-end;
+  }
+
+  .theme-selector {
+    width: 100%;
+  }
+
+  .theme-accordion {
+    width: 100%;
+    flex-basis: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .theme-selector {
+    grid-template-columns: 1fr;
   }
 }
 </style>

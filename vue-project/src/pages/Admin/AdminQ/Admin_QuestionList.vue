@@ -319,8 +319,8 @@ watch(
 .question-list-page {
   min-height: 100vh;
   padding: 39px 26px 40px 30px;
-  background: #172337;
-  color: #ffffff;
+  background: var(--page-bg);
+  color: var(--page-text);
 }
 
 .question-list-hero {
@@ -338,14 +338,14 @@ watch(
 }
 
 .question-list-hero__icon {
-  color: #b34aff;
+  color: var(--accent);
   font-size: 48px;
   margin-top: -2px;
 }
 
 .question-list-hero h1 {
   margin: 0;
-  color: #ffffff;
+  color: var(--heading-text);
   font-size: 40px;
   font-weight: 900;
   letter-spacing: 0;
@@ -354,7 +354,7 @@ watch(
 
 .question-list-hero p {
   margin: 9px 0 0;
-  color: #98b3d6;
+  color: var(--muted);
   font-size: 18px;
   font-weight: 500;
 }
@@ -371,11 +371,11 @@ watch(
   width: 100%;
   height: 46px;
   padding: 0 48px 0 16px;
-  border: 1px solid #344761;
+  border: 1px solid var(--surface-border);
   border-radius: 9px;
   appearance: none;
-  background: #1b293f;
-  color: #ffffff;
+  background: var(--surface-bg);
+  color: var(--page-text);
   cursor: pointer;
   font: inherit;
   font-size: 16px;
@@ -389,15 +389,15 @@ watch(
 }
 
 .scenario-field select:focus-visible {
-  border-color: #ad18f2;
-  box-shadow: 0 0 0 3px rgba(173, 24, 242, 0.24);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 24%, transparent);
 }
 
 .scenario-field__icon {
   position: absolute;
   top: 50%;
   right: 15px;
-  color: #536681;
+  color: var(--muted);
   font-size: 22px;
   pointer-events: none;
   transform: translateY(-50%);
@@ -408,14 +408,14 @@ watch(
   max-width: 1038px;
   min-height: 522px;
   padding: 29px 30px 30px;
-  border: 1px solid #31425e;
+  border: 1px solid var(--panel-border);
   border-radius: 17px;
-  background: #1b2a40;
+  background: var(--panel-bg);
 }
 
 .question-panel__header h2 {
   margin: 0;
-  color: #ffffff;
+  color: var(--heading-text);
   font-size: 22px;
   font-weight: 900;
   letter-spacing: 0;
@@ -423,7 +423,7 @@ watch(
 
 .question-panel__header p {
   margin: 10px 0 0;
-  color: #9bb4d2;
+  color: var(--muted);
   font-size: 18px;
   font-weight: 500;
 }
@@ -443,9 +443,9 @@ watch(
   gap: 26px;
   min-height: 155px;
   padding: 22px 20px;
-  border: 1px solid #506883;
+  border: 1px solid var(--surface-border);
   border-radius: 13px;
-  background: linear-gradient(180deg, #2a3b54 0%, #25364d 100%);
+  background: var(--surface-bg);
   box-shadow: 0 12px 26px rgba(2, 8, 23, 0.2);
   cursor: pointer;
   transition:
@@ -465,7 +465,7 @@ watch(
 
 .question-card:hover,
 .question-card:focus-visible {
-  border-color: rgba(179, 74, 255, 0.74);
+  border-color: color-mix(in srgb, var(--accent) 74%, transparent);
   box-shadow: 0 16px 34px rgba(2, 8, 23, 0.28);
   outline: none;
   transform: translateY(-1px);
@@ -485,7 +485,7 @@ watch(
 
 .question-card h3 {
   margin: 0;
-  color: #ffffff;
+  color: var(--heading-text);
   font-size: 23px;
   font-weight: 900;
   letter-spacing: 0;
@@ -508,18 +508,18 @@ watch(
 }
 
 .mail-type-chip--danger {
-  border: 1px solid #ff4057;
-  color: #ff4057;
+  border: 1px solid var(--danger);
+  color: var(--danger);
 }
 
 .mail-type-chip--safe {
-  border: 1px solid #00e178;
-  color: #00e178;
+  border: 1px solid var(--success);
+  color: var(--success);
 }
 
 .difficulty-chip--easy {
-  border: 1px solid #00d77c;
-  color: #00e178;
+  border: 1px solid var(--success);
+  color: var(--success);
 }
 
 .difficulty-chip--medium {
@@ -529,7 +529,7 @@ watch(
 
 .question-card__sender {
   margin: 16px 0 0;
-  color: #9bb4d2;
+  color: var(--muted);
   font-size: 16px;
   font-weight: 500;
   overflow-wrap: anywhere;
@@ -538,7 +538,7 @@ watch(
 .question-card__body {
   display: -webkit-box;
   margin: 12px 0 0;
-  color: #ffffff;
+  color: var(--page-text);
   font-size: 17px;
   font-weight: 500;
   line-height: 1.42;
@@ -555,7 +555,7 @@ watch(
   gap: 14px;
   min-height: 21px;
   margin-top: 12px;
-  color: #64a3ff;
+  color: var(--accent-strong);
   font-size: 14px;
   font-weight: 800;
 }
@@ -567,7 +567,7 @@ watch(
 }
 
 .question-card__meta :deep(.v-icon) {
-  color: #c7c3df;
+  color: var(--muted);
   font-size: 17px;
 }
 
@@ -578,7 +578,7 @@ watch(
   gap: 12px;
   padding-top: 0;
   padding-left: 22px;
-  border-left: 1px solid rgba(155, 180, 210, 0.16);
+  border-left: 1px solid color-mix(in srgb, var(--muted) 16%, transparent);
 }
 
 .action-button {
@@ -589,7 +589,7 @@ watch(
   gap: 8px;
   padding: 0 13px;
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--button-bg);
   cursor: pointer;
   font: inherit;
   font-size: 16px;
@@ -618,22 +618,22 @@ watch(
 }
 
 .action-button--edit {
-  border: 1px solid #5aa2ff;
-  color: #4d9dff;
+  border: 1px solid var(--accent-strong);
+  color: var(--accent-strong);
 }
 
 .action-button--delete {
-  border: 1px solid #ff4057;
-  color: #ff4057;
+  border: 1px solid var(--danger);
+  color: var(--danger);
 }
 
 .question-card-skeleton {
   min-height: 155px;
-  border: 1px solid #465a77;
+  border: 1px solid var(--surface-border);
   border-radius: 11px;
   background:
-    linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.07) 50%, transparent 100%),
-    #26364d;
+    linear-gradient(90deg, transparent 0%, color-mix(in srgb, var(--page-text) 7%, transparent) 50%, transparent 100%),
+    var(--surface-bg);
   background-size: 220px 100%, 100% 100%;
   animation: shimmer 1.2s infinite linear;
 }
@@ -651,17 +651,17 @@ watch(
 }
 
 .panel-message--error {
-  border: 1px solid rgba(255, 92, 112, 0.42);
-  background: rgba(255, 92, 112, 0.12);
-  color: #ffd4dc;
+  border: 1px solid color-mix(in srgb, var(--danger) 42%, transparent);
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  color: var(--danger);
 }
 
 .panel-message button {
   flex: 0 0 auto;
   border: 0;
   border-radius: 8px;
-  background: #ffffff;
-  color: #ff4057;
+  background: var(--button-bg);
+  color: var(--button-text);
   cursor: pointer;
   font: inherit;
   font-size: 14px;
@@ -676,12 +676,12 @@ watch(
   justify-content: center;
   flex-direction: column;
   gap: 20px;
-  color: #9bb4d2;
+  color: var(--muted);
   text-align: center;
 }
 
 .empty-state__icon {
-  color: #536681;
+  color: var(--muted);
   font-size: 72px;
 }
 
@@ -702,8 +702,8 @@ watch(
   justify-content: center;
   border: 0;
   border-radius: 50%;
-  background: #ffffff;
-  color: #111827;
+  background: var(--button-bg);
+  color: var(--button-text);
   cursor: pointer;
   font-size: 27px;
   line-height: 1;
@@ -763,7 +763,7 @@ watch(
     justify-content: flex-start;
     padding-top: 18px;
     padding-left: 0;
-    border-top: 1px solid rgba(155, 180, 210, 0.16);
+    border-top: 1px solid color-mix(in srgb, var(--muted) 16%, transparent);
     border-left: 0;
   }
 }
