@@ -1,17 +1,25 @@
 <template>
-  <main class="account-setting-page" :aria-busy="isLoading || isSaving ? 'true' : 'false'">
+  <main class="account-setting-page" :aria-busy="isBusy ? 'true' : 'false'">
     <header class="account-setting-hero">
       <v-icon icon="mdi-account-cog-outline" class="account-setting-hero__icon" />
       <div>
         <h1>アカウント変更</h1>
-        <p>プロフィール情報の変更</p>
+        <p>プロフィールとログイン情報の変更</p>
       </div>
+      <button
+        class="secondary-button account-setting-back-button"
+        type="button"
+        :disabled="isBusy"
+        @click="handleBack"
+      >
+        元に戻る
+      </button>
     </header>
 
     <section class="account-setting-panel">
       <div class="account-setting-panel__header">
-        <h2>プロフィール編集</h2>
-        <p>アカウント画面に表示される情報を更新します</p>
+        <h2>アカウント編集</h2>
+        <p>表示名、メールアドレス、アイコン、パスワードを更新します</p>
       </div>
 
       <div class="profile-preview">
@@ -19,7 +27,7 @@
           class="profile-avatar profile-avatar--button"
           type="button"
           aria-label="アイコン画像を変更"
-          :disabled="isLoading || isSaving"
+          :disabled="isBusy"
           @click="openAvatarFilePicker"
         >
           <img
@@ -39,7 +47,7 @@
           class="avatar-file-input"
           type="file"
           accept="image/jpeg,image/png,image/webp,image/gif"
-          :disabled="isLoading || isSaving"
+          :disabled="isBusy"
           @change="handleAvatarFileChange"
         />
         <div class="profile-summary">
@@ -67,7 +75,7 @@
               required
               maxlength="40"
               placeholder="ユーザーネーム"
-              :disabled="isLoading || isSaving"
+              :disabled="isBusy"
             />
           </label>
 
@@ -79,40 +87,73 @@
               type="email"
               required
               placeholder="user@example.com"
-              :disabled="isLoading || isSaving"
+              :disabled="isBusy"
             />
           </label>
         </div>
 
-        <div class="readonly-grid">
-          <article class="readonly-card">
-            <span>
-              <v-icon icon="mdi-calendar-outline" />
-              登録日
-            </span>
-            <strong>{{ formattedJoinedAt }}</strong>
-          </article>
-
-          <article class="readonly-card">
-            <span>
-              <v-icon icon="mdi-medal-outline" />
-              ランク
-            </span>
-            <strong>{{ profile.rank }}</strong>
-          </article>
+        <div class="form-actions">
+          <button class="primary-button" type="submit" :disabled="isBusy || !hasChanges">
+            {{ isSaving ? '保存中...' : '保存する' }}
+          </button>
         </div>
+      </form>
+
+      <form class="account-form password-section" @submit.prevent="handlePasswordChange">
+        <div class="password-section__header">
+          <h3>パスワード変更</h3>
+          <p>現在のパスワードを確認してから、新しいパスワードへ更新します</p>
+        </div>
+
+        <div class="form-grid password-form-grid">
+          <label class="form-field" for="currentPassword">
+            <span>現在のパスワード</span>
+            <input
+              id="currentPassword"
+              v-model="passwordForm.currentPassword"
+              type="password"
+              autocomplete="current-password"
+              maxlength="128"
+              :disabled="isBusy"
+            />
+          </label>
+
+          <label class="form-field" for="newPassword">
+            <span>新しいパスワード</span>
+            <input
+              id="newPassword"
+              v-model="passwordForm.newPassword"
+              type="password"
+              autocomplete="new-password"
+              maxlength="128"
+              :disabled="isBusy"
+            />
+          </label>
+
+          <label class="form-field" for="newPasswordConfirm">
+            <span>新しいパスワード（確認）</span>
+            <input
+              id="newPasswordConfirm"
+              v-model="passwordForm.confirmPassword"
+              type="password"
+              autocomplete="new-password"
+              maxlength="128"
+              :disabled="isBusy"
+            />
+          </label>
+        </div>
+
+        <p class="password-hint">
+          12文字以上で、英大文字・英小文字・数字・記号をすべて含めてください。
+        </p>
 
         <div class="form-actions">
           <button
-            class="secondary-button"
-            type="button"
-            :disabled="isLoading || isSaving"
-            @click="handleCancel"
+            class="primary-button"
+            type="submit"
+            :disabled="isBusy || !hasPasswordInput"
           >
-            元に戻す
-          </button>
-          <button class="primary-button" type="submit" :disabled="isLoading || isSaving || !hasChanges">
-            {{ isSaving ? '保存中...' : '保存する' }}
+            {{ isChangingPassword ? '変更中...' : 'パスワードを変更する' }}
           </button>
         </div>
       </form>
@@ -131,12 +172,13 @@
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
-import { fetchAccountSummary } from '@/api/account'
 import {
   fetchCurrentUserById,
   getCurrentUser,
   updateCurrentUserImage,
+  updateCurrentUserPassword,
   updateCurrentUserProfile,
+  validateNewPassword,
   validateUserImageFile,
   type CurrentUser,
 } from '@/api/users'
@@ -148,19 +190,21 @@ const form = reactive({
   email: '',
 })
 
+const passwordForm = reactive({
+  currentPassword: '',
+  newPassword: '',
+  confirmPassword: '',
+})
+
 const original = reactive({
   name: '',
   email: '',
 })
 
-const profile = reactive({
-  joinedAt: '',
-  rank: '初心者',
-})
-
 const currentUser = ref<CurrentUser | null>(null)
 const isLoading = ref(true)
 const isSaving = ref(false)
+const isChangingPassword = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
 const avatarImageError = ref(false)
@@ -182,29 +226,19 @@ const avatarInitial = computed(() => {
   return initial ? initial.toUpperCase() : 'U'
 })
 
-const formattedJoinedAt = computed(() => {
-  if (!profile.joinedAt) {
-    return '--'
-  }
-
-  const date = new Date(profile.joinedAt)
-
-  if (Number.isNaN(date.getTime())) {
-    return profile.joinedAt
-  }
-
-  return new Intl.DateTimeFormat('ja-JP', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  }).format(date)
-})
-
 const hasProfileChanges = computed(() => {
   return form.name.trim() !== original.name || form.email.trim() !== original.email
 })
 
 const hasChanges = computed(() => hasProfileChanges.value || selectedAvatarFile.value !== null)
+
+const hasPasswordInput = computed(() => {
+  return Boolean(
+    passwordForm.currentPassword || passwordForm.newPassword || passwordForm.confirmPassword,
+  )
+})
+
+const isBusy = computed(() => isLoading.value || isSaving.value || isChangingPassword.value)
 
 function applyUser(user: CurrentUser) {
   currentUser.value = user
@@ -213,7 +247,6 @@ function applyUser(user: CurrentUser) {
   form.email = user.email
   original.name = form.name
   original.email = form.email
-  profile.joinedAt = user.created_at
 }
 
 function handleAvatarImageError() {
@@ -274,7 +307,7 @@ function showError(message: string) {
   successMessage.value = ''
 }
 
-async function handleCancel() {
+async function handleBack() {
   await router.push({ name: 'Account' })
 }
 
@@ -292,6 +325,41 @@ function validateForm() {
   return true
 }
 
+function validatePasswordForm() {
+  if (!passwordForm.currentPassword) {
+    showError('現在のパスワードを入力してください')
+    return false
+  }
+
+  if (!passwordForm.newPassword) {
+    showError('新しいパスワードを入力してください')
+    return false
+  }
+
+  if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+    showError('新しいパスワードと確認用パスワードが一致しません')
+    return false
+  }
+
+  const passwordValidationError = validateNewPassword(passwordForm.newPassword, {
+    email: form.email,
+    name: form.name,
+  })
+
+  if (passwordValidationError) {
+    showError(passwordValidationError)
+    return false
+  }
+
+  return true
+}
+
+function clearPasswordForm() {
+  passwordForm.currentPassword = ''
+  passwordForm.newPassword = ''
+  passwordForm.confirmPassword = ''
+}
+
 async function loadAccountSetting() {
   isLoading.value = true
   errorMessage.value = ''
@@ -307,14 +375,6 @@ async function loadAccountSetting() {
     } catch (error) {
       console.error(error)
     }
-
-    try {
-      const account = await fetchAccountSummary(currentUser.value?.id ?? user.id)
-      profile.rank = account.profile.rank
-      profile.joinedAt = account.profile.joinedAt
-    } catch (error) {
-      console.error(error)
-    }
   } else {
     showError('ログイン中のユーザー情報が見つかりません')
   }
@@ -322,8 +382,33 @@ async function loadAccountSetting() {
   isLoading.value = false
 }
 
+async function handlePasswordChange() {
+  if (isBusy.value || !currentUser.value || !validatePasswordForm()) {
+    return
+  }
+
+  isChangingPassword.value = true
+  errorMessage.value = ''
+  successMessage.value = ''
+
+  try {
+    await updateCurrentUserPassword({
+      id: currentUser.value.id,
+      currentPassword: passwordForm.currentPassword,
+      newPassword: passwordForm.newPassword,
+    })
+    clearPasswordForm()
+    showSuccess('パスワードを変更しました')
+  } catch (error) {
+    console.error(error)
+    showError(error instanceof Error ? error.message : 'パスワードの変更に失敗しました')
+  } finally {
+    isChangingPassword.value = false
+  }
+}
+
 async function handleSave() {
-  if (isLoading.value || isSaving.value || !currentUser.value || !validateForm()) {
+  if (isBusy.value || !currentUser.value || !validateForm()) {
     return
   }
 

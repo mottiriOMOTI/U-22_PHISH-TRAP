@@ -2,6 +2,8 @@
   <AuthLoginPage
     title="ログイン"
     description="訓練メールに取り組むアカウントでログインしてください。"
+    alternate-login-label="管理者の方はこちら"
+    alternate-login-to="/admin_login"
     show-forgot-link
     show-register-link
     :loading="loading"
@@ -12,21 +14,27 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import AuthLoginPage from '@/components/auth/AuthLoginPage.vue'
-import { loginUser } from '@/api/users'
+import { loginLearner } from '@/api/users'
 
 const errorMessage = ref('')
 const loading = ref(false)
 const router = useRouter()
+const route = useRoute()
+
+function getRedirectPath() {
+  const redirect = route.query.redirect
+  return typeof redirect === 'string' && redirect.startsWith('/') ? redirect : '/mailbox'
+}
 
 async function handleLogin({ email, password }: { email: string; password: string }) {
   loading.value = true
   errorMessage.value = ''
 
   try {
-    await loginUser(email, password)
-    await router.push('/mailbox')
+    await loginLearner(email, password)
+    await router.push(getRedirectPath())
   } catch (error) {
     console.error('ログインエラー:', error)
     errorMessage.value =

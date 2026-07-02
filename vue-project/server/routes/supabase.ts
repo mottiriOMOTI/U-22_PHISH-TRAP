@@ -41,6 +41,17 @@ const ALLOWED_AVATAR_TYPES: Record<string, string> = {
 }
 const rateLimitBuckets = new Map<string, { count: number; resetAt: number }>()
 
+type LoginRole = 'admin' | 'learner'
+
+const LOGIN_ROLE_ERRORS: Record<LoginRole, string> = {
+  admin: '管理者アカウントではありません。',
+  learner: '利用者アカウントではありません。管理者の方は管理者ログインを利用してください。',
+}
+
+function parseLoginRole(value: unknown): LoginRole | null {
+  return value === 'admin' || value === 'learner' ? value : null
+}
+
 function validateDisplayName(displayName: unknown, res: Response): displayName is string {
   if (!displayName || typeof displayName !== 'string') {
     res.status(400).json({ error: 'display_name is required' })
@@ -464,17 +475,19 @@ router.post('/register', async (req, res) => {
   }
 })
 
-router.post('/login', async (req, res) => {
+async function handleLogin(req: Request, res: Response, requiredRole?: LoginRole) {
   try {
     const startedAt = Date.now()
-    const { email, password } = req.body ?? {}
+    const { email, password, role } = req.body ?? {}
     const normalizedEmail = normalizeEmail(email)
+    const expectedRole = requiredRole ?? parseLoginRole(role)
+    const rateLimitAction = expectedRole ? `login-${expectedRole}` : 'login'
 
     if (
       sendRateLimitIfNeeded(
         req,
         res,
-        'login',
+        rateLimitAction,
         normalizedEmail ?? getClientIp(req),
         LOGIN_RATE_LIMIT.limit,
         LOGIN_RATE_LIMIT.windowMs,
@@ -527,6 +540,11 @@ router.post('/login', async (req, res) => {
       updatePayload.password_hash = await hashPassword(password)
     }
 
+    if (expectedRole && data.role !== expectedRole) {
+      await waitAtLeast(startedAt)
+      return res.status(403).json({ error: LOGIN_ROLE_ERRORS[expectedRole] })
+    }
+
     const { data: updatedUser, error: updateError } = await supabaseAdmin
       .from('users')
       .update(updatePayload)
@@ -542,6 +560,18 @@ router.post('/login', async (req, res) => {
   } catch (error) {
     return sendUnexpectedError(res, error)
   }
+}
+
+router.post('/login', async (req, res) => {
+  return handleLogin(req, res)
+})
+
+router.post('/login/learner', async (req, res) => {
+  return handleLogin(req, res, 'learner')
+})
+
+router.post('/login/admin', async (req, res) => {
+  return handleLogin(req, res, 'admin')
 })
 
 router.post('/password-reset/request', async (req, res) => {
@@ -674,6 +704,86 @@ router.post('/password-reset/confirm', async (req, res) => {
         last_active_at: now,
       })
       .eq('id', user.id)
+
+    if (updateError) {
+      return sendAuthServiceError(res, updateError)
+    }
+
+    return res.json({ ok: true })
+  } catch (error) {
+    return sendUnexpectedError(res, error)
+  }
+})
+
+router.put('/users/:id/password', async (req, res) => {
+  try {
+    const userId = req.params.id
+    const { currentPassword, newPassword } = req.body ?? {}
+
+    if (!validateString(userId) || !isPasswordInput(currentPassword) || typeof newPassword !== 'string') {
+      return res.status(400).json({ error: '現在のパスワードと新しいパスワードを入力してください。' })
+    }
+
+    if (
+      sendRateLimitIfNeeded(
+        req,
+        res,
+        'password-change',
+        userId,
+        RESET_CONFIRM_RATE_LIMIT.limit,
+        RESET_CONFIRM_RATE_LIMIT.windowMs,
+      )
+    ) {
+      return
+    }
+
+    const { data: user, error } = await supabaseAdmin
+      .from('users')
+      .select(`${INTERNAL_USER_COLUMNS}, password_reset_token_hash`)
+      .eq('id', userId)
+      .maybeSingle()
+
+    if (error) {
+      return sendAuthServiceError(res, error)
+    }
+
+    if (!user || user.is_active === false) {
+      return res.status(404).json({ error: 'ユーザーが見つかりません。' })
+    }
+
+    const passwordResult = await verifyPassword(currentPassword, user.password_hash)
+
+    if (!passwordResult.ok) {
+      return res.status(401).json({ error: '現在のパスワードが間違っています。' })
+    }
+
+    if (currentPassword === newPassword) {
+      return res.status(400).json({ error: '現在と異なる新しいパスワードを入力してください。' })
+    }
+
+    const passwordValidationError = validatePasswordStrength(newPassword, {
+      email: typeof user.email === 'string' ? user.email : null,
+      name: typeof user.name === 'string' ? user.name : null,
+    })
+
+    if (passwordValidationError) {
+      return res.status(400).json({ error: passwordValidationError })
+    }
+
+    const now = new Date().toISOString()
+    const { error: updateError } = await supabaseAdmin
+      .from('users')
+      .update({
+        password_hash: await hashPassword(newPassword),
+        password_changed_at: now,
+        password_reset_token_hash: null,
+        password_reset_expires_at: null,
+        password_reset_used_at: null,
+        failed_login_count: 0,
+        locked_until: null,
+        last_active_at: now,
+      })
+      .eq('id', userId)
 
     if (updateError) {
       return sendAuthServiceError(res, updateError)

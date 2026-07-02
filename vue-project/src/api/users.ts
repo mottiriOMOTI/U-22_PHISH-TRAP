@@ -97,6 +97,12 @@ export type UpdateCurrentUserProfileInput = {
   email: string
 }
 
+export type UpdateCurrentUserPasswordInput = {
+  id: string
+  currentPassword: string
+  newPassword: string
+}
+
 export type CreateAdminUserInput = {
   name: string
   email: string
@@ -157,6 +163,33 @@ export function validateUserImageFile(file: File): string | null {
   }
 
   return null
+}
+
+async function loginWithRole(role: user_role, email: string, password: string): Promise<User> {
+  const res = await fetch(`${API_BASE_URL}/login/${role}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ email, password }),
+  })
+
+  if (!res.ok) {
+    return throwApiError(res, 'ログインに失敗しました')
+  }
+
+  const user = (await res.json()) as User
+  saveCurrentUser(user)
+
+  return user
+}
+
+export async function loginLearner(email: string, password: string): Promise<User> {
+  return loginWithRole('learner', email, password)
+}
+
+export async function loginAdmin(email: string, password: string): Promise<User> {
+  return loginWithRole('admin', email, password)
 }
 
 export async function loginUser(email: string, password: string): Promise<User> {
@@ -353,6 +386,24 @@ export async function updateCurrentUserProfile({
 
   const user = (await res.json()) as User
   return saveCurrentUser(user)
+}
+
+export async function updateCurrentUserPassword({
+  id,
+  currentPassword,
+  newPassword,
+}: UpdateCurrentUserPasswordInput): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/users/${encodeURIComponent(id)}/password`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ currentPassword, newPassword }),
+  })
+
+  if (!res.ok) {
+    return throwApiError(res, 'パスワードの変更に失敗しました')
+  }
 }
 
 export async function updateCurrentUserScenario(

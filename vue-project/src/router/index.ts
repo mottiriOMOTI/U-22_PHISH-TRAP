@@ -1,5 +1,11 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
+import {
+  clearCurrentUser,
+  fetchCurrentUserById,
+  getCurrentUser,
+  type user_role,
+} from '@/api/users'
 import Login from '@/pages/General/Login/vue/Login.vue'
 import MakeAccount from '@/pages/General/Login/vue/MakeAccount.vue'
 import ForgotAccount from '@/pages/General/Login/vue/ForgotAccount.vue'
@@ -31,6 +37,30 @@ import Admin_Userdetail from '@/pages/Admin/AdminUser/Admin_Userdetail.vue'
 import Admin_QuestionList from '@/pages/Admin/AdminQ/Admin_QuestionList.vue'
 import Admin_QuestionDetail from '@/pages/Admin/AdminQ/Admin_QuestionDetail.vue'
 import Admin_QuestionView from '@/pages/Admin/AdminQ/Admin_QuestionView.vue'
+
+const learnerRouteNames = new Set([
+  'Situation',
+  'Account',
+  'AccountSetting',
+  'Score',
+  'AVG_score',
+  'Setting',
+  'MailboxList',
+  'MailOpen',
+  'FearEffect_Death',
+  'FearEffect_False',
+  'Explanation',
+])
+
+const adminRouteNames = new Set([
+  'Admin_Overview',
+  'Admin_Makequestion',
+  'Admin_Setting',
+  'Admin_Userdetail',
+  'Admin_QuestionList',
+  'Admin_QuestionDetail',
+  'Admin_QuestionView',
+])
 
 const router = createRouter({
   history: createWebHistory(),
@@ -293,6 +323,72 @@ const router = createRouter({
       }
     }
   ],
+})
+
+function routeNameString(name: unknown) {
+  return typeof name === 'string' ? name : ''
+}
+
+function getRequiredRole(name: unknown): user_role | null {
+  const routeName = routeNameString(name)
+
+  if (adminRouteNames.has(routeName)) {
+    return 'admin'
+  }
+
+  if (learnerRouteNames.has(routeName)) {
+    return 'learner'
+  }
+
+  return null
+}
+
+function getLoginRouteName(role: user_role) {
+  return role === 'admin' ? 'Admin_Login' : 'Login'
+}
+
+function getHomeRouteName(role: user_role) {
+  return role === 'admin' ? 'Admin_Overview' : 'MailboxList'
+}
+
+router.beforeEach(async (to) => {
+  const requiredRole = getRequiredRole(to.name)
+  const storedUser = getCurrentUser()
+
+  if (!requiredRole) {
+    if (to.name === 'Login' && storedUser?.role === 'learner' && storedUser.is_active !== false) {
+      return { name: getHomeRouteName('learner') }
+    }
+
+    if (to.name === 'Admin_Login' && storedUser?.role === 'admin' && storedUser.is_active !== false) {
+      return { name: getHomeRouteName('admin') }
+    }
+
+    return true
+  }
+
+  const loginRouteName = getLoginRouteName(requiredRole)
+  const redirect = { name: loginRouteName, query: { redirect: to.fullPath } }
+
+  if (!storedUser || storedUser.is_active === false) {
+    clearCurrentUser()
+    return redirect
+  }
+
+  try {
+    const refreshedUser = await fetchCurrentUserById(storedUser.id)
+
+    if (refreshedUser.role !== requiredRole || refreshedUser.is_active === false) {
+      clearCurrentUser()
+      return redirect
+    }
+  } catch (error) {
+    console.error(error)
+    clearCurrentUser()
+    return redirect
+  }
+
+  return true
 })
 
 export default router

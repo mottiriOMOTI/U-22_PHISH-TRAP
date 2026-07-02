@@ -82,6 +82,10 @@
       <router-link to="/makeaccount">新規登録</router-link>
     </div>
 
+    <div v-if="alternateLoginTo" class="auth-link">
+      <router-link :to="alternateLoginTo">{{ alternateLoginLabel }}</router-link>
+    </div>
+
     <footer class="auth-footer">開発チーム: 防人（さきもりんちゅ）</footer>
   </main>
 </template>
@@ -98,6 +102,8 @@ withDefaults(
     title: string
     description?: string
     submitLabel?: string
+    alternateLoginLabel?: string
+    alternateLoginTo?: string
     showForgotLink?: boolean
     showRegisterLink?: boolean
     loading?: boolean
@@ -110,6 +116,8 @@ withDefaults(
     brandCopy: '知識だけでは防げない、<strong>判断力</strong>を体験しよう',
     description: '',
     submitLabel: 'ログイン',
+    alternateLoginLabel: '',
+    alternateLoginTo: '',
     showForgotLink: false,
     showRegisterLink: false,
     loading: false,
