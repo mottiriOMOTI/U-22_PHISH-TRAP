@@ -196,6 +196,75 @@ function parseAvatarDataUrl(dataUrl, contentType) {
     }
     return { fileBuffer, extension };
 }
+router.post('/admin/users', async (req, res) => {
+    try {
+        const { name, email, password, creatorUserId } = req.body ?? {};
+        const normalizedEmail = normalizeEmail(email);
+        if (!validateString(creatorUserId)) {
+            return res.status(403).json({ error: '管理者としてログインしてください。' });
+        }
+        const { data: creator, error: creatorError } = await supabaseAdmin
+            .from('users')
+            .select('id, role, is_active')
+            .eq('id', creatorUserId.trim())
+            .maybeSingle();
+        if (creatorError) {
+            return sendAuthServiceError(res, creatorError);
+        }
+        if (!creator || creator.role !== 'admin' || creator.is_active === false) {
+            return res.status(403).json({ error: '管理者権限がありません。' });
+        }
+        if (sendRateLimitIfNeeded(req, res, 'admin-create-user', normalizedEmail ?? getClientIp(req), REGISTER_RATE_LIMIT.limit, REGISTER_RATE_LIMIT.windowMs)) {
+            return;
+        }
+        if (!validateString(name) || !normalizedEmail || typeof password !== 'string') {
+            return res
+                .status(400)
+                .json({ error: '名前、メールアドレス、パスワードを正しく入力してください。' });
+        }
+        const passwordValidationError = validatePasswordStrength(password, {
+            email: normalizedEmail,
+            name,
+        });
+        if (passwordValidationError) {
+            return res.status(400).json({ error: passwordValidationError });
+        }
+        const { data: existingUser, error: existingUserError } = await supabaseAdmin
+            .from('users')
+            .select('id')
+            .eq('email', normalizedEmail)
+            .limit(1)
+            .maybeSingle();
+        if (existingUserError) {
+            return sendAuthServiceError(res, existingUserError);
+        }
+        if (existingUser) {
+            return res.status(409).json({ error: 'このメールアドレスはすでに登録されています。' });
+        }
+        const passwordHash = await hashPassword(password);
+        const { data, error } = await supabaseAdmin
+            .from('users')
+            .insert({
+            name: name.trim(),
+            email: normalizedEmail,
+            password_hash: passwordHash,
+            role: 'admin',
+            current_scenario: 'school',
+        })
+            .select(USER_COLUMNS)
+            .single();
+        if (error) {
+            if (error.code === '23505') {
+                return res.status(409).json({ error: 'このメールアドレスはすでに登録されています。' });
+            }
+            return sendAuthServiceError(res, error);
+        }
+        return res.status(201).json(data);
+    }
+    catch (error) {
+        return sendUnexpectedError(res, error);
+    }
+});
 router.post('/register', async (req, res) => {
     try {
         const { name, email, password } = req.body ?? {};

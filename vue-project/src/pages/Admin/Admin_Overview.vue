@@ -1,5 +1,8 @@
 <template>
-  <main class="overview-page" :aria-busy="loading || loadingAccuracy || loadingLearnerCount ? 'true' : 'false'">
+  <main
+    class="overview-page"
+    :aria-busy="loading || loadingAccuracy || loadingLearnerCount || adminCreating ? 'true' : 'false'"
+  >
     <header class="overview-hero">
       <div class="overview-hero__title">
         <v-icon icon="mdi-account-group-outline" class="overview-hero__icon" />
@@ -9,16 +12,39 @@
         </div>
       </div>
 
-      <label class="scenario-field">
-        <span class="sr-only">シチュエーション</span>
-        <select v-model="selectedCategory" :disabled="loading || loadingAccuracy || loadingLearnerCount">
-          <option v-for="item in categoryOptions" :key="item.value" :value="item.value">
-            {{ item.label }}
-          </option>
-        </select>
-        <v-icon icon="mdi-chevron-down" class="scenario-field__icon" />
-      </label>
+      <div class="overview-hero__actions">
+        <label class="scenario-field">
+          <span class="sr-only">シチュエーション</span>
+          <select
+            v-model="selectedCategory"
+            :disabled="loading || loadingAccuracy || loadingLearnerCount || adminCreating"
+          >
+            <option v-for="item in categoryOptions" :key="item.value" :value="item.value">
+              {{ item.label }}
+            </option>
+          </select>
+          <v-icon icon="mdi-chevron-down" class="scenario-field__icon" />
+        </label>
+
+        <button
+          class="add-admin-button"
+          type="button"
+          :disabled="adminCreating"
+          @click="openAdminDialog"
+        >
+          <v-icon icon="mdi-shield-account-outline" />
+          <span>管理者を追加</span>
+        </button>
+      </div>
     </header>
+
+    <p
+      v-if="adminCreateSuccess"
+      class="overview-message overview-message--success"
+      role="status"
+    >
+      {{ adminCreateSuccess }}
+    </p>
 
     <section class="metric-grid" aria-label="概要">
       <article class="metric-card">
@@ -89,17 +115,102 @@
         </article>
       </div>
     </section>
+
+    <v-dialog v-model="adminDialog" max-width="560" persistent>
+      <v-card class="admin-create-dialog">
+        <v-card-title class="admin-create-dialog__title">
+          <v-icon icon="mdi-shield-account-outline" />
+          <span>管理者を追加</span>
+        </v-card-title>
+
+        <v-card-text>
+          <form id="admin-create-form" class="admin-create-form" @submit.prevent="submitAdminCreate">
+            <v-text-field
+              v-model.trim="adminForm.name"
+              label="名前"
+              variant="outlined"
+              density="comfortable"
+              autocomplete="name"
+              maxlength="80"
+              :disabled="adminCreating"
+              required
+            />
+
+            <v-text-field
+              v-model.trim="adminForm.email"
+              label="メールアドレス"
+              type="email"
+              variant="outlined"
+              density="comfortable"
+              autocomplete="email"
+              maxlength="254"
+              :disabled="adminCreating"
+              required
+            />
+
+            <v-text-field
+              v-model="adminForm.password"
+              label="パスワード"
+              type="password"
+              variant="outlined"
+              density="comfortable"
+              autocomplete="new-password"
+              minlength="12"
+              maxlength="128"
+              hint="12文字以上・英大小文字/数字/記号をすべて含めてください"
+              persistent-hint
+              :disabled="adminCreating"
+              required
+            />
+
+            <v-text-field
+              v-model="adminForm.passwordConfirm"
+              label="パスワード確認"
+              type="password"
+              variant="outlined"
+              density="comfortable"
+              autocomplete="new-password"
+              minlength="12"
+              maxlength="128"
+              :disabled="adminCreating"
+              required
+            />
+
+            <p v-if="adminCreateError" class="dialog-message dialog-message--error" role="alert">
+              {{ adminCreateError }}
+            </p>
+          </form>
+        </v-card-text>
+
+        <v-card-actions class="admin-create-dialog__actions">
+          <v-btn variant="text" :disabled="adminCreating" @click="closeAdminDialog">
+            キャンセル
+          </v-btn>
+          <v-btn
+            color="primary"
+            type="submit"
+            form="admin-create-form"
+            :loading="adminCreating"
+          >
+            追加する
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </main>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { fetchLearnerCount, type Scenario } from '@/api/adminOverviewApi'
 import { fetchAverageAccuracy } from '@/api/trainingStatsApi'
+import { createAdminUser, getCurrentUser, validateNewPassword } from '@/api/users'
 import { fetchUsers, type UserListItem } from '@/api/usersListApi'
 
 type Category = 'student' | 'company' | 'general' | 'all'
 type StatusTone = 'success' | 'warning' | 'danger'
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 const selectedCategory = ref<Category>('all')
 const categoryOptions: Array<{ label: string; value: Category }> = [
@@ -170,11 +281,103 @@ async function loadAccuracy() {
 const users = ref<UserListItem[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
+const adminDialog = ref(false)
+const adminCreating = ref(false)
+const adminCreateError = ref('')
+const adminCreateSuccess = ref('')
+const adminForm = reactive({
+  name: '',
+  email: '',
+  password: '',
+  passwordConfirm: '',
+})
 
 const scenarioLabelMap: Record<Scenario, string> = {
   business: '企業',
   school: '学生',
   daily: '一般',
+}
+
+function resetAdminForm() {
+  adminForm.name = ''
+  adminForm.email = ''
+  adminForm.password = ''
+  adminForm.passwordConfirm = ''
+}
+
+function openAdminDialog() {
+  adminCreateError.value = ''
+  adminCreateSuccess.value = ''
+  resetAdminForm()
+  adminDialog.value = true
+}
+
+function closeAdminDialog() {
+  if (adminCreating.value) return
+
+  adminDialog.value = false
+  adminCreateError.value = ''
+  resetAdminForm()
+}
+
+async function submitAdminCreate() {
+  if (adminCreating.value) return
+
+  adminCreateError.value = ''
+  adminCreateSuccess.value = ''
+
+  const name = adminForm.name.trim()
+  const email = adminForm.email.trim()
+  const creator = getCurrentUser()
+
+  if (!creator || creator.role !== 'admin') {
+    adminCreateError.value = '管理者としてログインしてください。'
+    return
+  }
+
+  if (!name || !email || !adminForm.password || !adminForm.passwordConfirm) {
+    adminCreateError.value = 'すべての項目を入力してください。'
+    return
+  }
+
+  if (!EMAIL_PATTERN.test(email)) {
+    adminCreateError.value = 'メールアドレスを正しく入力してください。'
+    return
+  }
+
+  if (adminForm.password !== adminForm.passwordConfirm) {
+    adminCreateError.value = 'パスワードが一致しません。'
+    return
+  }
+
+  const passwordValidationError = validateNewPassword(adminForm.password, {
+    email,
+    name,
+  })
+
+  if (passwordValidationError) {
+    adminCreateError.value = passwordValidationError
+    return
+  }
+
+  try {
+    adminCreating.value = true
+    const createdAdmin = await createAdminUser({
+      name,
+      email,
+      password: adminForm.password,
+      creatorUserId: creator.id,
+    })
+
+    adminDialog.value = false
+    resetAdminForm()
+    adminCreateSuccess.value = `${createdAdmin.name} を管理者として追加しました。`
+  } catch (e) {
+    adminCreateError.value =
+      e instanceof Error ? e.message : '管理者アカウントの作成に失敗しました。'
+  } finally {
+    adminCreating.value = false
+  }
 }
 
 async function load() {
@@ -301,6 +504,14 @@ watch(selectedCategory, () => {
   gap: 18px;
 }
 
+.overview-hero__actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+}
+
 .overview-hero__icon {
   color: var(--accent);
   font-size: 52px;
@@ -328,7 +539,7 @@ watch(selectedCategory, () => {
   display: block;
   width: 240px;
   flex: 0 0 auto;
-  margin-top: 14px;
+  margin-top: 0;
 }
 
 .scenario-field select {
@@ -375,6 +586,63 @@ watch(selectedCategory, () => {
   font-size: 20px;
   pointer-events: none;
   transform: translateY(-50%);
+}
+
+.add-admin-button {
+  display: inline-flex;
+  height: 45px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  padding: 0 16px;
+  border: 1px solid var(--accent);
+  border-radius: 9px;
+  background: var(--button-bg);
+  color: var(--button-text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 900;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    opacity 160ms ease,
+    transform 160ms ease;
+}
+
+.add-admin-button:hover:not(:disabled),
+.add-admin-button:focus-visible {
+  border-color: var(--accent-strong);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 24%, transparent);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.add-admin-button:disabled {
+  cursor: default;
+  opacity: 0.7;
+  transform: none;
+}
+
+.add-admin-button :deep(.v-icon) {
+  font-size: 21px;
+}
+
+.overview-message {
+  width: 100%;
+  max-width: 1038px;
+  margin: -17px 0 24px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.overview-message--success {
+  border: 1px solid color-mix(in srgb, var(--success) 42%, transparent);
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+  color: var(--success);
 }
 
 .metric-grid {
@@ -646,6 +914,49 @@ watch(selectedCategory, () => {
   font-weight: 600;
 }
 
+.admin-create-dialog {
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  background: var(--panel-bg);
+  color: var(--page-text);
+}
+
+.admin-create-dialog__title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--heading-text);
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.admin-create-dialog__title :deep(.v-icon) {
+  color: var(--accent);
+}
+
+.admin-create-form {
+  display: grid;
+  gap: 14px;
+}
+
+.dialog-message {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.dialog-message--error {
+  border: 1px solid color-mix(in srgb, var(--danger) 42%, transparent);
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  color: var(--danger);
+}
+
+.admin-create-dialog__actions {
+  padding: 0 24px 20px;
+}
+
 .sr-only {
   position: absolute;
   width: 1px;
@@ -684,7 +995,17 @@ watch(selectedCategory, () => {
 
   .scenario-field {
     width: 100%;
+  }
+
+  .overview-hero__actions {
+    width: 100%;
+    align-items: stretch;
+    flex-direction: column;
     margin-top: 0;
+  }
+
+  .add-admin-button {
+    width: 100%;
   }
 
   .metric-grid {
