@@ -1,7 +1,7 @@
 <template>
   <AuthLoginPage
     title="ログイン"
-    description="訓練メールに取り組むアカウントでログインしてください。"
+    description="ログインしてください。"
     alternate-login-label="管理者の方はこちら"
     alternate-login-to="/admin_login"
     show-forgot-link

@@ -11,6 +11,7 @@ export type ScoreSummary = {
 }
 
 export type AverageScoreUserSummary = ScoreSummary & {
+  userId: string
   rank: number
   label: string
 }
