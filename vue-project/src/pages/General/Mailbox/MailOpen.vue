@@ -34,10 +34,15 @@
             <v-icon icon="mdi-reply" />
             <span>返信</span>
           </button>
-          <button class="action-button action-button--secondary" type="button" :disabled="isJudging" @click="judgeAction('delete')">
-            <v-icon icon="mdi-delete-outline" />
-            <span>削除</span>
-          </button>
+          <button 
+  class="action-button action-button--secondary" 
+  type="button" 
+  :disabled="isJudging" 
+  @click="showDeleteWarning"
+>
+  <v-icon icon="mdi-delete-outline" />
+  <span>削除</span>
+</button>
           <button class="action-button action-button--warning" type="button" :disabled="isJudging" @click="judgeAction('report')">
             <v-icon icon="mdi-alert-octagon-outline" />
             <span>報告</span>
@@ -163,6 +168,11 @@ function formatDate(iso: string): string {
   })
 }
 
+// 削除不可の警告を出す関数を追加
+function showDeleteWarning() {
+  alert('メールを削除することはできません。')
+}
+
 function judgeAction(action: ActionType, value?: string) {
   if (isJudging.value || !mail.value) return
   
@@ -181,7 +191,6 @@ function judgeAction(action: ActionType, value?: string) {
         isDeathFlag.value = true
         stateToPass.triggerDeath = true
         break
-      case 'delete':
       case 'report':
         stateToPass.triggerSuccess = true
         break

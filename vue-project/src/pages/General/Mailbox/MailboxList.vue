@@ -11,9 +11,10 @@
     <section class="mailbox-panel">
       <div class="mailbox-panel__header">
         <h2>受信トレイ</h2>
-        <p>{{ loading ? 'メールを読み込んでいます' : `${mails.length}件のメール` }}</p>
+        <p>{{ loading ? 'メールを読み込んでいます' : `${mails.length}件 of メール` }}</p>
       </div>
 
+      <!-- スケルトンローディング表示 -->
       <div v-if="loading" class="mail-list" aria-label="メール読み込み中">
         <article v-for="n in 5" :key="n" class="mail-row-skeleton">
           <span class="mail-row-skeleton__icon" />
@@ -25,6 +26,7 @@
         </article>
       </div>
 
+      <!-- エラーハンドリング -->
       <div v-else-if="error" class="mailbox-state mailbox-state--error" role="alert">
         <v-icon icon="mdi-alert-circle-outline" class="mailbox-state__icon" />
         <div>
@@ -34,6 +36,7 @@
         <button class="secondary-button" type="button" @click="load">再試行</button>
       </div>
 
+      <!-- 空状態 -->
       <div v-else-if="mails.length === 0" class="mailbox-state" role="status">
         <v-icon icon="mdi-email-open-outline" class="mailbox-state__icon" />
         <div>
@@ -42,6 +45,7 @@
         </div>
       </div>
 
+      <!-- メールリスト表示 -->
       <div v-else class="mail-list">
         <article v-for="mail in mails" :key="mail.id" class="mail-row">
           <button class="mail-row__button" type="button" @click="openMail(mail.id)">
@@ -64,34 +68,11 @@
       </div>
     </section>
 
-    <!-- ==========================================
-         🚨 【メールボックス画面】本格恐怖・バッドエンド演出用オーバーレイ群 
-         ========================================== -->
-    
-    <!-- 疑似デスクトップ通知スタック固定コンテナ -->
-    <div class="custom-notification-stack">
-      <transition-group name="list">
-        <v-card
-          v-for="item in notifications"
-          :key="item.id"
-          color="#1e1e1e"
-          elevation="24"
-          :class="['mb-2 pa-4 d-flex align-center custom-toast-card', item.borderClass]"
-          style="width: 340px;"
-        >
-          <v-icon :icon="item.icon" :color="item.color" class="me-3" size="large"></v-icon>
-          <div>
-            <div class="text-subtitle-2 font-weight-bold" :style="{ color: item.color }">{{ item.title }}</div>
-            <div class="text-caption text-white" style="line-height: 1.3;">{{ item.text }}</div>
-          </div>
-        </v-card>
-      </transition-group>
-    </div>
-
-    <!-- 画面ノイズ用オーバーレイ -->
+    <!-- ==========================================================
+         🚨 【共通演出レイヤー】バッドエンド（Death）演出オーバーレイ群
+         ========================================================== -->
     <div v-if="showNoise" class="vivid-noise-overlay"></div>
 
-    <!-- ブルースクリーン全画面（BSOD）オーバーレイ -->
     <div v-if="showBsod" class="bsod-screen">
       <div class="bsod-content">
         <div class="bsod-smiley">:(</div>
@@ -110,7 +91,6 @@
       </div>
     </div>
 
-    <!-- 最前面の暗号化警告ダイアログ -->
     <v-dialog v-model="showEncrypt" persistent width="600">
       <v-card color="#150505" variant="flat" :style="{ border: `1px solid ${popupColor}`, boxShadow: `0 0 15px ${popupColor}66` }" class="pa-6 rounded-lg text-left">
         <div class="d-flex align-center mb-4">
@@ -140,6 +120,166 @@
       </v-card>
     </v-dialog>
 
+
+    <!-- ==========================================================
+         🟢 【共通演出レイヤー】誤判定（False）演出用チャットポップアップ群
+         ========================================================== -->
+    <!-- 1. Slack風トースト（上部中央） -->
+    <transition name="slide-top">
+      <div v-if="showSlack && chatType === 'slack'" class="custom-chat-popup slack pa-3 d-flex align-center elevation-12">
+        <v-avatar color="#4a154b" size="40" class="me-3">
+          <v-icon :icon="slackAvatar" color="white"></v-icon>
+        </v-avatar>
+        <div class="text-left flex-grow-1">
+          <div class="d-flex align-center justify-space-between">
+            <span class="text-subtitle-2 font-weight-bold text-grey-darken-4">{{ slackUser }}</span>
+            <span class="text-caption text-grey-darken-1">たった今</span>
+          </div>
+          <p class="text-body-2 text-wrap ma-0" style="line-height: 1.3; max-width: 280px;">{{ slackMessage }}</p>
+        </div>
+      </div>
+    </transition>
+
+    <!-- 2. LINE風トースト（右下配置） -->
+    <transition name="slide-right">
+      <div v-if="showSlack && chatType === 'line'" class="custom-chat-popup line line-bottom-position pa-3 d-flex align-center elevation-12">
+        <v-avatar color="#24d500" size="40" class="me-3 elevation-1">
+          <v-icon :icon="slackAvatar" color="white" size="small"></v-icon>
+        </v-avatar>
+        <div class="text-left flex-grow-1">
+          <div class="d-flex align-center justify-space-between">
+            <span class="text-subtitle-2 font-weight-bold text-black" style="letter-spacing: -0.5px;">{{ slackUser }}</span>
+            <span class="text-caption text-grey-darken-1">現在</span>
+          </div>
+          <p class="text-body-2 text-wrap text-grey-darken-3 ma-0" style="line-height: 1.3; max-width: 280px;">{{ slackMessage }}</p>
+        </div>
+      </div>
+    </transition>
+
+    <!-- 3. Discord風トースト（右下隅に固定） -->
+    <transition name="slide-right">
+      <div v-if="showSlack && chatType === 'discord'" class="custom-chat-popup discord discord-bottom-position pa-3 d-flex align-center elevation-12">
+        <v-avatar color="#5865F2" size="40" class="me-3">
+          <v-icon :icon="slackAvatar" color="white"></v-icon>
+        </v-avatar>
+        <div class="text-left flex-grow-1">
+          <div class="d-flex align-center justify-space-between">
+            <span class="text-subtitle-2 font-weight-bold text-white">{{ slackUser }}</span>
+            <span class="text-caption text-grey-lighten-1">たった今</span>
+          </div>
+          <p class="text-body-2 text-wrap text-grey-lighten-2 ma-0" style="line-height: 1.3; max-width: 280px;">{{ slackMessage }}</p>
+        </div>
+      </div>
+    </transition>
+
+    <!-- ==========================================================
+         🟢 【共通演出レイヤー】誤判定（False）メール強制開封ダイアログ
+         ========================================================== -->
+    <v-dialog v-model="showDiag" :persistent="isForcedMode" width="700" transition="none">
+      <v-card :style="{ backgroundColor: popupBgColor, border: `2px solid ${popupColor}` }" class="pa-6 text-left position-relative">
+        <v-btn
+          v-if="!isForcedMode"
+          icon="mdi-close"
+          variant="text"
+          :color="popupColor"
+          style="position: absolute; top: 12px; right: 12px; z-index: 10;"
+          @click="showDiag = false"
+        ></v-btn>
+
+        <div class="d-flex align-center justify-space-between pb-3 mb-4" :style="{ borderBottom: `2px solid ${popupColor}` }">
+          <div class="d-flex align-center">
+            <v-icon icon="mdi-email-open-outline" :color="popupColor" class="me-2" size="large"></v-icon>
+            <span class="text-subtitle-1 font-weight-bold text-grey-darken-4">社内メールシステム</span>
+          </div>
+          <v-chip size="small" :color="popupColor" variant="flat" class="text-white font-weight-bold">
+            {{ isForcedMode ? '強制開封警告' : '通知確認' }}
+          </v-chip>
+        </div>
+
+        <div class="mb-4 pa-3 rounded text-grey-darken-4" style="background-color: rgba(0,0,0,0.06);">
+          <div class="text-body-2 mb-1"><span class="font-weight-bold">件名：</span> {{ mailSubject }}</div>
+          <div class="text-body-2 mb-1"><span class="font-weight-bold">差出人：</span> {{ mailSender }}</div>
+          <div class="text-body-2"><span class="font-weight-bold">アドレス：</span> {{ mailAddress }}</div>
+        </div>
+
+        <v-card-text class="px-3 py-3 text-body-1 text-grey-darken-4 font-weight-medium" style="line-height: 1.6; background-color: #ffffff; border-radius: 4px; border: 1px solid #ccc; min-height: 180px; white-space: pre-wrap;">
+          {{ mailBody }}
+        </v-card-text>
+
+        <div class="text-center text-caption text-grey-darken-2 mt-4">
+          <span v-if="isForcedMode" class="font-weight-bold">>> 【警告デモ動作中】5秒後に自動的に元の画面へ復帰します...</span>
+          <span v-else class="font-weight-bold">>> 【確認完了】右上の✖ボタン、または背景クリックで閉じてください</span>
+        </div>
+      </v-card>
+    </v-dialog>
+
+    <!-- ==========================================================
+         🟢 【共通演出レイヤー】誤判定（False）緊急コールポップアップ
+         ========================================================== -->
+    <v-dialog v-model="showCall" persistent width="400">
+      <v-card color="#1e1e24" variant="flat" :class="['pa-6 text-center rounded-xl border-call', { 'phone-shake': !isCallConnected }]">
+        <v-avatar size="80" color="grey-darken-3" class="mx-auto mb-4 elevation-6">
+          <v-icon :icon="isCallConnected ? 'mdi-phone-in-talk' : 'mdi-account-phone'" size="48" color="amber-lighten-2"></v-icon>
+        </v-avatar>
+
+        <h2 class="text-h6 font-weight-bold text-white mb-1">{{ callerName }}</h2>
+        
+        <p class="text-body-2 text-grey-lighten-1 mb-6 font-mono">
+          {{ isCallConnected ? formatCallTime(callDuration) : callStatus }}
+        </p>
+
+        <div class="d-flex justify-center gap-6">
+          <!-- 🔴 切断ボタン（クリックすると強制的に解説へリダイレクトして終了） -->
+          <v-btn
+            icon="mdi-phone-hangup"
+            color="error"
+            size="large"
+            elevation="8"
+            class="mx-2"
+            @click="handleFalseEnd()"
+          ></v-btn>
+
+          <!-- 🟢 応答ボタン -->
+          <v-btn
+            v-if="!isCallConnected"
+            icon="mdi-phone"
+            color="success"
+            size="large"
+            elevation="8"
+            class="mx-2 blink-call-icon"
+            @click="answerCall"
+          ></v-btn>
+        </div>
+
+        <v-expand-transition>
+          <div v-if="isCallConnected" class="mt-6 pa-3 rounded bg-grey-darken-4 text-left border-left-error">
+            <p class="text-caption text-error font-weight-bold mb-1">>> AUDIO LOG:</p>
+            <p class="text-body-2 text-grey-lighten-2" style="line-height: 1.4;">{{ callAudioLog }}</p>
+          </div>
+        </v-expand-transition>
+      </v-card>
+    </v-dialog>
+
+    <!-- 疑似通知ログスタックコンテナ（Death / False 共通） -->
+    <div class="custom-notification-stack">
+      <transition-group name="list">
+        <v-card
+          v-for="item in notifications"
+          :key="item.id"
+          color="#1e1e1e"
+          elevation="24"
+          :class="['mb-2 pa-4 d-flex align-center custom-toast-card', item.borderClass]"
+          style="width: 340px;"
+        >
+          <v-icon :icon="item.icon" :color="item.color" class="me-3" size="large"></v-icon>
+          <div>
+            <div class="text-subtitle-2 font-weight-bold" :style="{ color: item.color }">{{ item.title }}</div>
+            <div class="text-caption text-white" style="line-height: 1.3;">{{ item.text }}</div>
+          </div>
+        </v-card>
+      </transition-group>
+    </div>
+
     <!-- 完全シャットダウン（暗転）用オーバーレイ -->
     <div :class="['blackout-screen', { 'active': showBlackout }]"></div>
   </main>
@@ -151,7 +291,7 @@ import { useRouter } from 'vue-router'
 import { fetchMails, type MailListItem } from '@/api/mailApi'
 
 // ==========================================
-// 🚨 本格演出用の外部ユーティリティ群をインポート
+// 🚨 バッドエンド（Death）演出系の外部読み込み
 // ==========================================
 import { triggerNotificationEffect } from '@/pages/General/Mailbox/FearEffect/FearEffect_Death_Attack/notificationEffect'
 import { triggerNoiseEffect } from '@/pages/General/Mailbox/FearEffect/FearEffect_Death_Attack/noiseEffect'
@@ -170,11 +310,27 @@ import {
 } from '@/pages/General/Mailbox/FearEffect/FearEffect_Death_Attack/encryptEffect'
 import { triggerSequenceEffect } from '@/pages/General/Mailbox/FearEffect/FearEffect_Death_Attack/sequenceController'
 
+// ==========================================
+// 🟢 誤判定（False）演出系の外部読み込み
+// ==========================================
+import { triggerFalseNotification } from '@/pages/General/Mailbox/FearEffect/FearEffect_False_End/falseNotificationEffect'
+import { triggerDiagEffect, showDiag, resetDiagEffect, mailSubject, mailSender, mailAddress, mailBody, popupBgColor, isForcedMode } from '@/pages/General/Mailbox/FearEffect/FearEffect_False_End/diagEffect'
+import { triggerCallEffect, answerCall, hangUpCall, formatCallTime, showCall, callerName, callStatus, callDuration, isCallConnected, callAudioLog } from '@/pages/General/Mailbox/FearEffect/FearEffect_False_End/callEffect'
+import { triggerChatEffectByTag, showSlack, slackUser, slackMessage, slackAvatar, chatType } from '@/pages/General/Mailbox/FearEffect/FearEffect_False_End/slackEffect'
+
 const router = useRouter()
 
 const mails = ref<MailListItem[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
+
+// 状態記憶用キャッシュ
+const currentMailState = ref<any>(null)
+// 安全に解説ページへ引き渡すためのカテゴリ正規化状態 ('student' | 'company' | 'general')
+type ExplanationCategory = 'student' | 'company' | 'general'
+type SituationType = 'business' | 'school' | 'daily'
+
+const currentCategory = ref<ExplanationCategory>('general')
 
 // 🚨 演出コントロール用リアクティブ変数群
 const notifications = ref<any[]>([])
@@ -182,6 +338,25 @@ const showNoise = ref(false)
 const showBsod = ref(false)
 const bsodPercent = ref(0)
 const showBlackout = ref(false)
+
+const SCENARIO_PROFILES: Record<SituationType, { intensity: 'high' | 'medium' | 'low'; chatType: string; caller: string }> = {
+  business: { intensity: 'high', chatType: 'slack', caller: '総務部 佐藤' },
+  school: { intensity: 'medium', chatType: 'discord', caller: '担任の先生' },
+  daily: { intensity: 'low', chatType: 'line', caller: '友人' }
+};
+
+const normalizeCategory = (value: unknown): ExplanationCategory => {
+  const input = String(value || '').toLowerCase()
+  if (input === 'student' || input === 'school') return 'student'
+  if (input === 'company' || input === 'business') return 'company'
+  return 'general'
+}
+
+const categoryToScenario = (category: ExplanationCategory): SituationType => {
+  if (category === 'student') return 'school'
+  if (category === 'company') return 'business'
+  return 'daily'
+}
 
 async function load() {
   loading.value = true
@@ -204,39 +379,26 @@ const resetAllEffects = () => {
   showBlackout.value = false
   bsodPercent.value = 0
   resetEncryptEffect()
+  resetDiagEffect()
+  hangUpCall()
 }
 
+
 /**
- * 🎬 フィッシング詐欺バッドエンドの本格ホラー自動演出シーケンス
- * 演出完了後、自動的に解説ページ（Explanation）に状態を引き継ぎながら遷移します。
- * 🛠 修正：引数 scenarioType の型を 'business' | 'school' | 'daily' に厳密化
+ * 💀 バッドエンド演出
  */
-const startBadEndSequence = (state: any, scenarioType: 'business' | 'school' | 'daily' = 'business') => {
-  console.log(`💀 バッドエンド演出を開始。対象メール: ${state.mail.title}`)
+const startBadEndSequence = (state: any, scenarioType: SituationType = 'business') => {
+  const profile = SCENARIO_PROFILES[scenarioType];
+  console.log(`💀 バッドエンド演出開始: ${scenarioType} (強度: ${profile.intensity})`);
   
-  // 2. 0.5秒後に警告通知ログの送信開始
-  setTimeout(() => {
-    triggerNotificationEffect(notifications, scenarioType, 1)
-  }, 500)
+  setTimeout(() => { triggerNotificationEffect(notifications, scenarioType, 1) }, 500);
+  setTimeout(() => { triggerNotificationEffect(notifications, scenarioType, 2) }, 1500);
+  setTimeout(() => { triggerEncryptEffect(scenarioType) }, 2500);
+  setTimeout(() => { 
+    resetEncryptEffect();
+    triggerNoiseEffect(showNoise);
+  }, 6500);
 
-  // 3. 1.5秒後にさらなる重大ログを追加
-  setTimeout(() => {
-    triggerNotificationEffect(notifications, scenarioType, 2)
-  }, 1500)
-
-  // 4. 2.5秒後にフラッシュとともに最前面に暗号化ランサム警告ポップアップを出現させる
-  setTimeout(() => {
-    triggerEncryptEffect(scenarioType)
-  }, 2500)
-
-  // 5. 6.5秒後にランサム警告を消去し、不気味な砂嵐ノイズを発生
-  setTimeout(() => {
-    resetEncryptEffect()
-    triggerNoiseEffect(showNoise)
-  }, 6500)
-
-  // 6. 8.0秒後にノイズからブルースクリーンへと雪崩れ込み、カウントが完了したらブラックアウト（暗転）
-  //    そして、暗転完了時に「解説ページ」へと自動的に遷移させます！
   setTimeout(() => {
     triggerSequenceEffect(
       notifications,
@@ -246,15 +408,16 @@ const startBadEndSequence = (state: any, scenarioType: 'business' | 'school' | '
         percent: bsodPercent, 
         isBlackout: showBlackout, 
         onComplete: () => {
-          // すべての演出が完全完了（画面暗転完了）した後の処理
-          resetAllEffects()
-          
-          // ✨ 自動的に解説ページ（Explanation）へ
-          // 騙されてバッドエンドになったため、isCorrect: false で送ります。
-          // 🛠 追加：解説ページにブラックアウト状態のまま入ってもらうため `needFadeIn: true` を渡します。
+          resetAllEffects();
           router.push({ 
             path: '/explanation', 
-            state: { mail: state.mail, isCorrect: false, needFadeIn: true } 
+            state: {
+              mail: state.mail,
+              isCorrect: false,
+              needFadeIn: true,
+              judgedAction: state.judgedAction,
+              category: currentCategory.value,
+            } 
           })
         } 
       })
@@ -262,39 +425,95 @@ const startBadEndSequence = (state: any, scenarioType: 'business' | 'school' | '
   }, 8000)
 }
 
-function checkDeathSequence() {
-  const state = window.history.state
-  if (!state) return
+/**
+ * 🟢 誤判定（誤報告）ホラー演出シーケンス
+ */
+const startFalseSequence = (state: any, scenarioType: SituationType = 'business') => {
+  currentMailState.value = state;
+  const profile = SCENARIO_PROFILES[scenarioType];
+  const delayFactor = profile.intensity === 'high' ? 0.8 : 1.2;
 
-  if (state.triggerDeath) {
-    // 💀 フィッシングに引っかかった（実機ホラーフルコンボ演出➔演出終了後に解説ページへ自動遷移）
-    // 🛠 修正：代入する変数 scenarioType も明示的にリテラルユニオン型で定義します
-    let scenarioType: 'business' | 'school' | 'daily' = 'business'
-    const senderEmail = state.mail?.sender_email?.toLowerCase() || ''
-    if (senderEmail.includes('.ac.jp') || senderEmail.includes('school') || senderEmail.includes('univ')) {
-      scenarioType = 'school'
-    } else if (senderEmail.includes('daily') || senderEmail.includes('gmail') || senderEmail.includes('payment')) {
-      scenarioType = 'daily'
+  console.log(`⚠ 誤報告演出開始: ${scenarioType}`);
+
+  // 演出シーケンスを開始
+  triggerFalseNotification(notifications, scenarioType, 1);
+  setTimeout(() => triggerChatEffectByTag(scenarioType), 1000 * delayFactor);
+  setTimeout(() => triggerFalseNotification(notifications, scenarioType, 2), 2500 * delayFactor);
+  setTimeout(() => triggerCallEffect(scenarioType), 4000 * delayFactor);
+
+  // 演出終了後に確実に遷移するためのシーケンス終了監視
+  setTimeout(() => {
+    // 最後に暗転を入れ、演出の締めくくりを演出してから遷移
+    showBlackout.value = true;
+
+    setTimeout(() => {
+      handleFalseEnd(state);
+      router.push({
+    path: '/explanation',
+    state: {
+      mail: state.mail,
+      isCorrect: false,
+      needFadeIn: true,        // 解説ページのフェードイン演出を有効化
+      judgedAction: state.judgedAction,
+      category: currentCategory.value   // カテゴリを正しく引き継ぐ
     }
-    
-    // ホラー演出シーケンス開始
-    startBadEndSequence(state, scenarioType)
+  });
+    }, 500); // 暗転から遷移までの猶予
+  }, 7500 * delayFactor);
+};
 
-  } else if (state.triggerSocialDeath) {
-    // 👔 安全なメールを誤報告した（今回は即時解説へ移行。必要に応じて専用演出を追加可能）
-    router.push({ 
-      path: '/explanation', 
-      state: { mail: state.mail, isCorrect: false } 
-    })
-  } else if (state.triggerSuccess) {
-    // ✨ 正しい対処（即座に解説ページへ！）
-    // 正解時は `needFadeIn` を渡さないため、通常の即時遷移になります。
-    router.push({ 
-      path: '/explanation', 
-      state: { mail: state.mail, isCorrect: true } 
-    })
+/**
+ * 📞 誤報告時の安全なリダイレクト処理
+ */
+const handleFalseEnd = (state: any = currentMailState.value) => {
+  if (!state?.mail) return
+
+  // 演出系をリセット
+  resetAllEffects();
+  hangUpCall();
+  resetDiagEffect();
+
+};
+
+/**
+ * 💀＆🟢 前の画面から運ばれたフラグを元に自動演出を切り分ける
+ */
+// MailboxList.vue 内の checkDeathSequence を以下に置き換えてください
+function checkDeathSequence() {
+  const rawState = window.history.state;
+  const state = (rawState?.usr || rawState) as any;
+  if (!state) return;
+
+  // 演出用の状況タグと解説用カテゴリを分けて扱う
+  const category = normalizeCategory(state.category || state.mail?.category)
+  currentCategory.value = category
+  const scenarioType = categoryToScenario(category)
+
+  // 演出分岐
+  if (state.triggerDeath) {
+    // 💀 フィッシング成功（バッドエンド）
+    startBadEndSequence(state, scenarioType);
+  }
+  else if (state.triggerSocialDeath) {
+    // 👔 誤報告時の演出を開始し、完了後に handleFalseEnd で指定の push を行う
+    startFalseSequence(state, scenarioType);
+  }
+  else if (state.triggerSuccess) {
+    // ✨ 正解時
+    router.push({
+      path: '/explanation',
+      state: {
+        mail: state.mail,
+        isCorrect: state.isCorrect ?? true,
+        judgedAction: state.judgedAction,
+        category
+      }
+    });
   }
 }
+
+
+// startBadEndSequence と startFalseSequence の引数型も更新
 
 function openMail(id: string) {
   router.push({ name: 'MailOpen', query: { id } })
@@ -317,7 +536,6 @@ function formatDate(iso: string): string {
 }
 
 onMounted(() => {
-  // 💀 受信トレイに戻った瞬間にフラグ判定
   checkDeathSequence()
   load()
 })
@@ -586,13 +804,13 @@ onMounted(() => {
   }
 }
 
-/* ==========================================
-     🚨 【演出用】恐怖・ウイルス感染演出CSS
-   ========================================== */
+/* ==========================================================
+     🚨 【演出用】共通演出CSS（Death / False 統合）
+   ========================================================== */
 .font-mono { font-family: 'Courier New', Courier, monospace; }
 .min-height-zero { min-height: unset !important; }
 
-/* 通知スタック用 */
+/* 疑似デスクトップ通知スタック */
 .custom-notification-stack { 
   position: fixed; 
   bottom: 16px; 
@@ -606,15 +824,18 @@ onMounted(() => {
 .border-red { border-left: 4px solid #ff5252 !important; border-radius: 4px; }
 .border-orange { border-left: 4px solid #ff9800 !important; border-radius: 4px; }
 .border-green { border-left: 4px solid #00c853 !important; border-radius: 4px; }
+.border-yellow { border-left: 4px solid #ffb300 !important; border-radius: 4px; }
+.border-blue { border-left: 4px solid #03a9f4 !important; border-radius: 4px; }
+
 .list-enter-active, .list-leave-active { transition: all 0.4s ease; }
 .list-enter-from { opacity: 0; transform: translateX(100px); }
 .list-leave-to { opacity: 0; transform: translateY(-20px); }
 
-/* ポップアップ点滅 */
+/* ランサム警告ポップアップ点滅 */
 .blink-fast { animation: blink-fast-anim 0.4s infinite alternate; }
 @keyframes blink-fast-anim { 0% { opacity: 1; } 100% { opacity: 0.3; } }
 
-/* 砂嵐ノイズ */
+/* 砂嵐（グリッチ）ノイズ */
 .vivid-noise-overlay { 
   position: fixed; 
   top: 0; 
@@ -634,7 +855,7 @@ onMounted(() => {
   100% { transform: translate(1px, 2px) skewX(0deg); filter: invert(0); background-color: rgba(255, 255, 255, 0.05); } 
 }
 
-/* ブルースクリーン */
+/* Windowsブルースクリーン */
 .bsod-screen { 
   position: fixed; 
   top: 0; 
@@ -651,7 +872,7 @@ onMounted(() => {
 .bsod-title { font-size: 28px; font-weight: 300; margin-bottom: 20px; line-height: 1.4; }
 .bsod-text, .bsod-percent { font-size: 20px; font-weight: 300; margin-bottom: 10px; }
 
-/* 完全暗転（シャットダウン） */
+/* 完全シャットダウン（暗転） */
 .blackout-screen {
   position: fixed;
   top: 0; 
@@ -669,6 +890,81 @@ onMounted(() => {
   pointer-events: auto;
   transition: opacity 0s !important;
 }
+
+/* 📞 False専用着信ポップアップ用ネオン枠 */
+.border-call {
+  border: 1px solid #4caf50 !important;
+  box-shadow: 0 0 20px rgba(76, 175, 80, 0.3) !important;
+}
+
+/* 電話着信バイブレーション */
+.phone-shake {
+  animation: phone-vibrate-anim 0.15s infinite alternate;
+}
+@keyframes phone-vibrate-anim {
+  0% { transform: translate(1px, 1px) rotate(0deg); }
+  100% { transform: translate(-1px, -1px) rotate(0.5deg); }
+}
+
+/* 通話応答アイコンのアニメーション */
+.blink-call-icon {
+  animation: blink-call-anim 0.6s infinite alternate;
+}
+@keyframes blink-call-anim {
+  0% { transform: scale(1); background-color: #4caf50 !important; }
+  100% { transform: scale(1.08); background-color: #81c784 !important; }
+}
+
+.border-left-error {
+  border-left: 3px solid #ff5252 !important;
+}
+
+/* 💬 チャット通知ポップアップ */
+.custom-chat-popup {
+  position: fixed;
+  width: 360px;
+  border-radius: 8px;
+  z-index: 99999;
+}
+
+/* Slack：画面の上部中央 */
+.custom-chat-popup.slack {
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #ffffff !important;
+  border: 1px solid #dcdcdc;
+  color: #4a154b !important;
+  border-left: 5px solid #4a154b !important;
+}
+
+/* Discord：画面の右下隅 */
+.custom-chat-popup.discord-bottom-position {
+  bottom: 24px;
+  right: 24px;
+  background-color: #2f3136 !important;
+  border: 1px solid #202225;
+  border-left: 5px solid #5865F2 !important;
+}
+
+/* LINE：デスクトップ通知右下 */
+.custom-chat-popup.line-bottom-position {
+  bottom: 120px; 
+  right: 24px;
+  background-color: #ffffff !important;
+  border: 1px solid #e5e5e5;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12) !important;
+}
+
+/* アニメーション */
+.slide-top-enter-active { transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+.slide-top-leave-active { transition: all 0.25s ease-in; }
+.slide-top-enter-from, .slide-top-leave-to { transform: translate(-50%, -100px); opacity: 0; }
+
+.slide-right-enter-active { transition: all 0.25s cubic-bezier(0.25, 1, 0.5, 1); }
+.slide-right-leave-active { transition: all 0.2s ease-in; }
+.slide-right-enter-from, .slide-right-leave-to { transform: translateX(120px); opacity: 0; }
 
 @media (max-width: 900px) {
   .mailbox-page {
