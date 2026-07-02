@@ -97,6 +97,13 @@ export type UpdateCurrentUserProfileInput = {
   email: string
 }
 
+export type CreateAdminUserInput = {
+  name: string
+  email: string
+  password: string
+  creatorUserId: string
+}
+
 const MAX_USER_IMAGE_BYTES = 2 * 1024 * 1024
 const ALLOWED_USER_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 
@@ -188,6 +195,22 @@ export async function registerUser(name: string, email: string, password: string
   saveCurrentUser(user)
 
   return user
+}
+
+export async function createAdminUser(input: CreateAdminUserInput): Promise<User> {
+  const res = await fetch(`${API_BASE_URL}/admin/users`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(input),
+  })
+
+  if (!res.ok) {
+    return throwApiError(res, '管理者アカウントの作成に失敗しました')
+  }
+
+  return (await res.json()) as User
 }
 
 export function validateNewPassword(
