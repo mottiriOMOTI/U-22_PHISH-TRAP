@@ -68,8 +68,6 @@
       </div>
     </section>
 
-<<<<<<< HEAD
-=======
     <!-- 🔒 操作ロック用透明オーバーレイ (通常UIと演出ダイアログの間に配置) -->
     <div 
       v-if="isSystemLocked" 
@@ -91,7 +89,6 @@
       </div>
     </v-snackbar>
 
->>>>>>> Ishikawa
     <!-- ==========================================================
          🚨 【共通演出レイヤー】バッドエンド（Death）演出オーバーレイ群
          ========================================================== -->
@@ -343,34 +340,6 @@ import { triggerDiagEffect, showDiag, resetDiagEffect, mailSubject, mailSender, 
 import { triggerCallEffect, answerCall, hangUpCall, formatCallTime, showCall, callerName, callStatus, callDuration, isCallConnected, callAudioLog } from './FearEffect/FearEffect_False_End/callEffect'
 import { triggerChatEffectByTag, showSlack, slackUser, slackMessage, slackAvatar, chatType } from './FearEffect/FearEffect_False_End/slackEffect'
 
-// ==========================================
-// 🚨 バッドエンド（Death）演出系の外部読み込み
-// ==========================================
-import { triggerNotificationEffect } from './FearEffect/FearEffect_Death_Attack/notificationEffect'
-import { triggerNoiseEffect } from './FearEffect/FearEffect_Death_Attack/noiseEffect'
-import { triggerBsodEffect } from './FearEffect/FearEffect_Death_Attack/bsodEffect'
-import { 
-  triggerEncryptEffect, 
-  resetEncryptEffect, 
-  showEncrypt, 
-  encryptProgress, 
-  encryptStatusText, 
-  encryptMainText, 
-  encryptChecklist, 
-  popupTitle, 
-  popupIcon, 
-  popupColor 
-} from './FearEffect/FearEffect_Death_Attack/encryptEffect'
-import { triggerSequenceEffect } from './FearEffect/FearEffect_Death_Attack/sequenceController'
-
-// ==========================================
-// 🟢 誤判定（False）演出系の外部読み込み
-// ==========================================
-import { triggerFalseNotification } from './FearEffect/FearEffect_False_End/falseNotificationEffect'
-import { triggerDiagEffect, showDiag, resetDiagEffect, mailSubject, mailSender, mailAddress, mailBody, popupBgColor, isForcedMode } from './FearEffect/FearEffect_False_End/diagEffect'
-import { triggerCallEffect, answerCall, hangUpCall, formatCallTime, showCall, callerName, callStatus, callDuration, isCallConnected, callAudioLog } from './FearEffect/FearEffect_False_End/callEffect'
-import { triggerChatEffectByTag, showSlack, slackUser, slackMessage, slackAvatar, chatType } from './FearEffect/FearEffect_False_End/slackEffect'
-
 const router = useRouter()
 
 const mails = ref<MailListItem[]>([])
@@ -392,8 +361,6 @@ const showBsod = ref(false)
 const bsodPercent = ref(0)
 const showBlackout = ref(false)
 
-<<<<<<< HEAD
-=======
 // 🔒 画面操作ロック用の状態（追加）
 const isSystemLocked = ref(false);
 const showLockMessage = ref(false);
@@ -404,7 +371,6 @@ const handleLockClick = () => {
   }
 };
 
->>>>>>> Ishikawa
 const SCENARIO_PROFILES: Record<SituationType, { intensity: 'high' | 'medium' | 'low'; chatType: string; caller: string }> = {
   business: { intensity: 'high', chatType: 'slack', caller: '総務部 佐藤' },
   school: { intensity: 'medium', chatType: 'discord', caller: '担任の先生' },
@@ -462,10 +428,7 @@ const resetAllEffects = () => {
  * 💀 バッドエンド演出
  */
 const startBadEndSequence = (state: any, scenarioType: SituationType = 'business') => {
-<<<<<<< HEAD
-=======
   isSystemLocked.value = true; // 🚨 画面操作をロック
->>>>>>> Ishikawa
   const profile = SCENARIO_PROFILES[scenarioType];
   console.log(`💀 バッドエンド演出開始: ${scenarioType} (強度: ${profile.intensity})`);
   
@@ -487,10 +450,7 @@ const startBadEndSequence = (state: any, scenarioType: SituationType = 'business
         isBlackout: showBlackout, 
         onComplete: () => {
           resetAllEffects();
-<<<<<<< HEAD
-=======
           isSystemLocked.value = false; // ロックを解除
->>>>>>> Ishikawa
           router.push({ 
             path: '/explanation', 
             state: {
@@ -511,10 +471,7 @@ const startBadEndSequence = (state: any, scenarioType: SituationType = 'business
  * 🟢 誤判定（誤報告）ホラー演出シーケンス
  */
 const startFalseSequence = (state: any, scenarioType: SituationType = 'business') => {
-<<<<<<< HEAD
-=======
   isSystemLocked.value = true; // 🚨 画面操作をロック
->>>>>>> Ishikawa
   currentMailState.value = state;
   const profile = SCENARIO_PROFILES[scenarioType];
   const delayFactor = profile.intensity === 'high' ? 0.8 : 1.2;
@@ -531,11 +488,7 @@ const startFalseSequence = (state: any, scenarioType: SituationType = 'business'
   setTimeout(() => {
     // 最後に暗転を入れ、演出の締めくくりを演出してから遷移
     showBlackout.value = true;
-<<<<<<< HEAD
-
-=======
     isSystemLocked.value = false; // ロックを解除
->>>>>>> Ishikawa
     setTimeout(() => {
       handleFalseEnd(state);
       router.push({
@@ -568,10 +521,6 @@ const handleFalseEnd = (state: any = currentMailState.value) => {
 /**
  * 💀＆🟢 前の画面から運ばれたフラグを元に自動演出を切り分ける
  */
-<<<<<<< HEAD
-// MailboxList.vue 内の checkDeathSequence を以下に置き換えてください
-=======
->>>>>>> Ishikawa
 function checkDeathSequence() {
   const rawState = window.history.state;
   const state = (rawState?.usr || rawState) as any;
@@ -582,22 +531,8 @@ function checkDeathSequence() {
   currentCategory.value = category
   const scenarioType = categoryToScenario(category)
 
-<<<<<<< HEAD
-  // 演出分岐
-  if (state.triggerDeath) {
-    // 💀 フィッシング成功（バッドエンド）
-    startBadEndSequence(state, scenarioType);
-  }
-  else if (state.triggerSocialDeath) {
-    // 👔 誤報告時の演出を開始し、完了後に handleFalseEnd で指定の push を行う
-    startFalseSequence(state, scenarioType);
-  }
-  else if (state.triggerSuccess) {
-    // ✨ 正解時
-=======
   // ✨ 正解時：遅延なしですぐに解説ページへ遷移
   if (state.triggerSuccess) {
->>>>>>> Ishikawa
     router.push({
       path: '/explanation',
       state: {
@@ -607,8 +542,6 @@ function checkDeathSequence() {
         category
       }
     });
-<<<<<<< HEAD
-=======
     return;
   }
 
@@ -669,7 +602,6 @@ function checkDeathSequence() {
         router.push(pushOptions);
       }
     }, delayMs);
->>>>>>> Ishikawa
   }
 }
 
@@ -1159,8 +1091,6 @@ onMounted(() => {
     margin-left: 0;
   }
 }
-<<<<<<< HEAD
-=======
 
 .system-lock-overlay {
   position: fixed;
@@ -1172,5 +1102,4 @@ onMounted(() => {
   z-index: 2000; /* 通常UIの上、かつVuetifyのダイアログ(z-index: 2400~)の下 */
   cursor: not-allowed; /* マウスカーソルを「禁止」マークに変更して絶望感を演出 */
 }
->>>>>>> Ishikawa
 </style>
