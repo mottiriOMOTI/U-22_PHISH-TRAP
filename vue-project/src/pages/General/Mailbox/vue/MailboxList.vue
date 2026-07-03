@@ -68,6 +68,30 @@
       </div>
     </section>
 
+<<<<<<< HEAD
+=======
+    <!-- 🔒 操作ロック用透明オーバーレイ (通常UIと演出ダイアログの間に配置) -->
+    <div 
+      v-if="isSystemLocked" 
+      class="system-lock-overlay"
+      @click.stop="handleLockClick"
+    ></div>
+
+    <!-- 🚫 操作ロック警告スナックバー (逃げようとした時に発火) -->
+    <v-snackbar
+      v-model="showLockMessage"
+      color="error"
+      timeout="1500"
+      location="top"
+      elevation="24"
+    >
+      <div class="d-flex align-center font-weight-bold text-subtitle-1 font-mono">
+        <v-icon icon="mdi-alert-circle-outline" class="mr-2" size="large"></v-icon>
+        SYSTEM ERROR: 操作がロックされています。
+      </div>
+    </v-snackbar>
+
+>>>>>>> Ishikawa
     <!-- ==========================================================
          🚨 【共通演出レイヤー】バッドエンド（Death）演出オーバーレイ群
          ========================================================== -->
@@ -289,6 +313,35 @@
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { fetchMails, type MailListItem } from '@/api/mailApi'
+import { getCurrentUser } from '@/api/users'
+
+// ==========================================
+// 🚨 バッドエンド（Death）演出系の外部読み込み
+// ==========================================
+import { triggerNotificationEffect } from './FearEffect/FearEffect_Death_Attack/notificationEffect'
+import { triggerNoiseEffect } from './FearEffect/FearEffect_Death_Attack/noiseEffect'
+import { triggerBsodEffect } from './FearEffect/FearEffect_Death_Attack/bsodEffect'
+import { 
+  triggerEncryptEffect, 
+  resetEncryptEffect, 
+  showEncrypt, 
+  encryptProgress, 
+  encryptStatusText, 
+  encryptMainText, 
+  encryptChecklist, 
+  popupTitle, 
+  popupIcon, 
+  popupColor 
+} from './FearEffect/FearEffect_Death_Attack/encryptEffect'
+import { triggerSequenceEffect } from './FearEffect/FearEffect_Death_Attack/sequenceController'
+
+// ==========================================
+// 🟢 誤判定（False）演出系の外部読み込み
+// ==========================================
+import { triggerFalseNotification } from './FearEffect/FearEffect_False_End/falseNotificationEffect'
+import { triggerDiagEffect, showDiag, resetDiagEffect, mailSubject, mailSender, mailAddress, mailBody, popupBgColor, isForcedMode } from './FearEffect/FearEffect_False_End/diagEffect'
+import { triggerCallEffect, answerCall, hangUpCall, formatCallTime, showCall, callerName, callStatus, callDuration, isCallConnected, callAudioLog } from './FearEffect/FearEffect_False_End/callEffect'
+import { triggerChatEffectByTag, showSlack, slackUser, slackMessage, slackAvatar, chatType } from './FearEffect/FearEffect_False_End/slackEffect'
 
 // ==========================================
 // 🚨 バッドエンド（Death）演出系の外部読み込み
@@ -339,6 +392,19 @@ const showBsod = ref(false)
 const bsodPercent = ref(0)
 const showBlackout = ref(false)
 
+<<<<<<< HEAD
+=======
+// 🔒 画面操作ロック用の状態（追加）
+const isSystemLocked = ref(false);
+const showLockMessage = ref(false);
+
+const handleLockClick = () => {
+  if (isSystemLocked.value) {
+    showLockMessage.value = true;
+  }
+};
+
+>>>>>>> Ishikawa
 const SCENARIO_PROFILES: Record<SituationType, { intensity: 'high' | 'medium' | 'low'; chatType: string; caller: string }> = {
   business: { intensity: 'high', chatType: 'slack', caller: '総務部 佐藤' },
   school: { intensity: 'medium', chatType: 'discord', caller: '担任の先生' },
@@ -362,7 +428,15 @@ async function load() {
   loading.value = true
   error.value = null
   try {
-    mails.value = await fetchMails()
+    // 1. getCurrentUserを使って、ローカルストレージから瞬時にユーザー情報を取得！
+    const user = getCurrentUser()
+    
+    // 2. ユーザーの現在のシチュエーションを取得（設定されていなければ 'school' をデフォルトにする）
+    const userScenario = user?.current_scenario ?? 'school'
+    
+    // 3. 取得したシチュエーションを条件にして、バックエンドからメールを取得する
+    mails.value = await fetchMails(userScenario)
+
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'メールの取得に失敗しました'
   } finally {
@@ -388,6 +462,10 @@ const resetAllEffects = () => {
  * 💀 バッドエンド演出
  */
 const startBadEndSequence = (state: any, scenarioType: SituationType = 'business') => {
+<<<<<<< HEAD
+=======
+  isSystemLocked.value = true; // 🚨 画面操作をロック
+>>>>>>> Ishikawa
   const profile = SCENARIO_PROFILES[scenarioType];
   console.log(`💀 バッドエンド演出開始: ${scenarioType} (強度: ${profile.intensity})`);
   
@@ -409,6 +487,10 @@ const startBadEndSequence = (state: any, scenarioType: SituationType = 'business
         isBlackout: showBlackout, 
         onComplete: () => {
           resetAllEffects();
+<<<<<<< HEAD
+=======
+          isSystemLocked.value = false; // ロックを解除
+>>>>>>> Ishikawa
           router.push({ 
             path: '/explanation', 
             state: {
@@ -429,6 +511,10 @@ const startBadEndSequence = (state: any, scenarioType: SituationType = 'business
  * 🟢 誤判定（誤報告）ホラー演出シーケンス
  */
 const startFalseSequence = (state: any, scenarioType: SituationType = 'business') => {
+<<<<<<< HEAD
+=======
+  isSystemLocked.value = true; // 🚨 画面操作をロック
+>>>>>>> Ishikawa
   currentMailState.value = state;
   const profile = SCENARIO_PROFILES[scenarioType];
   const delayFactor = profile.intensity === 'high' ? 0.8 : 1.2;
@@ -445,7 +531,11 @@ const startFalseSequence = (state: any, scenarioType: SituationType = 'business'
   setTimeout(() => {
     // 最後に暗転を入れ、演出の締めくくりを演出してから遷移
     showBlackout.value = true;
+<<<<<<< HEAD
 
+=======
+    isSystemLocked.value = false; // ロックを解除
+>>>>>>> Ishikawa
     setTimeout(() => {
       handleFalseEnd(state);
       router.push({
@@ -478,7 +568,10 @@ const handleFalseEnd = (state: any = currentMailState.value) => {
 /**
  * 💀＆🟢 前の画面から運ばれたフラグを元に自動演出を切り分ける
  */
+<<<<<<< HEAD
 // MailboxList.vue 内の checkDeathSequence を以下に置き換えてください
+=======
+>>>>>>> Ishikawa
 function checkDeathSequence() {
   const rawState = window.history.state;
   const state = (rawState?.usr || rawState) as any;
@@ -489,6 +582,7 @@ function checkDeathSequence() {
   currentCategory.value = category
   const scenarioType = categoryToScenario(category)
 
+<<<<<<< HEAD
   // 演出分岐
   if (state.triggerDeath) {
     // 💀 フィッシング成功（バッドエンド）
@@ -500,6 +594,10 @@ function checkDeathSequence() {
   }
   else if (state.triggerSuccess) {
     // ✨ 正解時
+=======
+  // ✨ 正解時：遅延なしですぐに解説ページへ遷移
+  if (state.triggerSuccess) {
+>>>>>>> Ishikawa
     router.push({
       path: '/explanation',
       state: {
@@ -509,6 +607,69 @@ function checkDeathSequence() {
         category
       }
     });
+<<<<<<< HEAD
+=======
+    return;
+  }
+
+  // 🔥 タイマー完了後にこのページへ戻ってきた場合（即時発火フラグ）
+  if (state.isTimeUpReady) {
+    console.log("🔥 タイマー完了：演出を強制発火します！");
+    if (state.mode === 'death') {
+      startBadEndSequence(state.mailData, scenarioType);
+    } else if (state.mode === 'socialDeath') {
+      startFalseSequence(state.mailData, scenarioType);
+    }
+    // 発火後は状態をリセットし、リロード時の再発火を防ぐ
+    window.history.replaceState({ ...rawState, isTimeUpReady: false }, '');
+    return;
+  }
+
+  // ⏳ 失敗フラグを受信したが、まだ発火していない場合 -> 裏でタイマーを開始
+  if (state.triggerDeath || state.triggerSocialDeath) {
+    // 待機時間（ミリ秒）: 1分 = 60000ms
+    // ※テスト時は 5000 (5秒) などに変更して動作確認してください
+    const delayMs = 5000; 
+    
+    const mode = state.triggerDeath ? 'death' : 'socialDeath';
+    const savedMailData = state; // 現在のメール状態をまるごと保存
+    const targetPath = router.currentRoute.value.path; // 発火時に戻ってくるべきこの画面のパス
+
+    console.log(`⏳ 演出フラグ(${mode})を受信。約${delayMs / 1000}秒後に強制発火します...`);
+
+    // history.state からトリガーを削除し、タイマー待機中の誤動作を防ぐ
+    window.history.replaceState({ ...rawState, triggerDeath: false, triggerSocialDeath: false }, '');
+
+    // 画面遷移してもタイマーが生き残るように window オブジェクトに登録
+    if ((window as any).__deathSequenceTimer) {
+      clearTimeout((window as any).__deathSequenceTimer);
+    }
+
+    (window as any).__deathSequenceTimer = setTimeout(() => {
+      console.log("⏰ 時間です。MailboxListへ強制遷移して演出を開始します。");
+      (window as any).__deathSequenceTimer = null;
+
+      const pushOptions = {
+        path: targetPath,
+        state: {
+          isTimeUpReady: true,  // 強制発火用の特殊フラグ
+          mode: mode,
+          mailData: savedMailData,
+          category: category
+        }
+      };
+
+      // 現在すでにこの画面（MailboxList）にいるか、別の画面にいるかで処理を分岐
+      if (router.currentRoute.value.path === targetPath) {
+        // 同じ画面にいる場合、pushではonMountedが呼ばれないためstateを上書きして直接再実行
+        window.history.replaceState({ usr: pushOptions.state }, '');
+        checkDeathSequence();
+      } else {
+        // 別の画面にいる場合は強制的にこの画面へ遷移（遷移後のonMountedでcheckDeathSequenceが走る）
+        router.push(pushOptions);
+      }
+    }, delayMs);
+>>>>>>> Ishikawa
   }
 }
 
@@ -998,4 +1159,18 @@ onMounted(() => {
     margin-left: 0;
   }
 }
+<<<<<<< HEAD
+=======
+
+.system-lock-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: transparent; /* 完全に透明な罠 */
+  z-index: 2000; /* 通常UIの上、かつVuetifyのダイアログ(z-index: 2400~)の下 */
+  cursor: not-allowed; /* マウスカーソルを「禁止」マークに変更して絶望感を演出 */
+}
+>>>>>>> Ishikawa
 </style>
