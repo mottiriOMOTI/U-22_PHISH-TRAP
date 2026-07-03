@@ -170,7 +170,7 @@ function formatDate(iso: string): string {
 
 // 削除不可の警告を出す関数を追加
 function showDeleteWarning() {
-  alert('メールを削除することはできません。')
+  alert('権限不足：メールを削除することはできません。')
 }
 
 function judgeAction(action: ActionType, value?: string) {
