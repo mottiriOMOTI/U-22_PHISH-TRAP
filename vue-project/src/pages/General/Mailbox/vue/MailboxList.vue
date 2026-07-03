@@ -68,8 +68,6 @@
       </div>
     </section>
 
-<<<<<<< HEAD
-=======
     <!-- 🔒 操作ロック用透明オーバーレイ (通常UIと演出ダイアログの間に配置) -->
     <div 
       v-if="isSystemLocked" 
@@ -91,7 +89,6 @@
       </div>
     </v-snackbar>
 
->>>>>>> Ishikawa
     <!-- ==========================================================
          🚨 【共通演出レイヤー】バッドエンド（Death）演出オーバーレイ群
          ========================================================== -->
@@ -343,34 +340,6 @@ import { triggerDiagEffect, showDiag, resetDiagEffect, mailSubject, mailSender, 
 import { triggerCallEffect, answerCall, hangUpCall, formatCallTime, showCall, callerName, callStatus, callDuration, isCallConnected, callAudioLog } from './FearEffect/FearEffect_False_End/callEffect'
 import { triggerChatEffectByTag, showSlack, slackUser, slackMessage, slackAvatar, chatType } from './FearEffect/FearEffect_False_End/slackEffect'
 
-// ==========================================
-// 🚨 バッドエンド（Death）演出系の外部読み込み
-// ==========================================
-import { triggerNotificationEffect } from './FearEffect/FearEffect_Death_Attack/notificationEffect'
-import { triggerNoiseEffect } from './FearEffect/FearEffect_Death_Attack/noiseEffect'
-import { triggerBsodEffect } from './FearEffect/FearEffect_Death_Attack/bsodEffect'
-import { 
-  triggerEncryptEffect, 
-  resetEncryptEffect, 
-  showEncrypt, 
-  encryptProgress, 
-  encryptStatusText, 
-  encryptMainText, 
-  encryptChecklist, 
-  popupTitle, 
-  popupIcon, 
-  popupColor 
-} from './FearEffect/FearEffect_Death_Attack/encryptEffect'
-import { triggerSequenceEffect } from './FearEffect/FearEffect_Death_Attack/sequenceController'
-
-// ==========================================
-// 🟢 誤判定（False）演出系の外部読み込み
-// ==========================================
-import { triggerFalseNotification } from './FearEffect/FearEffect_False_End/falseNotificationEffect'
-import { triggerDiagEffect, showDiag, resetDiagEffect, mailSubject, mailSender, mailAddress, mailBody, popupBgColor, isForcedMode } from './FearEffect/FearEffect_False_End/diagEffect'
-import { triggerCallEffect, answerCall, hangUpCall, formatCallTime, showCall, callerName, callStatus, callDuration, isCallConnected, callAudioLog } from './FearEffect/FearEffect_False_End/callEffect'
-import { triggerChatEffectByTag, showSlack, slackUser, slackMessage, slackAvatar, chatType } from './FearEffect/FearEffect_False_End/slackEffect'
-
 const router = useRouter()
 
 const mails = ref<MailListItem[]>([])
@@ -392,10 +361,9 @@ const showBsod = ref(false)
 const bsodPercent = ref(0)
 const showBlackout = ref(false)
 
-<<<<<<< HEAD
-=======
+const isSystemLocked = ref(false)
+
 // 🔒 画面操作ロック用の状態（追加）
-const isSystemLocked = ref(false);
 const showLockMessage = ref(false);
 
 const handleLockClick = () => {
@@ -404,7 +372,6 @@ const handleLockClick = () => {
   }
 };
 
->>>>>>> Ishikawa
 const SCENARIO_PROFILES: Record<SituationType, { intensity: 'high' | 'medium' | 'low'; chatType: string; caller: string }> = {
   business: { intensity: 'high', chatType: 'slack', caller: '総務部 佐藤' },
   school: { intensity: 'medium', chatType: 'discord', caller: '担任の先生' },
@@ -427,23 +394,17 @@ const categoryToScenario = (category: ExplanationCategory): SituationType => {
 async function load() {
   loading.value = true
   error.value = null
-  try {
-    // 1. getCurrentUserを使って、ローカルストレージから瞬時にユーザー情報を取得！
-    const user = getCurrentUser()
-    
-    // 2. ユーザーの現在のシチュエーションを取得（設定されていなければ 'school' をデフォルトにする）
-    const userScenario = user?.current_scenario ?? 'school'
-    
-    // 3. 取得したシチュエーションを条件にして、バックエンドからメールを取得する
-    mails.value = await fetchMails(userScenario)
 
+  try {
+    const user = getCurrentUser()
+    const userScenario = user?.current_scenario ?? 'school'
+    mails.value = await fetchMails(userScenario)
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'メールの取得に失敗しました'
   } finally {
     loading.value = false
   }
 }
-
 /**
  * 🚨 すべての演出状態をリセットするクリーンアップ処理
  */
@@ -462,10 +423,7 @@ const resetAllEffects = () => {
  * 💀 バッドエンド演出
  */
 const startBadEndSequence = (state: any, scenarioType: SituationType = 'business') => {
-<<<<<<< HEAD
-=======
   isSystemLocked.value = true; // 🚨 画面操作をロック
->>>>>>> Ishikawa
   const profile = SCENARIO_PROFILES[scenarioType];
   console.log(`💀 バッドエンド演出開始: ${scenarioType} (強度: ${profile.intensity})`);
   
@@ -487,10 +445,7 @@ const startBadEndSequence = (state: any, scenarioType: SituationType = 'business
         isBlackout: showBlackout, 
         onComplete: () => {
           resetAllEffects();
-<<<<<<< HEAD
-=======
           isSystemLocked.value = false; // ロックを解除
->>>>>>> Ishikawa
           router.push({ 
             path: '/explanation', 
             state: {
@@ -511,47 +466,37 @@ const startBadEndSequence = (state: any, scenarioType: SituationType = 'business
  * 🟢 誤判定（誤報告）ホラー演出シーケンス
  */
 const startFalseSequence = (state: any, scenarioType: SituationType = 'business') => {
-<<<<<<< HEAD
-=======
-  isSystemLocked.value = true; // 🚨 画面操作をロック
->>>>>>> Ishikawa
-  currentMailState.value = state;
-  const profile = SCENARIO_PROFILES[scenarioType];
-  const delayFactor = profile.intensity === 'high' ? 0.8 : 1.2;
+  isSystemLocked.value = true
+  currentMailState.value = state
+  const profile = SCENARIO_PROFILES[scenarioType]
+  const delayFactor = profile.intensity === 'high' ? 0.8 : 1.2
 
-  console.log(`⚠ 誤報告演出開始: ${scenarioType}`);
+  console.log(`False sequence start: ${scenarioType}`)
 
-  // 演出シーケンスを開始
-  triggerFalseNotification(notifications, scenarioType, 1);
-  setTimeout(() => triggerChatEffectByTag(scenarioType), 1000 * delayFactor);
-  setTimeout(() => triggerFalseNotification(notifications, scenarioType, 2), 2500 * delayFactor);
-  setTimeout(() => triggerCallEffect(scenarioType), 4000 * delayFactor);
+  triggerFalseNotification(notifications, scenarioType, 1)
+  setTimeout(() => triggerChatEffectByTag(scenarioType), 1000 * delayFactor)
+  setTimeout(() => triggerFalseNotification(notifications, scenarioType, 2), 2500 * delayFactor)
+  setTimeout(() => triggerCallEffect(scenarioType), 4000 * delayFactor)
 
-  // 演出終了後に確実に遷移するためのシーケンス終了監視
   setTimeout(() => {
-    // 最後に暗転を入れ、演出の締めくくりを演出してから遷移
-    showBlackout.value = true;
-<<<<<<< HEAD
+    showBlackout.value = true
+    isSystemLocked.value = false
 
-=======
-    isSystemLocked.value = false; // ロックを解除
->>>>>>> Ishikawa
     setTimeout(() => {
-      handleFalseEnd(state);
+      handleFalseEnd(state)
       router.push({
-    path: '/explanation',
-    state: {
-      mail: state.mail,
-      isCorrect: false,
-      needFadeIn: true,        // 解説ページのフェードイン演出を有効化
-      judgedAction: state.judgedAction,
-      category: currentCategory.value   // カテゴリを正しく引き継ぐ
-    }
-  });
-    }, 500); // 暗転から遷移までの猶予
-  }, 7500 * delayFactor);
-};
-
+        path: '/explanation',
+        state: {
+          mail: state.mail,
+          isCorrect: false,
+          needFadeIn: true,
+          judgedAction: state.judgedAction,
+          category: currentCategory.value,
+        },
+      })
+    }, 500)
+  }, 7500 * delayFactor)
+}
 /**
  * 📞 誤報告時の安全なリダイレクト処理
  */
@@ -568,112 +513,108 @@ const handleFalseEnd = (state: any = currentMailState.value) => {
 /**
  * 💀＆🟢 前の画面から運ばれたフラグを元に自動演出を切り分ける
  */
-<<<<<<< HEAD
 // MailboxList.vue 内の checkDeathSequence を以下に置き換えてください
-=======
->>>>>>> Ishikawa
-function checkDeathSequence() {
-  const rawState = window.history.state;
-  const state = (rawState?.usr || rawState) as any;
-  if (!state) return;
+function getHistoryState(): any {
+  const rawState = window.history.state
+  return rawState?.usr || rawState
+}
 
-  // 演出用の状況タグと解説用カテゴリを分けて扱う
-  const category = normalizeCategory(state.category || state.mail?.category)
+function replaceHistoryState(patch: Record<string, unknown>) {
+  const rawState = window.history.state ?? {}
+
+  if (rawState && typeof rawState === 'object' && 'usr' in rawState) {
+    window.history.replaceState(
+      {
+        ...rawState,
+        usr: {
+          ...(rawState.usr ?? {}),
+          ...patch,
+        },
+      },
+      '',
+    )
+    return
+  }
+
+  window.history.replaceState({ ...rawState, ...patch }, '')
+}
+
+function setHistoryState(nextState: Record<string, unknown>) {
+  const rawState = window.history.state ?? {}
+
+  if (rawState && typeof rawState === 'object' && 'usr' in rawState) {
+    window.history.replaceState({ ...rawState, usr: nextState }, '')
+    return
+  }
+
+  window.history.replaceState(nextState, '')
+}
+
+function checkDeathSequence() {
+  const state = getHistoryState()
+  if (!state) return
+
+  const category = normalizeCategory(state.category || state.mail?.category || state.mailData?.mail?.category)
   currentCategory.value = category
   const scenarioType = categoryToScenario(category)
 
-<<<<<<< HEAD
-  // 演出分岐
-  if (state.triggerDeath) {
-    // 💀 フィッシング成功（バッドエンド）
-    startBadEndSequence(state, scenarioType);
-  }
-  else if (state.triggerSocialDeath) {
-    // 👔 誤報告時の演出を開始し、完了後に handleFalseEnd で指定の push を行う
-    startFalseSequence(state, scenarioType);
-  }
-  else if (state.triggerSuccess) {
-    // ✨ 正解時
-=======
-  // ✨ 正解時：遅延なしですぐに解説ページへ遷移
   if (state.triggerSuccess) {
->>>>>>> Ishikawa
     router.push({
       path: '/explanation',
       state: {
         mail: state.mail,
         isCorrect: state.isCorrect ?? true,
         judgedAction: state.judgedAction,
-        category
-      }
-    });
-<<<<<<< HEAD
-=======
-    return;
+        category,
+      },
+    })
+    return
   }
 
-  // 🔥 タイマー完了後にこのページへ戻ってきた場合（即時発火フラグ）
   if (state.isTimeUpReady) {
-    console.log("🔥 タイマー完了：演出を強制発火します！");
     if (state.mode === 'death') {
-      startBadEndSequence(state.mailData, scenarioType);
+      startBadEndSequence(state.mailData, scenarioType)
     } else if (state.mode === 'socialDeath') {
-      startFalseSequence(state.mailData, scenarioType);
+      startFalseSequence(state.mailData, scenarioType)
     }
-    // 発火後は状態をリセットし、リロード時の再発火を防ぐ
-    window.history.replaceState({ ...rawState, isTimeUpReady: false }, '');
-    return;
+
+    replaceHistoryState({ isTimeUpReady: false })
+    return
   }
 
-  // ⏳ 失敗フラグを受信したが、まだ発火していない場合 -> 裏でタイマーを開始
   if (state.triggerDeath || state.triggerSocialDeath) {
-    // 待機時間（ミリ秒）: 1分 = 60000ms
-    // ※テスト時は 5000 (5秒) などに変更して動作確認してください
-    const delayMs = 5000; 
-    
-    const mode = state.triggerDeath ? 'death' : 'socialDeath';
-    const savedMailData = state; // 現在のメール状態をまるごと保存
-    const targetPath = router.currentRoute.value.path; // 発火時に戻ってくるべきこの画面のパス
+    const delayMs = 5000
+    const mode = state.triggerDeath ? 'death' : 'socialDeath'
+    const savedMailData = state
+    const targetPath = router.currentRoute.value.path
 
-    console.log(`⏳ 演出フラグ(${mode})を受信。約${delayMs / 1000}秒後に強制発火します...`);
+    console.log(`Sequence flag received: ${mode}; starting in ${delayMs / 1000}s`)
+    replaceHistoryState({ triggerDeath: false, triggerSocialDeath: false })
 
-    // history.state からトリガーを削除し、タイマー待機中の誤動作を防ぐ
-    window.history.replaceState({ ...rawState, triggerDeath: false, triggerSocialDeath: false }, '');
-
-    // 画面遷移してもタイマーが生き残るように window オブジェクトに登録
     if ((window as any).__deathSequenceTimer) {
-      clearTimeout((window as any).__deathSequenceTimer);
+      clearTimeout((window as any).__deathSequenceTimer)
     }
 
-    (window as any).__deathSequenceTimer = setTimeout(() => {
-      console.log("⏰ 時間です。MailboxListへ強制遷移して演出を開始します。");
-      (window as any).__deathSequenceTimer = null;
+    ;(window as any).__deathSequenceTimer = setTimeout(() => {
+      ;(window as any).__deathSequenceTimer = null
 
-      const pushOptions = {
-        path: targetPath,
-        state: {
-          isTimeUpReady: true,  // 強制発火用の特殊フラグ
-          mode: mode,
-          mailData: savedMailData,
-          category: category
-        }
-      };
-
-      // 現在すでにこの画面（MailboxList）にいるか、別の画面にいるかで処理を分岐
-      if (router.currentRoute.value.path === targetPath) {
-        // 同じ画面にいる場合、pushではonMountedが呼ばれないためstateを上書きして直接再実行
-        window.history.replaceState({ usr: pushOptions.state }, '');
-        checkDeathSequence();
-      } else {
-        // 別の画面にいる場合は強制的にこの画面へ遷移（遷移後のonMountedでcheckDeathSequenceが走る）
-        router.push(pushOptions);
+      const nextState = {
+        isTimeUpReady: true,
+        mode,
+        mailData: savedMailData,
+        category,
       }
-    }, delayMs);
->>>>>>> Ishikawa
+
+      if (router.currentRoute.value.path === targetPath) {
+        setHistoryState(nextState)
+        checkDeathSequence()
+        return
+      }
+
+      router.push({ path: targetPath, state: nextState })
+    }, delayMs)
   }
 }
-
-
 // startBadEndSequence と startFalseSequence の引数型も更新
 
 function openMail(id: string) {
@@ -708,8 +649,8 @@ onMounted(() => {
   box-sizing: border-box;
   min-height: 100vh;
   padding: 18px 22px 14px;
-  background: #172337;
-  color: #ffffff;
+  background: var(--page-bg);
+  color: var(--page-text);
 }
 
 .mailbox-hero {
@@ -720,7 +661,7 @@ onMounted(() => {
 }
 
 .mailbox-hero__icon {
-  color: #45a4ff;
+  color: var(--accent-strong);
   font-size: 42px;
 }
 
@@ -737,7 +678,7 @@ onMounted(() => {
 .mail-row__meta,
 .mailbox-state p {
   margin: 0;
-  color: #9fbbe0;
+  color: var(--muted);
 }
 
 .mailbox-hero p {
@@ -748,9 +689,9 @@ onMounted(() => {
 .mailbox-panel {
   width: min(100%, 1040px);
   padding: 18px 22px 20px;
-  border: 1px solid #34465f;
+  border: 1px solid var(--panel-border);
   border-radius: 12px;
-  background: #172337;
+  background: var(--panel-bg);
 }
 
 .mailbox-panel__header {
@@ -787,8 +728,8 @@ onMounted(() => {
   padding: 14px 16px;
   border: 1px solid transparent;
   border-radius: 8px;
-  background: #111a2f;
-  color: #ffffff;
+  background: var(--surface-bg);
+  color: var(--page-text);
   cursor: pointer;
   text-align: left;
   transition:
@@ -798,8 +739,8 @@ onMounted(() => {
 
 .mail-row__button:hover,
 .mail-row__button:focus-visible {
-  border-color: #45a4ff;
-  background: #162444;
+  border-color: var(--accent-strong);
+  background: color-mix(in srgb, var(--surface-bg) 78%, var(--accent-strong));
   outline: none;
 }
 
@@ -810,8 +751,8 @@ onMounted(() => {
   flex: 0 0 auto;
   place-items: center;
   border-radius: 8px;
-  background: #1c3574;
-  color: #5da2ff;
+  background: color-mix(in srgb, var(--accent-strong) 24%, var(--surface-bg));
+  color: var(--accent-strong);
 }
 
 .mail-row__icon :deep(.v-icon) {
@@ -859,7 +800,7 @@ onMounted(() => {
 }
 
 .mail-row__meta :deep(.v-icon) {
-  color: #ffffff;
+  color: var(--page-text);
   font-size: 20px;
 }
 
@@ -870,17 +811,17 @@ onMounted(() => {
   min-height: 92px;
   padding: 18px;
   border-radius: 8px;
-  background: #111a2f;
+  background: var(--surface-bg);
 }
 
 .mailbox-state__icon {
   flex: 0 0 auto;
-  color: #45a4ff;
+  color: var(--accent-strong);
   font-size: 34px;
 }
 
 .mailbox-state--error .mailbox-state__icon {
-  color: #ff7382;
+  color: var(--danger);
 }
 
 .mailbox-state h3 {
@@ -900,10 +841,10 @@ onMounted(() => {
   min-height: 38px;
   margin-left: auto;
   padding: 0 18px;
-  border: 1px solid #4d6079;
+  border: 1px solid var(--surface-border);
   border-radius: 8px;
   background: transparent;
-  color: #ffffff;
+  color: var(--page-text);
   font-size: 14px;
   font-weight: 800;
   cursor: pointer;
@@ -911,7 +852,7 @@ onMounted(() => {
 
 .secondary-button:hover,
 .secondary-button:focus-visible {
-  background: #172337;
+  background: var(--panel-bg);
   outline: none;
 }
 
@@ -923,14 +864,19 @@ onMounted(() => {
   gap: 14px;
   padding: 14px 16px;
   border-radius: 8px;
-  background: #111a2f;
+  background: var(--surface-bg);
 }
 
 .mail-row-skeleton__icon,
 .mail-row-skeleton__line {
   display: block;
   border-radius: 999px;
-  background: linear-gradient(90deg, #26334a, #34465f, #26334a);
+  background: linear-gradient(
+    90deg,
+    var(--toggle-bg),
+    var(--surface-border),
+    var(--toggle-bg)
+  );
   background-size: 220% 100%;
   animation: mailbox-loading 1200ms ease-in-out infinite;
 }
@@ -1159,8 +1105,6 @@ onMounted(() => {
     margin-left: 0;
   }
 }
-<<<<<<< HEAD
-=======
 
 .system-lock-overlay {
   position: fixed;
@@ -1172,5 +1116,4 @@ onMounted(() => {
   z-index: 2000; /* 通常UIの上、かつVuetifyのダイアログ(z-index: 2400~)の下 */
   cursor: not-allowed; /* マウスカーソルを「禁止」マークに変更して絶望感を演出 */
 }
->>>>>>> Ishikawa
 </style>

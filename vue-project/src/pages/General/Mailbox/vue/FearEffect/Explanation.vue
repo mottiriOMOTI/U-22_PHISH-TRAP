@@ -1,5 +1,4 @@
 <template>
-<<<<<<< HEAD
   <main class="explanation-page" :aria-busy="isLoading ? 'true' : 'false'" aria-labelledby="explanation-title">
     <div v-if="showFadeOverlay" :class="['explanation-fade-overlay', { 'is-fading': startFadeOut }]" />
 
@@ -28,9 +27,7 @@
         <h2>解説データが見つかりません</h2>
         <p>メールボックスからもう一度トレーニングを開始してください。</p>
       </div>
-      <button class="explanation-secondary-button" type="button" @click="goToMailbox">
-        メールボックスへ戻る
-      </button>
+      <button class="explanation-secondary-button" type="button" @click="goToMailbox">メールボックスへ戻る</button>
     </section>
 
     <template v-else>
@@ -88,7 +85,7 @@
       <section class="explanation-panel explanation-learning-panel">
         <div>
           <span>学習ポイント</span>
-          <h2>次に同じメールを見たときの判断基準を残しましょう。</h2>
+          <h2>次に同じメールを見たときの判断基準を残しましょう</h2>
           <p>
             急がせる表現、送信元の違和感、リンク先、添付ファイルの有無を順番に確認すると、
             実際のメールでも落ち着いて判断しやすくなります。
@@ -106,10 +103,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import {
-  fetchQuestionExplanation,
-  type QuestionExplanation,
-} from '@/api/mailApi'
+import { fetchQuestionExplanation, type QuestionExplanation } from '@/api/mailApi'
 
 type ExplanationMail = {
   id: string
@@ -142,14 +136,10 @@ const startFadeOut = ref(false)
 const isPhishing = computed(() => mailCard.value?.is_phishing !== false)
 const resultTone = computed(() => (isCorrect.value ? 'success' : 'danger'))
 const pageIcon = computed(() => (isCorrect.value ? 'mdi-check-circle-outline' : 'mdi-close-circle-outline'))
-
 const resultLabel = computed(() => (isCorrect.value ? '正しい判断' : '確認が必要な判断'))
 
 const pageTitle = computed(() => {
-  if (isCorrect.value) {
-    return '正しい対応ができました'
-  }
-
+  if (isCorrect.value) return '正しい対応ができました'
   return isPhishing.value ? 'フィッシングメールに反応しました' : '安全なメールを報告しました'
 })
 
@@ -177,7 +167,7 @@ const resultDescription = computed(() => {
 
   return isPhishing.value
     ? '返信、リンク、添付ファイル操作は被害につながる可能性があります。'
-    : '通常メールでも過剰に報告すると、必要な業務連絡を見落とす原因になります。'
+    : '通常メールを過剰に報告すると、必要な業務連絡を見落とす原因になります。'
 })
 
 const mailTypeLabel = computed(() => (isPhishing.value ? 'フィッシングメール' : '通常メール'))
@@ -330,11 +320,17 @@ onMounted(initializeExplanation)
   position: relative;
   box-sizing: border-box;
   min-height: 100vh;
-  background: var(--page-bg);
+  padding: 18px 22px 28px;
+  background: var(--page-bg, #172337);
+  color: var(--page-text, #ffffff);
 }
 
 .explanation-hero {
+  display: flex;
   width: min(100%, 1040px);
+  align-items: center;
+  gap: 14px;
+  margin: 0 auto 18px;
 }
 
 .explanation-result-icon {
@@ -343,9 +339,9 @@ onMounted(initializeExplanation)
   height: 58px;
   flex: 0 0 auto;
   place-items: center;
-  border: 1px solid var(--panel-border);
+  border: 1px solid var(--panel-border, #31435c);
   border-radius: 8px;
-  background: var(--surface-bg);
+  background: var(--surface-bg, #111a2f);
 }
 
 .explanation-result-icon :deep(.v-icon) {
@@ -362,10 +358,41 @@ onMounted(initializeExplanation)
 
 .explanation-eyebrow {
   margin: 0 0 5px;
-  color: var(--muted);
+  color: var(--muted, #9fbbe0);
   font-size: 13px;
   font-weight: 900;
-  letter-spacing: 0;
+}
+
+.explanation-hero h1 {
+  margin: 0;
+  color: var(--heading-text, #ffffff);
+  font-size: 30px;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+.explanation-hero p,
+.explanation-panel p,
+.explanation-result-card p,
+.explanation-info-card p,
+.explanation-check-list li {
+  color: var(--muted, #9fbbe0);
+}
+
+.explanation-panel,
+.explanation-result-card,
+.explanation-mail-card,
+.explanation-info-card {
+  border: 1px solid var(--panel-border, #31435c);
+  border-radius: 8px;
+  background: var(--panel-bg, #1d2b43);
+  color: var(--page-text, #ffffff);
+}
+
+.explanation-panel {
+  width: min(100%, 1040px);
+  margin: 0 auto 18px;
+  padding: 20px;
 }
 
 .explanation-panel--message {
@@ -379,46 +406,44 @@ onMounted(initializeExplanation)
   margin: 0;
   font-size: 18px;
   font-weight: 800;
-  line-height: 1.3;
-}
-
-.explanation-panel--message p {
-  margin-top: 5px;
-  color: var(--muted);
-  font-size: 14px;
 }
 
 .explanation-loading-icon {
   width: 42px;
   height: 42px;
   flex: 0 0 auto;
-  border: 4px solid var(--toggle-bg);
-  border-top-color: var(--accent-strong);
+  border: 4px solid var(--toggle-bg, #34455e);
+  border-top-color: var(--accent-strong, #5da2ff);
   border-radius: 50%;
   animation: explanation-loading 900ms linear infinite;
 }
 
 .explanation-message-icon {
   flex: 0 0 auto;
-  color: var(--danger);
+  color: var(--danger, #ff6b76);
   font-size: 34px;
 }
 
-.explanation-summary-grid {
+.explanation-summary-grid,
+.explanation-card-grid {
   display: grid;
   width: min(100%, 1040px);
-  grid-template-columns: minmax(260px, 0.65fr) minmax(0, 1.35fr);
   gap: 18px;
-  margin-bottom: 18px;
+  margin: 0 auto 18px;
+}
+
+.explanation-summary-grid {
+  grid-template-columns: minmax(260px, 0.65fr) minmax(0, 1.35fr);
+}
+
+.explanation-card-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .explanation-result-card,
 .explanation-mail-card,
 .explanation-info-card {
-  border: 1px solid var(--panel-border);
-  border-radius: 8px;
-  background: var(--panel-bg);
-  color: var(--page-text);
+  padding: 22px;
 }
 
 .explanation-result-card {
@@ -426,12 +451,14 @@ onMounted(initializeExplanation)
   align-content: start;
   min-height: 220px;
   gap: 14px;
-  padding: 24px;
 }
 
-.explanation-result-card span {
-  color: var(--muted);
-  font-size: 14px;
+.explanation-result-card span,
+.explanation-mail-card__header span,
+.explanation-mail-meta dt,
+.explanation-learning-panel span {
+  color: var(--muted, #9fbbe0);
+  font-size: 13px;
   font-weight: 900;
 }
 
@@ -441,25 +468,8 @@ onMounted(initializeExplanation)
   line-height: 1;
 }
 
-.explanation-result-card p {
-  color: var(--muted);
-  font-size: 14px;
-  font-weight: 700;
-  line-height: 1.55;
-}
-
-.explanation-result-card--success {
-  border-color: color-mix(in srgb, var(--success) 70%, var(--panel-border));
-  background: color-mix(in srgb, var(--success) 14%, var(--panel-bg));
-}
-
 .explanation-result-card--success strong {
   color: #77d99a;
-}
-
-.explanation-result-card--danger {
-  border-color: color-mix(in srgb, var(--danger) 70%, var(--panel-border));
-  background: color-mix(in srgb, var(--danger) 13%, var(--panel-bg));
 }
 
 .explanation-result-card--danger strong {
@@ -469,7 +479,6 @@ onMounted(initializeExplanation)
 .explanation-mail-card {
   display: grid;
   gap: 16px;
-  padding: 22px;
 }
 
 .explanation-mail-card__header {
@@ -489,22 +498,11 @@ onMounted(initializeExplanation)
   color: #5da2ff;
 }
 
-.explanation-mail-card__icon :deep(.v-icon) {
-  font-size: 26px;
-}
-
-.explanation-mail-card__header span,
-.explanation-mail-meta dt {
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: 900;
-}
-
 .explanation-mail-card__header strong {
   display: block;
   margin-top: 4px;
   overflow-wrap: anywhere;
-  color: var(--heading-text);
+  color: var(--heading-text, #ffffff);
   font-size: 21px;
   font-weight: 900;
   line-height: 1.3;
@@ -517,11 +515,15 @@ onMounted(initializeExplanation)
   margin: 0;
 }
 
+.explanation-mail-meta div,
+.explanation-mail-body {
+  border-radius: 8px;
+  background: var(--surface-bg, #111a2f);
+}
+
 .explanation-mail-meta div {
   min-width: 0;
   padding: 12px;
-  border-radius: 8px;
-  background: var(--surface-bg);
 }
 
 .explanation-mail-meta dd {
@@ -529,26 +531,14 @@ onMounted(initializeExplanation)
   overflow-wrap: anywhere;
   font-size: 14px;
   font-weight: 800;
-  line-height: 1.35;
 }
 
 .explanation-mail-body {
   margin: 0;
   padding: 16px;
-  border: 1px solid color-mix(in srgb, var(--panel-border) 72%, transparent);
-  border-radius: 8px;
-  background: var(--surface-bg);
-  color: var(--page-text);
+  border: 1px solid color-mix(in srgb, var(--panel-border, #31435c) 72%, transparent);
   font-size: 14px;
   line-height: 1.7;
-}
-
-.explanation-card-grid {
-  display: grid;
-  width: min(100%, 1040px);
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
-  margin-bottom: 18px;
 }
 
 .explanation-info-card {
@@ -556,7 +546,6 @@ onMounted(initializeExplanation)
   align-content: start;
   min-height: 220px;
   gap: 14px;
-  padding: 20px;
 }
 
 .explanation-info-card--warning {
@@ -578,24 +567,17 @@ onMounted(initializeExplanation)
 }
 
 .explanation-info-card__heading :deep(.v-icon) {
-  color: var(--accent);
+  color: var(--accent, #5da2ff);
   font-size: 22px;
 }
 
-.explanation-info-card h2 {
+.explanation-info-card h2,
+.explanation-learning-panel h2 {
   margin: 0;
-  color: var(--heading-text);
+  color: var(--heading-text, #ffffff);
   font-size: 18px;
   font-weight: 900;
   line-height: 1.3;
-}
-
-.explanation-info-card p {
-  margin: 0;
-  color: var(--muted);
-  font-size: 14px;
-  font-weight: 700;
-  line-height: 1.65;
 }
 
 .explanation-check-list {
@@ -609,7 +591,6 @@ onMounted(initializeExplanation)
 .explanation-check-list li {
   position: relative;
   padding-left: 20px;
-  color: var(--muted);
   font-size: 14px;
   font-weight: 700;
   line-height: 1.55;
@@ -622,7 +603,7 @@ onMounted(initializeExplanation)
   width: 8px;
   height: 8px;
   border-radius: 999px;
-  background: var(--accent-strong);
+  background: var(--accent-strong, #5da2ff);
   content: "";
 }
 
@@ -633,21 +614,13 @@ onMounted(initializeExplanation)
   gap: 18px;
 }
 
-.explanation-learning-panel span {
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: 900;
-}
-
 .explanation-learning-panel h2 {
   margin: 5px 0 8px;
   font-size: 20px;
-  font-weight: 900;
-  line-height: 1.35;
 }
 
 .explanation-learning-panel p {
-  color: var(--muted);
+  margin: 0;
   font-size: 14px;
   font-weight: 700;
   line-height: 1.65;
@@ -675,24 +648,12 @@ onMounted(initializeExplanation)
   color: #ffffff;
 }
 
-.explanation-primary-button:hover,
-.explanation-primary-button:focus-visible {
-  background: #1f55ca;
-  outline: none;
-}
-
 .explanation-secondary-button {
   margin-left: auto;
   padding: 0 18px;
-  border: 1px solid var(--panel-border);
+  border: 1px solid var(--panel-border, #31435c);
   background: transparent;
-  color: var(--page-text);
-}
-
-.explanation-secondary-button:hover,
-.explanation-secondary-button:focus-visible {
-  background: var(--surface-bg);
-  outline: none;
+  color: var(--page-text, #ffffff);
 }
 
 .explanation-fade-overlay {
@@ -700,219 +661,10 @@ onMounted(initializeExplanation)
   inset: 0;
   z-index: 99999;
   background-color: #000000;
-=======
-  <v-container class="explanation-container py-8 px-4" max-width="960">
-    <!-- フェードイン用オーバーレイ -->
-    <div :class="['explanation-fade-overlay', { 'is-fading': startFadeOut }]" v-if="showFadeOverlay"></div>
-
-    <div class="d-flex justify-center mt-6 mb-2">
-      <v-icon
-        :icon="pageIcon"
-        size="160"
-        :class="pageIconClass"
-      ></v-icon>
-    </div>
-
-    <h1 class="d-flex justify-center text-h4 font-weight-black mb-1">{{ pageTitle }}</h1>
-    <h3 class="d-flex justify-center text-subtitle-1 color-subtitle mb-6">{{ pageSubtitle }}</h3>
-
-    <v-row v-if="isLoading" class="my-6 justify-center">
-      <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
-    </v-row>
-
-    <v-row v-else class="margin-3">
-      <v-col v-for="item in cards" :key="item.id" cols="12">
-        
-        <BaseCard
-          v-if="item.type === 'danger'"
-          :type="item.type"
-          :title="item.title || (isPhishing ? 'フィッシングメール本文' : '通常メール本文')" 
-          :subTitle="item.sender_name ? `${item.sender_name} <${item.sender_email}>` : item.sender_email" 
-          :text="item.body" 
-          :color="item.color"
-          :variant="item.variant"
-        />
-        
-        <BaseCard
-          v-else-if="item.type === 'DangerExplanation'"
-          :type="item.type"
-          :title="isPhishing ? 'なぜ危険なのか（解説）' : '安全と判断できる理由'"
-          :text="item.why_dangerous"
-          :color="item.color"
-          :variant="item.variant"
-        />
-
-        <BaseCard
-          v-else-if="item.type === 'advice'"
-          :type="item.type"
-          :title="isPhishing ? '安全に見破るチェックリスト' : '注目すべき箇所のリスト'"
-          :textList="item.warning_signals"
-          :color="item.color"
-          :variant="item.variant"
-        />
-
-        <BaseCard
-          v-else-if="item.type === 'correctiveAction'"
-          :type="item.type"
-          :title="isPhishing ? '正しい対処法' : '類似した詐欺・対策'"
-          :textList="item.correct_action"
-          :color="item.color"
-          :variant="item.variant"
-        />
-
-      </v-col>
-    </v-row>
-
-    <v-row class="mt-4">
-      <v-col cols="12">
-        <v-card
-          variant="tonal"
-          color="secondary"
-          class="pa-4"
-        >
-          <div class="d-flex align-center mb-2">
-            <v-icon icon="mdi-book-open-page-variant" class="me-2" size="large"></v-icon>
-            <h3 class="text-h6 font-weight-bold">📝 学習のポイント</h3>
-          </div>
-          <v-card-text class="px-0 pb-0 text-body-1 text-high-emphasis">
-            今回体験した「恐怖」を忘れないでください。実際のフィッシング詐欺では、本物のランサムウェア感染や個人情報の洩れが発生します。このトレーニングで学んだ警告サインを実生活でも必ず確認しましょう。
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
-
-    <v-row class="mt-8 px-1 justify-center">
-      <v-col cols="12" sm="6" md="4">
-        <v-btn 
-          block 
-          color="primary" 
-          size="large"
-          variant="elevated" 
-          prepend-icon="mdi-arrow-left-box" 
-          class="font-weight-bold text-body-1"
-          @click="goToPage('MailboxList')"
-        >
-          メールボックスに戻る
-        </v-btn>
-      </v-col>
-    </v-row>
-  </v-container>
-</template>
-
-<script setup lang="ts">
-import BaseCard from '@/components/ui/IshikawaStyle.vue'
-import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-
-const router = useRouter()
-const pageTitle = ref('フィッシング詐欺に遭遇')
-const pageSubtitle = ref('今のは危険なメールでした')
-const pageIcon = ref('mdi-close-circle-outline')
-const pageIconClass = ref('slow-pulse super-vivid-red')
-
-const cards = ref<any[]>([])
-const isLoading = ref(true)
-
-// フェードイン制御用フラグ
-const showFadeOverlay = ref(false)
-const startFadeOut = ref(false)
-
-const isPhishing = computed(() => {
-  const dangerCard = cards.value.find(item => item.type === 'danger')
-  return dangerCard?.is_phishing !== false
-})
-
-const initializeExplanation = () => {
-  isLoading.value = true
-  const state = window.history.state
-  const mail = state?.mail
-  const isCorrect = !!state?.isCorrect
-
-  // フェードイン演出の判定
-  if (state?.needFadeIn) {
-    showFadeOverlay.value = true
-    setTimeout(() => {
-      startFadeOut.value = true
-      // 2.5秒後にオーバーレイをDOMから完全に消す
-      setTimeout(() => { showFadeOverlay.value = false }, 2500)
-    }, 100)
-  }
-
-  if (mail) {
-    // データ解析処理...
-    const explanationData = mail.question_explanations || {}
-    let parsedWarningSignals: string[] = []
-    if (explanationData.warning_signals) {
-      if (typeof explanationData.warning_signals === 'string') {
-        try { parsedWarningSignals = JSON.parse(explanationData.warning_signals) } catch (e) { parsedWarningSignals = [explanationData.warning_signals] }
-      } else if (Array.isArray(explanationData.warning_signals)) {
-        parsedWarningSignals = explanationData.warning_signals
-      }
-    }
-
-    let parsedCorrectActions: string[] = []
-    if (explanationData.correct_action) {
-      if (typeof explanationData.correct_action === 'string') {
-        parsedCorrectActions = explanationData.correct_action.split('\n').filter((line: string) => line.trim() !== '')
-      } else if (Array.isArray(explanationData.correct_action)) {
-        parsedCorrectActions = explanationData.correct_action
-      }
-    }
-
-    cards.value = [
-      { id: mail.id, type: 'danger', ...mail, color: 'error', variant: 'tonal' },
-      { id: 'exp', type: 'DangerExplanation', why_dangerous: explanationData.why_dangerous || 'このメールは危険です。', color: 'warning', variant: 'tonal' },
-      { id: 'adv', type: 'advice', warning_signals: parsedWarningSignals.length > 0 ? parsedWarningSignals : ['送信元ドメインの不審さ', '緊急性を煽る文面'], color: 'info', variant: 'tonal' },
-      { id: 'act', type: 'correctiveAction', correct_action: parsedCorrectActions.length > 0 ? parsedCorrectActions : ['正規サイトからアクセス', '報告・破棄'], color: 'success', variant: 'tonal' }
-    ]
-    
-    applyJudgementMode(isCorrect)
-  }
-  isLoading.value = false
-}
-
-const applyJudgementMode = (isCorrect: boolean) => {
-  if (isCorrect) {
-    pageTitle.value = '正解'
-    pageIcon.value = 'mdi-check-circle-outline'
-    pageIconClass.value = 'super-vivid-green'
-    pageSubtitle.value = isPhishing.value ? '適切な判断ができました！' : '仕事をやり遂げました！'
-  } else {
-    pageIcon.value = 'mdi-close-circle-outline'
-    pageIconClass.value = 'slow-pulse super-vivid-red'
-    pageTitle.value = isPhishing.value ? 'フィッシング詐欺に遭遇' : '安全なメールの確認'
-    pageSubtitle.value = isPhishing.value ? '今のは詐欺でした' : '今のは正常なメールでした'
-  }
-}
-
-onMounted(initializeExplanation)
-const goToPage = (pageName: string) => { router.push({ name: pageName }) }
-</script>
-
-<style lang="css" scoped>
-.explanation-container { color: #ffffff; }
-.margin-3 { margin-top: 2em; }
-.color-subtitle { color: #9fbbe0 !important; }
-.super-vivid-red { color: #FF3B30 !important; }
-.super-vivid-green { color: #34C759 !important; }
-.slow-pulse { animation: pulse-animation 1.5s ease-in-out infinite alternate; }
-@keyframes pulse-animation { 0% { opacity: 1; } 100% { opacity: 0.35; } }
-
-/* フェードイン用スタイル */
-.explanation-fade-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: #000000 !important;
-  z-index: 99999;
->>>>>>> Ishikawa
   opacity: 1;
   pointer-events: none;
   transition: opacity 2.5s ease-in-out;
 }
-<<<<<<< HEAD
 
 .explanation-fade-overlay.is-fading {
   opacity: 0;
@@ -927,21 +679,11 @@ const goToPage = (pageName: string) => { router.push({ name: pageName }) }
 @media (max-width: 900px) {
   .explanation-summary-grid,
   .explanation-card-grid {
-    width: 100%;
-  }
-
-  .explanation-summary-grid,
-  .explanation-card-grid {
     grid-template-columns: 1fr;
   }
 
-  .explanation-result-card,
-  .explanation-info-card {
-    min-height: 0;
-  }
-
   .explanation-learning-panel {
-    align-items: stretch;
+    align-items: flex-start;
     flex-direction: column;
   }
 
@@ -951,6 +693,14 @@ const goToPage = (pageName: string) => { router.push({ name: pageName }) }
 }
 
 @media (max-width: 640px) {
+  .explanation-page {
+    padding-inline: 14px;
+  }
+
+  .explanation-hero {
+    align-items: flex-start;
+  }
+
   .explanation-result-icon {
     width: 50px;
     height: 50px;
@@ -976,8 +726,7 @@ const goToPage = (pageName: string) => { router.push({ name: pageName }) }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .explanation-loading-icon,
-  .slow-pulse {
+  .explanation-loading-icon {
     animation: none;
   }
 
@@ -986,9 +735,3 @@ const goToPage = (pageName: string) => { router.push({ name: pageName }) }
   }
 }
 </style>
-=======
-.explanation-fade-overlay.is-fading {
-  opacity: 0;
-}
-</style>
->>>>>>> Ishikawa

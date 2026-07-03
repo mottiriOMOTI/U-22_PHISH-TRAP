@@ -34,27 +34,10 @@
             <v-icon icon="mdi-reply" />
             <span>返信</span>
           </button>
-<<<<<<< HEAD
-          <button
-            class="action-button action-button--secondary"
-            type="button"
-            :disabled="isJudging"
-            @click="showDeleteWarning"
-          >
+          <button class="action-button action-button--secondary" type="button" :disabled="isJudging" @click="showDeleteWarning">
             <v-icon icon="mdi-delete-outline" />
             <span>削除</span>
           </button>
-=======
-          <button 
-  class="action-button action-button--secondary" 
-  type="button" 
-  :disabled="isJudging" 
-  @click="showDeleteWarning"
->
-  <v-icon icon="mdi-delete-outline" />
-  <span>削除</span>
-</button>
->>>>>>> Ishikawa
           <button class="action-button action-button--warning" type="button" :disabled="isJudging" @click="judgeAction('report')">
             <v-icon icon="mdi-alert-octagon-outline" />
             <span>報告</span>
@@ -116,7 +99,7 @@ import { fetchMail, type MailDetail } from '@/api/mailApi'
 
 type ActionType = 'link' | 'attachment' | 'reply' | 'delete' | 'report'
 type JudgementState = {
-  mail: any
+  mail: MailDetail
   judgedAction: {
     action: ActionType
     value?: string
@@ -134,19 +117,12 @@ const router = useRouter()
 const mail = ref<MailDetail | null>(null)
 const loading = ref(true)
 const error = ref<string | null>(null)
-<<<<<<< HEAD
 const isDeathFlag = ref(false)
 const isSocialDeathFlag = ref(false)
-=======
-const isDeathFlag = ref(false) // 💀 死フラグ
-const isSocialDeathFlag = ref(false) // 👔 社会的死フラグ
->>>>>>> Ishikawa
 const isJudging = ref(false)
 const bodyEl = ref<HTMLElement | null>(null)
 
-const sanitizedBody = computed(() =>
-  DOMPurify.sanitize(mail.value?.body ?? ''),
-)
+const sanitizedBody = computed(() => DOMPurify.sanitize(mail.value?.body ?? ''))
 
 const senderInitial = computed(() => {
   const initial = mail.value?.sender_name.trim().charAt(0) || mail.value?.sender_email.trim().charAt(0)
@@ -192,35 +168,22 @@ function formatDate(iso: string): string {
   })
 }
 
-<<<<<<< HEAD
 function showDeleteWarning() {
   alert('このトレーニングではメールを削除できません。返信・報告などの判断を選んでください。')
-=======
-// 削除不可の警告を出す関数を追加
-function showDeleteWarning() {
-  alert('権限不足：メールを削除することはできません。')
->>>>>>> Ishikawa
 }
 
 function judgeAction(action: ActionType, value?: string) {
   if (isJudging.value || !mail.value) return
-<<<<<<< HEAD
 
-  const m = JSON.parse(JSON.stringify(mail.value))
-
-  isJudging.value = true
-  const stateToPass: JudgementState = { mail: m, judgedAction: { action, value } }
-=======
-  
-  // 🛠 修正: Proxyオブジェクトを純粋なオブジェクトに変換する
-  // JSONの変換を通すことで、Vueの監視対象(Proxy)から完全に切り離します
-  const m = JSON.parse(JSON.stringify(mail.value))
+  const mailToPass = JSON.parse(JSON.stringify(mail.value)) as MailDetail
+  const stateToPass: JudgementState = {
+    mail: mailToPass,
+    judgedAction: { action, value },
+  }
 
   isJudging.value = true
-  let stateToPass: any = { mail: m }
->>>>>>> Ishikawa
 
-  if (m.is_phishing) {
+  if (mailToPass.is_phishing) {
     switch (action) {
       case 'link':
       case 'attachment':
@@ -232,7 +195,6 @@ function judgeAction(action: ActionType, value?: string) {
         stateToPass.triggerSuccess = true
         break
     }
-<<<<<<< HEAD
   } else if (action === 'report') {
     isSocialDeathFlag.value = true
     stateToPass.triggerSocialDeath = true
@@ -243,24 +205,8 @@ function judgeAction(action: ActionType, value?: string) {
   router.push({
     path: ROUTE_MAILBOX,
     state: stateToPass,
-=======
-  } else {
-    if (action === 'report') {
-      isSocialDeathFlag.value = true
-      stateToPass.triggerSocialDeath = true
-    } else {
-      stateToPass.triggerSuccess = true
-    }
-  }
-
-  // 純粋なオブジェクトになったのでエラーなく遷移できるようになります
-  router.push({ 
-    path: ROUTE_MAILBOX, 
-    state: stateToPass 
->>>>>>> Ishikawa
   })
 }
-
 
 function handleBodyLinkClick(e: MouseEvent) {
   const target = (e.target as HTMLElement | null)?.closest('a') as HTMLAnchorElement | null
@@ -293,15 +239,14 @@ onBeforeUnmount(() => {
   detachLinkHandler()
 })
 </script>
-
 <style lang="css" scoped>
 .mail-open-page {
   position: relative;
   box-sizing: border-box;
   min-height: 100vh;
   padding: 18px 22px 14px;
-  background: #172337;
-  color: #ffffff;
+  background: var(--page-bg);
+  color: var(--page-text);
 }
 
 .mail-open-hero {
@@ -317,10 +262,10 @@ onBeforeUnmount(() => {
   height: 42px;
   flex: 0 0 auto;
   place-items: center;
-  border: 1px solid #4d6079;
+  border: 1px solid var(--surface-border);
   border-radius: 50%;
-  background: #111a2f;
-  color: #ffffff;
+  background: var(--surface-bg);
+  color: var(--page-text);
   cursor: pointer;
   transition:
     background-color 160ms ease,
@@ -329,8 +274,8 @@ onBeforeUnmount(() => {
 
 .back-button:hover,
 .back-button:focus-visible {
-  border-color: #45a4ff;
-  background: #1f55ca;
+  border-color: var(--accent-strong);
+  background: var(--sidebar-active-bg);
   outline: none;
 }
 
@@ -351,7 +296,7 @@ onBeforeUnmount(() => {
 .mail-open-panel--loading p,
 .mail-open-panel--message p {
   margin: 0;
-  color: #9fbbe0;
+  color: var(--muted);
 }
 
 .mail-open-hero p {
@@ -362,9 +307,9 @@ onBeforeUnmount(() => {
 .mail-open-panel {
   width: min(100%, 1040px);
   padding: 18px 22px 20px;
-  border: 1px solid #34465f;
+  border: 1px solid var(--panel-border);
   border-radius: 12px;
-  background: #172337;
+  background: var(--panel-bg);
 }
 
 .mail-open-panel--loading,
@@ -389,15 +334,15 @@ onBeforeUnmount(() => {
   width: 42px;
   height: 42px;
   flex: 0 0 auto;
-  border: 4px solid #26334a;
-  border-top-color: #45a4ff;
+  border: 4px solid var(--toggle-bg);
+  border-top-color: var(--accent-strong);
   border-radius: 50%;
   animation: mail-open-loading 900ms linear infinite;
 }
 
 .mail-open-message-icon {
   flex: 0 0 auto;
-  color: #ff7382;
+  color: var(--danger);
   font-size: 34px;
 }
 
@@ -412,10 +357,10 @@ onBeforeUnmount(() => {
   min-height: 38px;
   margin-left: auto;
   padding: 0 18px;
-  border: 1px solid #4d6079;
+  border: 1px solid var(--surface-border);
   border-radius: 8px;
   background: transparent;
-  color: #ffffff;
+  color: var(--page-text);
   font-size: 14px;
   font-weight: 800;
   cursor: pointer;
@@ -423,7 +368,7 @@ onBeforeUnmount(() => {
 
 .secondary-button:hover,
 .secondary-button:focus-visible {
-  background: #111a2f;
+  background: var(--surface-bg);
   outline: none;
 }
 
@@ -455,22 +400,22 @@ onBeforeUnmount(() => {
 
 .action-button--primary {
   border: 0;
-  background: #2265f4;
-  color: #ffffff;
+  background: var(--sidebar-active-bg);
+  color: var(--sidebar-active-text);
 }
 
 .action-button--primary:hover:not(:disabled) {
-  background: #1f55ca;
+  background: color-mix(in srgb, var(--sidebar-active-bg) 82%, #000000);
 }
 
 .action-button--secondary {
-  border: 1px solid #4d6079;
+  border: 1px solid var(--surface-border);
   background: transparent;
-  color: #ffffff;
+  color: var(--page-text);
 }
 
 .action-button--secondary:hover:not(:disabled) {
-  background: #111a2f;
+  background: var(--surface-bg);
 }
 
 .action-button--warning {
@@ -509,8 +454,8 @@ onBeforeUnmount(() => {
   flex: 0 0 auto;
   place-items: center;
   border-radius: 8px;
-  background: #1c3574;
-  color: #5da2ff;
+  background: color-mix(in srgb, var(--accent-strong) 24%, var(--surface-bg));
+  color: var(--accent-strong);
 }
 
 .mail-title-row__icon :deep(.v-icon) {
@@ -537,7 +482,7 @@ onBeforeUnmount(() => {
   gap: 14px;
   padding: 12px 14px;
   border-radius: 8px;
-  background: #111a2f;
+  background: var(--surface-bg);
 }
 
 .sender-avatar {
@@ -620,8 +565,8 @@ onBeforeUnmount(() => {
   padding: 0 14px;
   border: 1px solid transparent;
   border-radius: 8px;
-  background: #111a2f;
-  color: #ffffff;
+  background: var(--surface-bg);
+  color: var(--page-text);
   cursor: pointer;
   text-align: left;
   transition:
@@ -631,14 +576,14 @@ onBeforeUnmount(() => {
 
 .attachment-button:hover:not(:disabled),
 .attachment-button:focus-visible:not(:disabled) {
-  border-color: #45a4ff;
-  background: #162444;
+  border-color: var(--accent-strong);
+  background: color-mix(in srgb, var(--surface-bg) 78%, var(--accent-strong));
   outline: none;
 }
 
 .attachment-button :deep(.v-icon) {
   flex: 0 0 auto;
-  color: #45a4ff;
+  color: var(--accent-strong);
   font-size: 20px;
 }
 
