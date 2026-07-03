@@ -293,9 +293,9 @@ import { fetchMails, type MailListItem } from '@/api/mailApi'
 // ==========================================
 // 🚨 バッドエンド（Death）演出系の外部読み込み
 // ==========================================
-import { triggerNotificationEffect } from '@/pages/General/Mailbox/FearEffect/FearEffect_Death_Attack/notificationEffect'
-import { triggerNoiseEffect } from '@/pages/General/Mailbox/FearEffect/FearEffect_Death_Attack/noiseEffect'
-import { triggerBsodEffect } from '@/pages/General/Mailbox/FearEffect/FearEffect_Death_Attack/bsodEffect'
+import { triggerNotificationEffect } from './FearEffect/FearEffect_Death_Attack/notificationEffect'
+import { triggerNoiseEffect } from './FearEffect/FearEffect_Death_Attack/noiseEffect'
+import { triggerBsodEffect } from './FearEffect/FearEffect_Death_Attack/bsodEffect'
 import { 
   triggerEncryptEffect, 
   resetEncryptEffect, 
@@ -307,16 +307,16 @@ import {
   popupTitle, 
   popupIcon, 
   popupColor 
-} from '@/pages/General/Mailbox/FearEffect/FearEffect_Death_Attack/encryptEffect'
-import { triggerSequenceEffect } from '@/pages/General/Mailbox/FearEffect/FearEffect_Death_Attack/sequenceController'
+} from './FearEffect/FearEffect_Death_Attack/encryptEffect'
+import { triggerSequenceEffect } from './FearEffect/FearEffect_Death_Attack/sequenceController'
 
 // ==========================================
 // 🟢 誤判定（False）演出系の外部読み込み
 // ==========================================
-import { triggerFalseNotification } from '@/pages/General/Mailbox/FearEffect/FearEffect_False_End/falseNotificationEffect'
-import { triggerDiagEffect, showDiag, resetDiagEffect, mailSubject, mailSender, mailAddress, mailBody, popupBgColor, isForcedMode } from '@/pages/General/Mailbox/FearEffect/FearEffect_False_End/diagEffect'
-import { triggerCallEffect, answerCall, hangUpCall, formatCallTime, showCall, callerName, callStatus, callDuration, isCallConnected, callAudioLog } from '@/pages/General/Mailbox/FearEffect/FearEffect_False_End/callEffect'
-import { triggerChatEffectByTag, showSlack, slackUser, slackMessage, slackAvatar, chatType } from '@/pages/General/Mailbox/FearEffect/FearEffect_False_End/slackEffect'
+import { triggerFalseNotification } from './FearEffect/FearEffect_False_End/falseNotificationEffect'
+import { triggerDiagEffect, showDiag, resetDiagEffect, mailSubject, mailSender, mailAddress, mailBody, popupBgColor, isForcedMode } from './FearEffect/FearEffect_False_End/diagEffect'
+import { triggerCallEffect, answerCall, hangUpCall, formatCallTime, showCall, callerName, callStatus, callDuration, isCallConnected, callAudioLog } from './FearEffect/FearEffect_False_End/callEffect'
+import { triggerChatEffectByTag, showSlack, slackUser, slackMessage, slackAvatar, chatType } from './FearEffect/FearEffect_False_End/slackEffect'
 
 const router = useRouter()
 

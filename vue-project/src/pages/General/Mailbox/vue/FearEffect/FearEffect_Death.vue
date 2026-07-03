@@ -118,11 +118,11 @@ import { useRouter } from 'vue-router'
 
 import { triggerShakeEffect } from './FearEffect_Death_Attack/shakeEffect'
 import { triggerFlashEffect } from './FearEffect_Death_Attack/flashEffect'
-import { triggerNotificationEffect } from '@/pages/General/Mailbox/FearEffect/FearEffect_Death_Attack/notificationEffect'
-import { triggerNoiseEffect } from '@/pages/General/Mailbox/FearEffect/FearEffect_Death_Attack/noiseEffect'
-import { triggerBsodEffect } from '@/pages/General/Mailbox/FearEffect/FearEffect_Death_Attack/bsodEffect'
-import { triggerEncryptEffect, resetEncryptEffect, showEncrypt, encryptProgress, encryptStatusText, encryptMainText, encryptChecklist, popupTitle, popupIcon, popupColor } from '@/pages/General/Mailbox/FearEffect/FearEffect_Death_Attack/encryptEffect'
-import { triggerSequenceEffect } from '@/pages/General/Mailbox/FearEffect/FearEffect_Death_Attack/sequenceController'
+import { triggerNotificationEffect } from './FearEffect_Death_Attack/notificationEffect'
+import { triggerNoiseEffect } from './FearEffect_Death_Attack/noiseEffect'
+import { triggerBsodEffect } from './FearEffect_Death_Attack/bsodEffect'
+import { triggerEncryptEffect, resetEncryptEffect, showEncrypt, encryptProgress, encryptStatusText, encryptMainText, encryptChecklist, popupTitle, popupIcon, popupColor } from './FearEffect_Death_Attack/encryptEffect'
+import { triggerSequenceEffect } from './FearEffect_Death_Attack/sequenceController'
 
 const router = useRouter()
 

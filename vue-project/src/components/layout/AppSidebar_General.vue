@@ -9,7 +9,14 @@
 
       <div class="profile-score-row">
         <RouterLink to="/account" class="sidebar-profile-avatar" aria-label="プロフィール">
-          {{ profileInitial }}
+          <img
+            v-if="profileImageUrl"
+            :src="profileImageUrl"
+            alt=""
+            class="sidebar-profile-avatar__image"
+            @error="handleAvatarImageError"
+          />
+          <span v-else>{{ profileInitial }}</span>
         </RouterLink>
 
         <div class="score-card">
@@ -46,18 +53,31 @@
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
-import { clearCurrentUser, getCurrentUser } from '@/api/users'
+import { clearCurrentUser, fetchCurrentUserById, getCurrentUser } from '@/api/users'
 
 const route = useRoute()
 const currentUser = ref(getCurrentUser())
+const avatarImageError = ref(false)
 
 watch(
   () => route.fullPath,
   () => {
-    currentUser.value = getCurrentUser()
+    void syncCurrentUser()
   },
   { immediate: true },
 )
+
+watch(
+  () => currentUser.value?.image,
+  () => {
+    avatarImageError.value = false
+  },
+)
+
+const profileImageUrl = computed(() => {
+  const image = currentUser.value?.image?.trim()
+  return image && !avatarImageError.value ? image : ''
+})
 
 const profileInitial = computed(() => {
   const user = currentUser.value
@@ -65,6 +85,25 @@ const profileInitial = computed(() => {
 
   return initial ? initial.toUpperCase() : 'U'
 })
+
+function handleAvatarImageError() {
+  avatarImageError.value = true
+}
+
+async function syncCurrentUser() {
+  const user = getCurrentUser()
+  currentUser.value = user
+
+  if (!user) {
+    return
+  }
+
+  try {
+    currentUser.value = await fetchCurrentUserById(user.id)
+  } catch (error) {
+    console.error(error)
+  }
+}
 
 const navItems = [
   {
@@ -76,6 +115,11 @@ const navItems = [
     label: 'スコア',
     to: '/score',
     icon: 'mdi-trophy-outline',
+  },
+  {
+    label: '全体統計',
+    to: '/avg_score',
+    icon: 'mdi-chart-bar',
   },
   {
     label: 'シチュエーション',
@@ -105,9 +149,9 @@ function isActive(path: string) {
 
 <style lang="css" scoped>
 .general-sidebar {
-  border-right: 1px solid #2f3d52;
-  background: #10182b !important;
-  color: #ffffff;
+  border-right: 1px solid var(--sidebar-border);
+  background: var(--sidebar-bg) !important;
+  color: var(--sidebar-text);
 }
 
 .general-sidebar :deep(.v-navigation-drawer__content) {
@@ -125,7 +169,7 @@ function isActive(path: string) {
   display: flex;
   align-items: center;
   gap: 7px;
-  color: #ffffff;
+  color: var(--sidebar-text);
   text-decoration: none;
 }
 
@@ -166,10 +210,17 @@ function isActive(path: string) {
   font-size: 16px;
   font-weight: 900;
   line-height: 1;
+  overflow: hidden;
   text-decoration: none;
   transition:
     background-color 160ms ease,
     transform 160ms ease;
+}
+
+.sidebar-profile-avatar__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .sidebar-profile-avatar:hover,
@@ -187,11 +238,11 @@ function isActive(path: string) {
   align-content: center;
   padding: 7px 10px;
   border-radius: 8px;
-  background: #172238;
+  background: var(--sidebar-card-bg);
 }
 
 .score-card span {
-  color: #a7c3e6;
+  color: var(--muted);
   font-size: 14px;
   line-height: 1.1;
 }
@@ -206,7 +257,7 @@ function isActive(path: string) {
 .sidebar-nav {
   display: grid;
   gap: 8px;
-  margin-top: 36px;
+  margin-top: 16px;
   padding-bottom: 10px;
 }
 
@@ -217,7 +268,7 @@ function isActive(path: string) {
   gap: 12px;
   padding: 0 14px;
   border-radius: 23px;
-  color: #d4e0f1;
+  color: var(--sidebar-link-text);
   font-size: 16px;
   font-weight: 800;
   text-decoration: none;
@@ -233,8 +284,8 @@ function isActive(path: string) {
 
 .sidebar-nav__link:hover,
 .sidebar-nav__link--active {
-  background: #2265f4;
-  color: #ffffff;
+  background: var(--sidebar-active-bg);
+  color: var(--sidebar-active-text);
 }
 
 .sidebar-footer {
@@ -248,8 +299,8 @@ function isActive(path: string) {
   justify-content: center;
   gap: 8px;
   border-radius: 17px;
-  background: #ffffff;
-  color: #bdd0e6;
+  background: var(--sidebar-logout-bg);
+  color: var(--sidebar-logout-text);
   font-size: 13px;
   font-weight: 800;
   text-decoration: none;
@@ -261,7 +312,7 @@ function isActive(path: string) {
 
 .sidebar-footer p {
   margin: 12px 0 0;
-  color: #8aa0bd;
+  color: var(--sidebar-muted);
   font-size: 12px;
   text-align: center;
 }

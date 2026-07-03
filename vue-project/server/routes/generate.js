@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -8,6 +9,23 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const PYTHON_SCRIPT = path.resolve(__dirname, '../ai/python/generate_question_explanation.py');
 const PYTHON_COMMAND = process.env.PYTHON_COMMAND ?? 'python';
+const QUESTION_IMAGE_BUCKET = 'questions_image';
+const QUESTION_IMAGE_CONTENT_TYPE = 'image/jpeg';
+const MAX_QUESTION_IMAGE_BYTES = 8 * 1024 * 1024;
+const CLOUDFLARE_IMAGE_MODELS = [
+    {
+        id: '@cf/black-forest-labs/flux-2-klein-4b',
+        requestType: 'multipart',
+    },
+    {
+        id: '@cf/black-forest-labs/flux-1-schnell',
+        requestType: 'json',
+    },
+    {
+        id: '@cf/stabilityai/stable-diffusion-xl-base-1.0',
+        requestType: 'json',
+    },
+];
 const categories = ['student', 'company', 'general'];
 function isRecord(value) {
     return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -17,6 +35,239 @@ function isStringArray(value) {
 }
 function parseJsonArray(value) {
     return Array.isArray(value) ? value : [];
+}
+function stripHtml(value) {
+    return value.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+function buildImagePrompt(question) {
+    const mailType = question.is_phishing ? 'phishing awareness training' : 'safe email training';
+    const bodyPreview = stripHtml(question.body).slice(0, 360);
+    return [
+        'A realistic educational cybersecurity training illustration.',
+        `Theme: ${mailType}.`,
+        `Email subject context: ${question.title}.`,
+        `Sender context: ${question.sender_name}.`,
+        `Email body context: ${bodyPreview}.`,
+        'Show a modern inbox or security training scene, no real brands, no logos, no readable text, no real people.',
+        'Clean composition, professional UI training material, 1024x1024.',
+    ].join(' ');
+}
+class CloudflareImageGenerationError extends Error {
+    constructor(modelId, status, body) {
+        super(`Cloudflare image generation failed for ${modelId} (${status}): ${body.slice(0, 300)}`);
+        this.status = status;
+        this.body = body;
+        this.modelId = modelId;
+    }
+}
+function isCloudflareLimitError(error) {
+    if (!(error instanceof CloudflareImageGenerationError))
+        return false;
+    const body = error.body.toLowerCase();
+    const fallbackStatuses = new Set([402, 403, 408, 409, 425, 429, 500, 502, 503, 504]);
+    return (fallbackStatuses.has(error.status) ||
+        body.includes('limit') ||
+        body.includes('quota') ||
+        body.includes('rate') ||
+        body.includes('throttl') ||
+        body.includes('capacity') ||
+        body.includes('too many') ||
+        body.includes('exceed') ||
+        body.includes('unavailable') ||
+        body.includes('overload') ||
+        body.includes('temporarily') ||
+        body.includes('try again') ||
+        body.includes('resource'));
+}
+function parseQuestionImageDataUrl(value) {
+    if (typeof value !== 'string' || value.length === 0) {
+        return null;
+    }
+    const prefix = `data:${QUESTION_IMAGE_CONTENT_TYPE};base64,`;
+    if (!value.startsWith(prefix)) {
+        throw new Error('question image must be a jpeg data URL');
+    }
+    const fileBuffer = Buffer.from(value.slice(prefix.length), 'base64');
+    if (fileBuffer.length === 0 || fileBuffer.length > MAX_QUESTION_IMAGE_BYTES) {
+        throw new Error('question image size is invalid');
+    }
+    return fileBuffer;
+}
+async function ensureQuestionImageBucket() {
+    const { data: buckets, error: listError } = await supabaseAdmin.storage.listBuckets();
+    if (listError) {
+        return listError;
+    }
+    const exists = buckets?.some((bucket) => bucket.name === QUESTION_IMAGE_BUCKET);
+    if (exists) {
+        const { error } = await supabaseAdmin.storage.updateBucket(QUESTION_IMAGE_BUCKET, {
+            public: true,
+        });
+        return error;
+    }
+    const { error } = await supabaseAdmin.storage.createBucket(QUESTION_IMAGE_BUCKET, {
+        public: true,
+        fileSizeLimit: MAX_QUESTION_IMAGE_BYTES,
+        allowedMimeTypes: [QUESTION_IMAGE_CONTENT_TYPE],
+    });
+    return error;
+}
+async function uploadQuestionImage(dataUrl) {
+    const fileBuffer = parseQuestionImageDataUrl(dataUrl);
+    if (!fileBuffer)
+        return null;
+    const bucketError = await ensureQuestionImageBucket();
+    if (bucketError) {
+        throw new Error(bucketError.message);
+    }
+    const filePath = `generated-questions/${randomUUID()}.jpg`;
+    const { error: uploadError } = await supabaseAdmin.storage
+        .from(QUESTION_IMAGE_BUCKET)
+        .upload(filePath, fileBuffer, {
+        contentType: QUESTION_IMAGE_CONTENT_TYPE,
+        upsert: false,
+    });
+    if (uploadError) {
+        throw new Error(uploadError.message);
+    }
+    const { data: publicUrlData } = supabaseAdmin.storage
+        .from(QUESTION_IMAGE_BUCKET)
+        .getPublicUrl(filePath);
+    return publicUrlData.publicUrl;
+}
+function buildCloudflareRequestBody(model, prompt) {
+    if (model.requestType === 'multipart') {
+        const form = new FormData();
+        form.set('prompt', prompt);
+        form.set('width', '1024');
+        form.set('height', '1024');
+        form.set('steps', '25');
+        return {
+            body: form,
+            headers: {},
+        };
+    }
+    const isFluxSchnell = model.id.includes('flux-1-schnell');
+    return {
+        body: JSON.stringify(isFluxSchnell
+            ? {
+                prompt,
+                steps: 4,
+            }
+            : {
+                prompt,
+                negative_prompt: 'real logos, brand names, readable text, watermark, signature, real person, distorted UI',
+                width: 1024,
+                height: 1024,
+                num_steps: 20,
+                guidance: 7.5,
+            }),
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    };
+}
+function getCloudflareAcceptHeader(model) {
+    return model.id.includes('stable-diffusion-xl-base-1.0') ? QUESTION_IMAGE_CONTENT_TYPE : 'application/json';
+}
+function readBase64Image(value) {
+    if (typeof value !== 'string' || value.length === 0)
+        return null;
+    const base64 = value.includes(',') ? value.split(',').at(-1) : value;
+    if (!base64)
+        return null;
+    const buffer = Buffer.from(base64, 'base64');
+    return buffer.length > 0 ? buffer : null;
+}
+function extractImageFromJson(value) {
+    if (!isRecord(value))
+        return null;
+    const direct = readBase64Image(value.image);
+    if (direct)
+        return direct;
+    if (isRecord(value.result)) {
+        const resultImage = readBase64Image(value.result.image);
+        if (resultImage)
+            return resultImage;
+    }
+    return null;
+}
+async function readCloudflareImageResponse(response, modelId) {
+    const contentType = response.headers.get('content-type') ?? '';
+    if (!response.ok) {
+        const body = await response.text().catch(() => '');
+        throw new CloudflareImageGenerationError(modelId, response.status, body);
+    }
+    if (contentType.includes('image/')) {
+        return Buffer.from(await response.arrayBuffer());
+    }
+    const text = await response.text();
+    const data = JSON.parse(text);
+    const buffer = extractImageFromJson(data);
+    if (!buffer) {
+        throw new CloudflareImageGenerationError(modelId, 502, text);
+    }
+    return buffer;
+}
+async function runCloudflareImageModel(model, prompt, apiKey, accountId) {
+    const endpoint = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${model.id}`;
+    const requestBody = buildCloudflareRequestBody(model, prompt);
+    const headers = new Headers();
+    headers.set('Authorization', `Bearer ${apiKey}`);
+    headers.set('Accept', getCloudflareAcceptHeader(model));
+    for (const [key, value] of Object.entries(requestBody.headers)) {
+        headers.set(key, value);
+    }
+    const response = await fetch(endpoint, {
+        method: 'POST',
+        headers,
+        body: requestBody.body,
+    });
+    return await readCloudflareImageResponse(response, model.id);
+}
+async function generateQuestionImage(question) {
+    const apiKey = process.env.CLOUDFLARE_API_KEY;
+    const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+    if (!apiKey || !accountId) {
+        throw new Error('CLOUDFLARE_API_KEY / CLOUDFLARE_ACCOUNT_ID is not set');
+    }
+    const prompt = buildImagePrompt(question);
+    let lastLimitError = null;
+    for (const model of CLOUDFLARE_IMAGE_MODELS) {
+        try {
+            const buffer = await runCloudflareImageModel(model, prompt, apiKey, accountId);
+            if (buffer.length === 0 || buffer.length > MAX_QUESTION_IMAGE_BYTES) {
+                throw new Error(`Cloudflare image generation returned invalid image size from ${model.id}`);
+            }
+            return `data:${QUESTION_IMAGE_CONTENT_TYPE};base64,${buffer.toString('base64')}`;
+        }
+        catch (error) {
+            if (!isCloudflareLimitError(error)) {
+                throw error;
+            }
+            lastLimitError = error;
+            console.warn(`Cloudflare image model unavailable. Falling back from ${error.modelId} (${error.status}).`);
+        }
+    }
+    throw lastLimitError ?? new Error('Cloudflare image generation failed for all models');
+}
+async function addGeneratedImages(questions, includeImage) {
+    if (!includeImage) {
+        return questions.map((question) => ({
+            ...question,
+            question_image_url: null,
+            question_image_data_url: null,
+        }));
+    }
+    const result = [];
+    for (const question of questions) {
+        result.push({
+            ...question,
+            question_image_url: null,
+            question_image_data_url: await generateQuestionImage(question),
+        });
+    }
+    return result;
 }
 function parseSavePayload(body) {
     if (typeof body.category !== 'string' ||
@@ -53,7 +304,9 @@ function parseSavePayload(body) {
             is_decoy: typeof body.is_decoy === 'boolean' ? body.is_decoy : false,
             is_active: typeof body.is_active === 'boolean' ? body.is_active : true,
             safe_attachments: parseJsonArray(body.safe_attachments),
+            question_image_url: typeof body.question_image_url === 'string' ? body.question_image_url : null,
         },
+        questionImageDataUrl: body.question_image_data_url,
         explanation: {
             why_dangerous: body.explanation.why_dangerous,
             warning_signals: body.explanation.warning_signals,
@@ -62,14 +315,19 @@ function parseSavePayload(body) {
     };
 }
 router.post('/', async (req, res) => {
-    const { category, count } = req.body;
+    const { category, count, isPhishing, includeImage } = req.body;
     if (!category || !categories.includes(category)) {
         return res.status(400).json({ error: 'category must be student, company, or general' });
     }
-    if (count !== 1) {
-        return res.status(400).json({ error: 'count must be 1' });
+    if (typeof count !== 'number' || !Number.isInteger(count) || count < 1 || count > 10) {
+        return res.status(400).json({ error: 'count must be an integer from 1 to 10' });
     }
-    const generationCount = count;
+    if (typeof isPhishing !== 'boolean') {
+        return res.status(400).json({ error: 'isPhishing must be boolean' });
+    }
+    if (typeof includeImage !== 'boolean') {
+        return res.status(400).json({ error: 'includeImage must be boolean' });
+    }
     const child = spawn(PYTHON_COMMAND, [PYTHON_SCRIPT], {
         env: {
             ...process.env,
@@ -86,7 +344,7 @@ router.post('/', async (req, res) => {
         responded = true;
         child.kill();
         res.status(504).json({ error: 'AI generation timed out' });
-    }, 120000);
+    }, 180000);
     child.stdout.setEncoding('utf8');
     child.stderr.setEncoding('utf8');
     child.stdout.on('data', (chunk) => {
@@ -95,7 +353,7 @@ router.post('/', async (req, res) => {
     child.stderr.on('data', (chunk) => {
         stderr += chunk;
     });
-    child.stdin.write(JSON.stringify({ category, count: generationCount }));
+    child.stdin.write(JSON.stringify({ category, count, isPhishing }));
     child.stdin.end();
     child.on('error', (error) => {
         if (responded)
@@ -104,7 +362,7 @@ router.post('/', async (req, res) => {
         clearTimeout(timeout);
         return res.status(500).json({ error: error.message });
     });
-    child.on('close', (code) => {
+    child.on('close', async (code) => {
         if (responded)
             return;
         responded = true;
@@ -114,10 +372,16 @@ router.post('/', async (req, res) => {
             return res.status(500).json({ error: message });
         }
         try {
-            return res.json(JSON.parse(stdout));
+            const generated = JSON.parse(stdout);
+            if (!Array.isArray(generated.questions)) {
+                return res.status(500).json({ error: 'Generator output must include questions' });
+            }
+            const questions = await addGeneratedImages(generated.questions, includeImage);
+            return res.json({ questions });
         }
-        catch {
-            return res.status(500).json({ error: 'Failed to parse generator output' });
+        catch (error) {
+            const message = error instanceof Error ? error.message : 'Failed to parse generator output';
+            return res.status(500).json({ error: message });
         }
     });
 });
@@ -125,6 +389,13 @@ router.post('/save', async (req, res) => {
     const payload = parseSavePayload(req.body);
     if (!payload) {
         return res.status(400).json({ error: 'Invalid generated question payload' });
+    }
+    try {
+        payload.question.question_image_url = await uploadQuestionImage(payload.questionImageDataUrl);
+    }
+    catch (error) {
+        const message = error instanceof Error ? error.message : 'Failed to upload question image';
+        return res.status(500).json({ error: message });
     }
     const { data: question, error: questionError } = await supabaseAdmin
         .from('questions')

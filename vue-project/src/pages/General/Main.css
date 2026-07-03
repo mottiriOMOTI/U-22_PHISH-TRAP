@@ -1,0 +1,121 @@
+/* Shared main page styles: variables and base components */
+:root{
+  --page-padding-vertical: 18px;
+  --page-padding-horizontal: 22px;
+  --page-bg: #172337;
+  --page-text: #ffffff;
+  --heading-text: #ffffff;
+  --panel-bg: #172337;
+  --panel-border: #34465f;
+  --surface-bg: #111a2f;
+  --muted: #9fbbe0;
+  --accent: #b449ff;
+  --accent-strong: #45a4ff;
+  --danger: #ff3048;
+  --success: #77d99a;
+}
+
+/* Page layout */
+[class$="-page"]{
+  padding: var(--page-padding-vertical) var(--page-padding-horizontal) 24px;
+  color: var(--page-text);
+}
+
+/* Hero sections (e.g. account-hero, settings-hero) */
+[class$="-hero"]{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin-bottom:18px;
+}
+
+[class$="-hero"] .v-icon{
+  color: var(--accent);
+  font-size: 42px;
+}
+
+[class$="-hero"] h1{
+  margin:0;
+  color: var(--heading-text);
+  font-size:30px;
+  font-weight:800;
+  line-height:1.1;
+}
+
+[class$="-hero"] p{
+  margin:6px 0 0 0;
+  color: var(--muted);
+  font-size:16px;
+}
+
+/* Panel base (applies to account-panel, settings-panel, avg-score-panel, etc.) */
+[class$="-panel"]{
+  width: min(100%, 1040px);
+  padding: 18px 22px 20px;
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  background: var(--panel-bg);
+  color: var(--page-text);
+}
+
+[class$="-panel"] + [class$="-panel"]{
+  margin-top:16px;
+}
+
+/* Panel header styles (target headings inside panel blocks) */
+[class$="-panel"] h2{
+  margin:0 0 4px 0;
+  color: var(--heading-text);
+  font-size:18px;
+  font-weight:800;
+  line-height:1.3;
+}
+
+[class$="-panel"] p{
+  margin:0;
+  font-size:14px;
+}
+
+/* Small utilities */
+.help-button{
+  position: fixed;
+  right: 14px;
+  bottom: 12px;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--panel-border);
+  border-radius: 50%;
+  background: var(--surface-bg);
+  color: var(--page-text);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.settings-message,
+.account-message{
+  width: min(100%, 1040px);
+  margin: 8px 0 0;
+  font-size:13px;
+  font-weight:700;
+}
+
+.settings-message--error,
+.account-message--error{
+  color: var(--danger);
+}
+
+.settings-message--success,
+.account-message--success{
+  color: var(--success);
+}
+
+@media (max-width:900px){
+  [class$="-page"]{ padding:18px 14px 16px; }
+  [class$="-hero"] h1{ font-size:28px; }
+  [class$="-panel"]{ padding:16px; }
+}
+
+@media (max-width:640px){
+  [class$="-hero"]{ align-items:flex-start; }
+}

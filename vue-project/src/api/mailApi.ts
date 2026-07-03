@@ -15,6 +15,7 @@ export type MailListItem = {
   phishing_type: string | null
   has_link: boolean
   has_attachment: boolean
+  question_image_url?: string | null
   created_at: string
 }
 
@@ -36,6 +37,7 @@ export type MailDetail = MailListItem & {
   dangerous_links: DangerousLink[] | null
   dangerous_attachments: DangerousAttachment[] | null
   safe_attachments: SafeAttachment[] | null
+  question_image_url: string | null
   is_decoy: boolean
   is_active: boolean
   updated_at: string

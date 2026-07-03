@@ -112,6 +112,11 @@ import {
   type SituationId,
   type SituationOption,
 } from '@/api/situation'
+import {
+  fetchCurrentUserById,
+  getCurrentUser,
+  updateCurrentUserScenario,
+} from '@/api/users'
 
 const scenarios: SituationOption[] = [
   {
@@ -148,6 +153,11 @@ const isLoading = ref(true)
 const savingScenarioId = ref<SituationId | null>(null)
 const errorMessage = ref('')
 const successMessage = ref('')
+const validScenarioIds = new Set<SituationId>(['business', 'school', 'daily'])
+
+function isSituationId(value: unknown): value is SituationId {
+  return typeof value === 'string' && validScenarioIds.has(value as SituationId)
+}
 
 function showSuccess(message: string) {
   successMessage.value = message
@@ -162,6 +172,17 @@ function showError(message: string) {
 async function loadSituation() {
   isLoading.value = true
   try {
+    const currentUser = getCurrentUser()
+
+    if (currentUser) {
+      const refreshedUser = await fetchCurrentUserById(currentUser.id)
+
+      if (isSituationId(refreshedUser.current_scenario)) {
+        selectedScenarioId.value = refreshedUser.current_scenario
+        return
+      }
+    }
+
     const situation = await fetchSituation()
     selectedScenarioId.value = situation.selectedScenarioId
   } catch (error) {
@@ -180,8 +201,22 @@ async function selectScenario(scenarioId: SituationId) {
   savingScenarioId.value = scenarioId
 
   try {
-    const situation = await saveSituation(scenarioId)
-    selectedScenarioId.value = situation.selectedScenarioId
+    const currentUser = getCurrentUser()
+
+    if (currentUser) {
+      const updatedUser = await updateCurrentUserScenario(currentUser.id, scenarioId)
+      selectedScenarioId.value = isSituationId(updatedUser.current_scenario)
+        ? updatedUser.current_scenario
+        : scenarioId
+
+      saveSituation(selectedScenarioId.value).catch((error) => {
+        console.error(error)
+      })
+    } else {
+      const situation = await saveSituation(scenarioId)
+      selectedScenarioId.value = situation.selectedScenarioId
+    }
+
     showSuccess('シチュエーションを保存しました')
   } catch (error) {
     console.error(error)
@@ -195,300 +230,5 @@ async function selectScenario(scenarioId: SituationId) {
 onMounted(loadSituation)
 </script>
 
-<style lang="css" scoped>
-.situation-page {
-  position: relative;
-  box-sizing: border-box;
-  min-height: 100vh;
-  padding: 18px 22px 14px;
-  background: #172337;
-  color: #ffffff;
-}
-
-.situation-hero {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 18px;
-}
-
-.situation-hero__icon {
-  color: #ff7a1a;
-  font-size: 42px;
-}
-
-.situation-hero h1 {
-  margin: 0;
-  font-size: 30px;
-  font-weight: 800;
-  line-height: 1.1;
-}
-
-.situation-hero p,
-.scenario-card__description,
-.scenario-card__block p,
-.scenario-card__block li,
-.situation-panel p,
-.situation-notes {
-  color: #9fbbe0;
-}
-
-.situation-hero p {
-  margin: 6px 0 0;
-  font-size: 16px;
-}
-
-.scenario-grid {
-  display: grid;
-  width: min(100%, 1040px);
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 30px;
-}
-
-.scenario-card {
-  min-width: 0;
-}
-
-.scenario-card__button {
-  display: flex;
-  width: 100%;
-  min-height: 432px;
-  flex-direction: column;
-  align-items: stretch;
-  padding: 28px 30px 30px;
-  border: 2px solid #34465f;
-  border-radius: 16px;
-  background: #172337;
-  color: #ffffff;
-  cursor: pointer;
-  text-align: left;
-  transition:
-    border-color 160ms ease,
-    background-color 160ms ease;
-}
-
-.scenario-card--selected .scenario-card__button {
-  border-color: #00d66f;
-  background: #15383d;
-}
-
-.scenario-card__head {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.scenario-card__icon {
-  display: grid;
-  width: 70px;
-  height: 70px;
-  flex: 0 0 auto;
-  place-items: center;
-  border-radius: 10px;
-}
-
-.scenario-card--business .scenario-card__icon {
-  background: #1c3574;
-  color: #5da2ff;
-}
-
-.scenario-card--school .scenario-card__icon {
-  background: #0d5b35;
-  color: #00d66f;
-}
-
-.scenario-card--daily .scenario-card__icon {
-  background: #50207d;
-  color: #c173ff;
-}
-
-.scenario-card__icon :deep(.v-icon) {
-  font-size: 42px;
-}
-
-.scenario-card h2 {
-  margin: 0;
-  font-size: 24px;
-  font-weight: 800;
-}
-
-.scenario-card__check {
-  margin-left: auto;
-  color: #00d66f;
-  font-size: 26px;
-}
-
-.scenario-card__description {
-  min-height: 66px;
-  margin: 22px 0 18px;
-  font-size: 17px;
-  line-height: 1.6;
-}
-
-.scenario-card__block {
-  margin-top: 0;
-}
-
-.scenario-card__block + .scenario-card__block {
-  margin-top: 18px;
-}
-
-.scenario-card__block h3 {
-  margin: 0 0 8px;
-  font-size: 16px;
-  font-weight: 800;
-}
-
-.scenario-card__block ul {
-  margin: 0;
-  padding-left: 18px;
-}
-
-.scenario-card__block li,
-.scenario-card__block p {
-  margin: 0;
-  font-size: 14px;
-  line-height: 1.55;
-}
-
-.scenario-card__divider {
-  height: 1px;
-  margin: 16px 0;
-  background: #34465f;
-}
-
-.scenario-card__label--danger {
-  color: #ff485c;
-}
-
-.scenario-card__label--warning {
-  color: #ffd400;
-}
-
-.scenario-card__selected-label {
-  display: flex;
-  min-height: 44px;
-  align-items: center;
-  justify-content: center;
-  margin-top: auto;
-  border-radius: 8px;
-  background: #09ad4b;
-  color: #ffffff;
-  font-size: 16px;
-  font-weight: 800;
-}
-
-.situation-panel {
-  width: min(100%, 1040px);
-  margin-top: 30px;
-  padding: 26px 30px;
-  border: 1px solid #34465f;
-  border-radius: 12px;
-  background: #172337;
-}
-
-.situation-panel h2 {
-  margin: 0 0 30px;
-  font-size: 19px;
-  font-weight: 800;
-}
-
-.situation-panel p {
-  margin: 0 0 18px;
-  font-size: 15px;
-  line-height: 1.6;
-}
-
-.situation-notes {
-  display: grid;
-  gap: 14px;
-  margin: 0;
-  padding: 0 0 0 24px;
-  font-size: 15px;
-  line-height: 1.45;
-  list-style: none;
-}
-
-.situation-notes li {
-  display: flex;
-  gap: 8px;
-}
-
-.situation-notes strong {
-  color: #ffffff;
-}
-
-.situation-notes__mark--business {
-  color: #5da2ff;
-}
-
-.situation-notes__mark--school {
-  color: #00d66f;
-}
-
-.situation-notes__mark--daily {
-  color: #c173ff;
-}
-
-.situation-message {
-  width: min(100%, 1040px);
-  margin: 8px 0 0;
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.situation-message--error {
-  color: #ff7382;
-}
-
-.situation-message--success {
-  color: #77d99a;
-}
-
-.help-button {
-  position: fixed;
-  right: 14px;
-  bottom: 12px;
-  width: 34px;
-  height: 34px;
-  border: 1px solid #d7dce7;
-  border-radius: 50%;
-  background: #ffffff;
-  color: #1e2430;
-  font-size: 22px;
-  line-height: 1;
-  cursor: pointer;
-}
-
-@media (max-width: 1100px) {
-  .scenario-grid {
-    gap: 16px;
-  }
-
-  .scenario-card__button {
-    padding: 22px;
-  }
-}
-
-@media (max-width: 900px) {
-  .situation-page {
-    padding: 18px 14px 16px;
-  }
-
-  .scenario-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .scenario-card__button {
-    min-height: auto;
-  }
-
-  .scenario-card__description {
-    min-height: 0;
-  }
-
-  .situation-panel {
-    padding: 18px;
-  }
-}
-</style>
+<style src="../../Main.css"></style>
+<style lang="css" scoped src="../css/Situation.css"></style>

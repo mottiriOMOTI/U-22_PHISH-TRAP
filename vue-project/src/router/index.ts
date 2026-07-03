@@ -1,37 +1,66 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import Home from '@/pages/Home.vue'
-import About from '@/pages/About.vue'
 
-import Login from '@/pages/General/Login/Login.vue'
-import MakeAccount from '@/pages/General/Login/MakeAccount.vue'
-import ForgotAccount from '@/pages/General/Login/ForgotAccount.vue'
-import Privacypolicy from '@/pages/General/Login/Privacypolicy.vue'
-import TermsOfService from '@/pages/General/Login/TermsOfService.vue'
+import {
+  clearCurrentUser,
+  fetchCurrentUserById,
+  getCurrentUser,
+  type user_role,
+} from '@/api/users'
+import Login from '@/pages/General/Login/vue/Login.vue'
+import MakeAccount from '@/pages/General/Login/vue/MakeAccount.vue'
+import ForgotAccount from '@/pages/General/Login/vue/ForgotAccount.vue'
+import Privacypolicy from '@/pages/General/Login/vue/Privacypolicy.vue'
+import TermsOfService from '@/pages/General/Login/vue/TermsOfService.vue'
 
-import Situation from '@/pages/General/Main/Situation.vue'
-import Account from '@/pages/General/Main/Account.vue'  
-import AccountSetting from '@/pages/General/Main/AccountSetting.vue'
-import Score from '@/pages/General/Main/Score.vue'
-import Setting from '@/pages/General/Main/Setting.vue'
+import Situation from '@/pages/General/Main/vue/Situation.vue'
+import Account from '@/pages/General/Main/vue/Account.vue'
+import AccountSetting from '@/pages/General/Main/vue/AccountSetting.vue'
+import Score from '@/pages/General/Main/vue/Score.vue'
+import AVG_score from '@/pages/General/Main/vue/AVG_score.vue'
+import Setting from '@/pages/General/Main/vue/Setting.vue'
 
-import MailboxList from '@/pages/General/Mailbox/MailboxList.vue'
-import MailOpen from '@/pages/General/Mailbox/MailOpen.vue'
 
-import FearEffect_Death from '@/pages/General/Mailbox/FearEffect/FearEffect_Death.vue'
-import FearEffect_False from '@/pages/General/Mailbox/FearEffect/FearEffect_False.vue'
-import Explanation from '@/pages/General/Mailbox/FearEffect/Explanation.vue'
+import MailboxList from '@/pages/General/Mailbox/vue/MailboxList.vue'
+import MailOpen from '@/pages/General/Mailbox/vue/MailOpen.vue'
+
+import FearEffect_Death from '@/pages/General/Mailbox/vue/FearEffect/FearEffect_Death.vue'
+import FearEffect_False from '@/pages/General/Mailbox/vue/FearEffect/FearEffect_False.vue'
+import Explanation from '@/pages/General/Mailbox/vue/FearEffect/Explanation.vue'
 
 import Admin_Login from '@/pages/Admin/Admin_Login.vue'
 import Admin_Overview from '@/pages/Admin/Admin_Overview.vue'
 import Admin_Makequestion from '@/pages/Admin/Admin_Makequestion.vue'
 import Admin_Setting from '@/pages/Admin/Admin_Setting.vue'
 
-import Admin_UserList from '@/pages/Admin/AdminUser/Admin_UserList.vue'
 import Admin_Userdetail from '@/pages/Admin/AdminUser/Admin_Userdetail.vue'
 
 import Admin_QuestionList from '@/pages/Admin/AdminQ/Admin_QuestionList.vue'
 import Admin_QuestionDetail from '@/pages/Admin/AdminQ/Admin_QuestionDetail.vue'
 import Admin_QuestionView from '@/pages/Admin/AdminQ/Admin_QuestionView.vue'
+
+const learnerRouteNames = new Set([
+  'Situation',
+  'Account',
+  'AccountSetting',
+  'Score',
+  'AVG_score',
+  'Setting',
+  'MailboxList',
+  'MailOpen',
+  'FearEffect_Death',
+  'FearEffect_False',
+  'Explanation',
+])
+
+const adminRouteNames = new Set([
+  'Admin_Overview',
+  'Admin_Makequestion',
+  'Admin_Setting',
+  'Admin_Userdetail',
+  'Admin_QuestionList',
+  'Admin_QuestionDetail',
+  'Admin_QuestionView',
+])
 
 const router = createRouter({
   history: createWebHistory(),
@@ -39,17 +68,7 @@ const router = createRouter({
   //ここにページを配置
   routes: [
     {
-      path: '/home',
-      name: 'Home',
-      component: Home,
-    },
-    {
-      path: '/about',
-      name: 'About',
-      component: About,
-    },
-    {
-      path: '/Login',
+      path: '/',
       name: 'Login',
       component: Login,
       meta: {
@@ -142,6 +161,18 @@ const router = createRouter({
       }
     },
     {
+      path: '/avg_score',
+      name: 'AVG_score',
+      component: AVG_score,
+      meta: {
+        sidebar: 'user',
+        header: null,
+        shell: 'dark',
+        fluid: true,
+        flush: true,
+      }
+    },
+    {
       path: '/setting',
       name: 'Setting',
       component: Setting,
@@ -220,7 +251,10 @@ const router = createRouter({
       component: Admin_Overview,
       meta: {
         sidebar: 'admin',
-        header: 'admin_overview',
+        header: null,
+        shell: 'dark',
+        fluid: true,
+        flush: true,
       }
     },
     {
@@ -229,7 +263,10 @@ const router = createRouter({
       component: Admin_Makequestion,
       meta: {
         sidebar: 'admin',
-        header: 'admin_makequestion',
+        header: null,
+        shell: 'dark',
+        fluid: true,
+        flush: true,
       }
     },
     {
@@ -238,16 +275,10 @@ const router = createRouter({
       component: Admin_Setting,
       meta: {
         sidebar: 'admin',
-        header: 'admin_setting',
-      }
-    },
-    {
-      path: '/admin_userlist',
-      name: 'Admin_UserList',
-      component: Admin_UserList,
-      meta: {
-        sidebar: 'admin',
-        header: 'admin_userList',
+        header: null,
+        shell: 'dark',
+        fluid: true,
+        flush: true,
       }
     },
     {
@@ -265,7 +296,10 @@ const router = createRouter({
       component: Admin_QuestionList,
       meta: {
         sidebar: 'admin',
-        header: 'admin_questionList',
+        header: null,
+        shell: 'dark',
+        fluid: true,
+        flush: true,
       }
     },
     {
@@ -275,6 +309,9 @@ const router = createRouter({
       meta: {
         sidebar: 'admin',
         header: null,
+        shell: 'dark',
+        fluid: true,
+        flush: true,
       }
     },
     {
@@ -290,6 +327,72 @@ const router = createRouter({
 
     
   ],
+})
+
+function routeNameString(name: unknown) {
+  return typeof name === 'string' ? name : ''
+}
+
+function getRequiredRole(name: unknown): user_role | null {
+  const routeName = routeNameString(name)
+
+  if (adminRouteNames.has(routeName)) {
+    return 'admin'
+  }
+
+  if (learnerRouteNames.has(routeName)) {
+    return 'learner'
+  }
+
+  return null
+}
+
+function getLoginRouteName(role: user_role) {
+  return role === 'admin' ? 'Admin_Login' : 'Login'
+}
+
+function getHomeRouteName(role: user_role) {
+  return role === 'admin' ? 'Admin_Overview' : 'MailboxList'
+}
+
+router.beforeEach(async (to) => {
+  const requiredRole = getRequiredRole(to.name)
+  const storedUser = getCurrentUser()
+
+  if (!requiredRole) {
+    if (to.name === 'Login' && storedUser?.role === 'learner' && storedUser.is_active !== false) {
+      return { name: getHomeRouteName('learner') }
+    }
+
+    if (to.name === 'Admin_Login' && storedUser?.role === 'admin' && storedUser.is_active !== false) {
+      return { name: getHomeRouteName('admin') }
+    }
+
+    return true
+  }
+
+  const loginRouteName = getLoginRouteName(requiredRole)
+  const redirect = { name: loginRouteName, query: { redirect: to.fullPath } }
+
+  if (!storedUser || storedUser.is_active === false) {
+    clearCurrentUser()
+    return redirect
+  }
+
+  try {
+    const refreshedUser = await fetchCurrentUserById(storedUser.id)
+
+    if (refreshedUser.role !== requiredRole || refreshedUser.is_active === false) {
+      clearCurrentUser()
+      return redirect
+    }
+  } catch (error) {
+    console.error(error)
+    clearCurrentUser()
+    return redirect
+  }
+
+  return true
 })
 
 export default router

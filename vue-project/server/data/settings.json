@@ -2,8 +2,11 @@
   "settings": {
     "soundEnabled": true,
     "notificationsEnabled": true,
-    "fearEffectEnabled": true
+    "fearEffectEnabled": true,
+    "themeColor": 0,
+    "autoGenerateEnabled": true,
+    "dataCollectionEnabled": true
   },
   "learningHistory": [],
-  "lastResetAt": null
+  "lastResetAt": "2026-06-30T03:21:34.983Z"
 }

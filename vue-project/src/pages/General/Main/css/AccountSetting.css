@@ -1,0 +1,326 @@
+.account-setting-page {
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 100vh;
+  padding: 18px 22px 14px;
+  background: var(--page-bg);
+  color: var(--page-text);
+}
+
+.account-setting-hero {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.account-setting-hero__icon {
+  color: #45a4ff;
+}
+
+.account-setting-back-button {
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
+/* Component-specific account-setting rules */
+.profile-avatar {
+  position: relative;
+  display: grid;
+  width: 58px;
+  height: 58px;
+  flex: 0 0 auto;
+  place-items: center;
+  padding: 0;
+  border: 2px solid #45a4ff;
+  border-radius: 50%;
+  background: #00bf56;
+  color: #ffffff;
+  font-size: 24px;
+  font-weight: 800;
+  box-shadow: 0 0 0 3px rgba(69, 164, 255, 0.14);
+  overflow: hidden;
+}
+
+.profile-avatar--button {
+  cursor: pointer;
+  transition:
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.profile-avatar--button:hover:not(:disabled),
+.profile-avatar--button:focus-visible {
+  box-shadow:
+    0 0 0 3px rgba(69, 164, 255, 0.42),
+    0 8px 20px rgba(0, 0, 0, 0.28);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.profile-avatar--button:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+.profile-avatar__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-avatar__overlay {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border: 2px solid var(--surface-bg);
+  border-radius: 50%;
+  background: #2265f4;
+  color: #ffffff;
+}
+
+.profile-avatar__overlay :deep(.v-icon) {
+  font-size: 14px;
+}
+
+.profile-summary {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.profile-image-actions {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.selected-image-name {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.avatar-file-input {
+  display: none;
+}
+
+.profile-summary strong {
+  overflow-wrap: anywhere;
+  font-size: 19px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.profile-summary > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  line-height: 1.3;
+}
+
+.profile-summary :deep(.v-icon) {
+  font-size: 18px;
+}
+
+.account-form {
+  display: grid;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.password-form-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.form-field {
+  display: grid;
+  gap: 8px;
+}
+
+.form-field span {
+  color: var(--heading-text);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.form-field input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  background: var(--surface-bg);
+  color: var(--page-text);
+  font-size: 16px;
+  outline: none;
+}
+
+.form-field input::placeholder {
+  color: var(--muted);
+}
+
+.form-field input:focus {
+  border-color: var(--accent-strong);
+  box-shadow: 0 0 0 3px rgba(69, 164, 255, 0.18);
+}
+
+.form-field input:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
+.password-hint {
+  margin: -4px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.password-section {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--panel-border);
+}
+
+.password-section__header {
+  display: grid;
+  gap: 6px;
+}
+
+.password-section__header h3 {
+  margin: 0;
+  color: var(--heading-text);
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1.25;
+}
+
+.password-section__header p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.primary-button,
+.secondary-button {
+  min-height: 40px;
+  padding: 0 18px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.primary-button {
+  border: 0;
+  background: #2265f4;
+  color: #ffffff;
+}
+
+.primary-button:hover:not(:disabled) {
+  background: #1f55ca;
+}
+
+.secondary-button {
+  border: 1px solid var(--panel-border);
+  background: transparent;
+  color: var(--page-text);
+}
+
+.secondary-button:hover:not(:disabled) {
+  background: var(--surface-bg);
+}
+
+.primary-button:disabled,
+.secondary-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.account-setting-message {
+  width: min(100%, 1040px);
+  margin: 8px 0 0;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.account-setting-message--error {
+  color: var(--danger);
+}
+
+.account-setting-message--success {
+  color: var(--success);
+}
+
+@media (max-width: 900px) {
+  .account-setting-page {
+    padding: 18px 14px 16px;
+  }
+
+  .account-setting-panel {
+    padding: 16px;
+  }
+
+  .form-grid,
+  .password-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .account-setting-hero {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .account-setting-hero h1 {
+    font-size: 28px;
+  }
+
+  .account-setting-back-button {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .profile-preview {
+    align-items: flex-start;
+    padding: 18px;
+  }
+
+  .form-actions {
+    flex-direction: column-reverse;
+  }
+
+  .primary-button,
+  .secondary-button {
+    width: 100%;
+  }
+}

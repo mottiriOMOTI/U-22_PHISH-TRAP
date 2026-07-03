@@ -13,7 +13,7 @@ const SCENARIO_TO_CATEGORY: Record<Scenario, string> = {
 }
 
 const QUESTION_LIST_SELECT =
-  'id, category, title, sender_name, sender_email, body, is_phishing, phishing_type, has_link, has_attachment, created_at'
+  'id, category, title, sender_name, sender_email, body, is_phishing, phishing_type, has_link, has_attachment, question_image_url, created_at'
 
 type UpdateQuestionPayload = {
   title?: string

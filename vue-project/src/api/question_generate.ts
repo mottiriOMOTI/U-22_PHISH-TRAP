@@ -5,8 +5,9 @@ export type GenerateCategory = 'student' | 'company' | 'general'
 
 export type GenerateQuestionPayload = {
   category: GenerateCategory
-  count: 1
+  count: number
   isPhishing: boolean
+  includeImage: boolean
 }
 
 export type GeneratedDangerousLink = {
@@ -41,6 +42,8 @@ export type GeneratedQuestion = {
   is_decoy: boolean
   is_active: boolean
   safe_attachments: GeneratedAttachment[]
+  question_image_url?: string | null
+  question_image_data_url?: string | null
   explanation: GeneratedQuestionExplanation
 }
 

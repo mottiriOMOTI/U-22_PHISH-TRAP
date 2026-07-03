@@ -5,6 +5,9 @@ const defaultSettings = {
     soundEnabled: true,
     notificationsEnabled: true,
     fearEffectEnabled: true,
+    themeColor: 0,
+    autoGenerateEnabled: false,
+    dataCollectionEnabled: true,
 };
 const defaultStore = {
     settings: defaultSettings,
@@ -14,6 +17,9 @@ const defaultStore = {
 const currentFile = fileURLToPath(import.meta.url);
 const dataDir = path.resolve(path.dirname(currentFile), '../data');
 const dataFile = path.join(dataDir, 'settings.json');
+function normalizeThemeColor(value) {
+    return value === 1 || value === 2 ? value : defaultSettings.themeColor;
+}
 function normalizeSettings(input) {
     return {
         soundEnabled: typeof input?.soundEnabled === 'boolean' ? input.soundEnabled : defaultSettings.soundEnabled,
@@ -23,6 +29,13 @@ function normalizeSettings(input) {
         fearEffectEnabled: typeof input?.fearEffectEnabled === 'boolean'
             ? input.fearEffectEnabled
             : defaultSettings.fearEffectEnabled,
+        themeColor: normalizeThemeColor(input?.themeColor),
+        autoGenerateEnabled: typeof input?.autoGenerateEnabled === 'boolean'
+            ? input.autoGenerateEnabled
+            : defaultSettings.autoGenerateEnabled,
+        dataCollectionEnabled: typeof input?.dataCollectionEnabled === 'boolean'
+            ? input.dataCollectionEnabled
+            : defaultSettings.dataCollectionEnabled,
     };
 }
 function normalizeStore(input) {

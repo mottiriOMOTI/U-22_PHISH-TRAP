@@ -1,0 +1,96 @@
+:root {
+  color-scheme: dark;
+  --page-bg: #172337;
+  --page-text: #ffffff;
+  --heading-text: #ffffff;
+  --panel-bg: #172337;
+  --panel-border: #34465f;
+  --surface-bg: #111a2f;
+  --surface-border: #2f3d52;
+  --muted: #9fbbe0;
+  --accent: #b449ff;
+  --accent-strong: #45a4ff;
+  --danger: #ff3048;
+  --success: #77d99a;
+  --toggle-bg: #26334a;
+  --toggle-active-bg: #050617;
+  --button-bg: #ffffff;
+  --button-text: #ff3048;
+  --button-hover-bg: #fff5f6;
+  --sidebar-bg: #10182b;
+  --sidebar-border: #2f3d52;
+  --sidebar-text: #ffffff;
+  --sidebar-muted: #8aa0bd;
+  --sidebar-card-bg: #172238;
+  --sidebar-link-text: #d4e0f1;
+  --sidebar-active-bg: #2265f4;
+  --sidebar-active-text: #ffffff;
+  --sidebar-logout-bg: #ffffff;
+  --sidebar-logout-text: #bdd0e6;
+}
+
+:root[data-app-theme-color='1'] {
+  color-scheme: light;
+  --page-bg: #f4f7fb;
+  --page-text: #172033;
+  --heading-text: #101828;
+  --panel-bg: #ffffff;
+  --panel-border: #d8e1ec;
+  --surface-bg: #eef3f9;
+  --surface-border: #d7e0ec;
+  --muted: #52667f;
+  --accent: #1f66e5;
+  --accent-strong: #0f8f61;
+  --danger: #d92d3f;
+  --success: #13854f;
+  --toggle-bg: #ccd7e5;
+  --toggle-active-bg: #1f66e5;
+  --button-bg: #ffffff;
+  --button-text: #d92d3f;
+  --button-hover-bg: #fff0f2;
+  --sidebar-bg: #ffffff;
+  --sidebar-border: #d8e1ec;
+  --sidebar-text: #172033;
+  --sidebar-muted: #677a92;
+  --sidebar-card-bg: #eef3f9;
+  --sidebar-link-text: #41546d;
+  --sidebar-active-bg: #1f66e5;
+  --sidebar-active-text: #ffffff;
+  --sidebar-logout-bg: #f4f7fb;
+  --sidebar-logout-text: #52667f;
+}
+
+:root[data-app-theme-color='2'] {
+  color-scheme: dark;
+  --page-bg: #050617;
+  --page-text: #eef4ff;
+  --heading-text: #ffffff;
+  --panel-bg: #0c1220;
+  --panel-border: #24324a;
+  --surface-bg: #111827;
+  --surface-border: #2b3a52;
+  --muted: #91a6c4;
+  --accent: #8b5cf6;
+  --accent-strong: #2dd4bf;
+  --danger: #fb4960;
+  --success: #58d68d;
+  --toggle-bg: #1f2937;
+  --toggle-active-bg: #8b5cf6;
+  --button-bg: #111827;
+  --button-text: #ff6b7c;
+  --button-hover-bg: #1d2838;
+  --sidebar-bg: #070b16;
+  --sidebar-border: #1f2937;
+  --sidebar-text: #f8fbff;
+  --sidebar-muted: #7c8da6;
+  --sidebar-card-bg: #111827;
+  --sidebar-link-text: #cbd7e8;
+  --sidebar-active-bg: #6d45d8;
+  --sidebar-active-text: #ffffff;
+  --sidebar-logout-bg: #111827;
+  --sidebar-logout-text: #9fb0c8;
+}
+
+body {
+  background: var(--page-bg);
+}

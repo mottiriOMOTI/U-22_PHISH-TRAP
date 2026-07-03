@@ -205,8 +205,8 @@ def main():
 
         if category not in CATEGORY_LABELS:
             raise ValueError("category must be student, company, or general")
-        if count != 1:
-            raise ValueError("count must be 1")
+        if not isinstance(count, int) or count < 1 or count > 10:
+            raise ValueError("count must be an integer from 1 to 10")
         if not isinstance(is_phishing, bool):
             raise ValueError("isPhishing must be boolean")
 

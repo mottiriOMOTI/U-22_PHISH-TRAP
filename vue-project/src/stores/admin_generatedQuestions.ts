@@ -2,6 +2,8 @@ import { defineStore } from 'pinia'
 import type { GeneratedQuestion } from '@/api/question_generate'
 import type { SaveQuestionExplanationPayload, UpdateMailPayload } from '@/api/mailApi'
 
+type GeneratedPhishingType = GeneratedQuestion['phishing_type']
+
 export type EditableGeneratedQuestion = GeneratedQuestion & {
   id: string
   created_at: string
@@ -11,6 +13,18 @@ export type EditableGeneratedQuestion = GeneratedQuestion & {
 type AdminGeneratedQuestionsState = {
   questions: EditableGeneratedQuestion[]
   savedIds: string[]
+}
+
+function toGeneratedPhishingType(value: string | null): GeneratedPhishingType {
+  if (
+    value === 'credential_theft' ||
+    value === 'account_takeover' ||
+    value === 'malware_attachment'
+  ) {
+    return value
+  }
+
+  return null
 }
 
 export const useAdminGeneratedQuestions = defineStore('admin_generated_questions', {
@@ -43,9 +57,14 @@ export const useAdminGeneratedQuestions = defineStore('admin_generated_questions
     updateQuestion(id: string, payload: UpdateMailPayload) {
       const index = this.questions.findIndex((question) => question.id === id)
       if (index === -1) return
+
+      const currentQuestion = this.questions[index]
+      if (!currentQuestion) return
+
       this.questions[index] = {
-        ...this.questions[index],
+        ...currentQuestion,
         ...payload,
+        phishing_type: toGeneratedPhishingType(payload.phishing_type),
         updated_at: new Date().toISOString(),
       }
     },
@@ -53,8 +72,12 @@ export const useAdminGeneratedQuestions = defineStore('admin_generated_questions
     updateExplanation(id: string, payload: SaveQuestionExplanationPayload) {
       const index = this.questions.findIndex((question) => question.id === id)
       if (index === -1) return
+
+      const currentQuestion = this.questions[index]
+      if (!currentQuestion) return
+
       this.questions[index] = {
-        ...this.questions[index],
+        ...currentQuestion,
         explanation: payload,
         updated_at: new Date().toISOString(),
       }
