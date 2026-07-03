@@ -7,37 +7,37 @@ import {
   shouldRevalidateCurrentUser,
   type user_role,
 } from '@/api/users'
-import Login from '@/pages/General/Login/vue/Login.vue'
-import MakeAccount from '@/pages/General/Login/vue/MakeAccount.vue'
-import ForgotAccount from '@/pages/General/Login/vue/ForgotAccount.vue'
-import Privacypolicy from '@/pages/General/Login/vue/Privacypolicy.vue'
-import TermsOfService from '@/pages/General/Login/vue/TermsOfService.vue'
 
-import Situation from '@/pages/General/Main/vue/Situation.vue'
-import Account from '@/pages/General/Main/vue/Account.vue'
-import AccountSetting from '@/pages/General/Main/vue/AccountSetting.vue'
-import Score from '@/pages/General/Main/vue/Score.vue'
-import AVG_score from '@/pages/General/Main/vue/AVG_score.vue'
-import Setting from '@/pages/General/Main/vue/Setting.vue'
+const Login = () => import('@/pages/General/Login/vue/Login.vue')
+const MakeAccount = () => import('@/pages/General/Login/vue/MakeAccount.vue')
+const ForgotAccount = () => import('@/pages/General/Login/vue/ForgotAccount.vue')
+const Privacypolicy = () => import('@/pages/General/Login/vue/Privacypolicy.vue')
+const TermsOfService = () => import('@/pages/General/Login/vue/TermsOfService.vue')
 
+const Situation = () => import('@/pages/General/Main/vue/Situation.vue')
+const Account = () => import('@/pages/General/Main/vue/Account.vue')
+const AccountSetting = () => import('@/pages/General/Main/vue/AccountSetting.vue')
+const Score = () => import('@/pages/General/Main/vue/Score.vue')
+const AVG_score = () => import('@/pages/General/Main/vue/AVG_score.vue')
+const Setting = () => import('@/pages/General/Main/vue/Setting.vue')
 
-import MailboxList from '@/pages/General/Mailbox/vue/MailboxList.vue'
-import MailOpen from '@/pages/General/Mailbox/vue/MailOpen.vue'
+const MailboxList = () => import('@/pages/General/Mailbox/vue/MailboxList.vue')
+const MailOpen = () => import('@/pages/General/Mailbox/vue/MailOpen.vue')
 
-import FearEffect_Death from '@/pages/General/Mailbox/vue/FearEffect/FearEffect_Death.vue'
-import FearEffect_False from '@/pages/General/Mailbox/vue/FearEffect/FearEffect_False.vue'
-import Explanation from '@/pages/General/Mailbox/vue/FearEffect/Explanation.vue'
+const FearEffect_Death = () => import('@/pages/General/Mailbox/vue/FearEffect/FearEffect_Death.vue')
+const FearEffect_False = () => import('@/pages/General/Mailbox/vue/FearEffect/FearEffect_False.vue')
+const Explanation = () => import('@/pages/General/Mailbox/vue/FearEffect/Explanation.vue')
 
-import Admin_Login from '@/pages/Admin/Admin_Login.vue'
-import Admin_Overview from '@/pages/Admin/Admin_Overview.vue'
-import Admin_Makequestion from '@/pages/Admin/Admin_Makequestion.vue'
-import Admin_Setting from '@/pages/Admin/Admin_Setting.vue'
+const Admin_Login = () => import('@/pages/Admin/Admin_Login.vue')
+const Admin_Overview = () => import('@/pages/Admin/Admin_Overview.vue')
+const Admin_Makequestion = () => import('@/pages/Admin/Admin_Makequestion.vue')
+const Admin_Setting = () => import('@/pages/Admin/Admin_Setting.vue')
 
-import Admin_Userdetail from '@/pages/Admin/AdminUser/Admin_Userdetail.vue'
+const Admin_Userdetail = () => import('@/pages/Admin/AdminUser/Admin_Userdetail.vue')
 
-import Admin_QuestionList from '@/pages/Admin/AdminQ/Admin_QuestionList.vue'
-import Admin_QuestionDetail from '@/pages/Admin/AdminQ/Admin_QuestionDetail.vue'
-import Admin_QuestionView from '@/pages/Admin/AdminQ/Admin_QuestionView.vue'
+const Admin_QuestionList = () => import('@/pages/Admin/AdminQ/Admin_QuestionList.vue')
+const Admin_QuestionDetail = () => import('@/pages/Admin/AdminQ/Admin_QuestionDetail.vue')
+const Admin_QuestionView = () => import('@/pages/Admin/AdminQ/Admin_QuestionView.vue')
 
 const learnerRouteNames = new Set([
   'Situation',
