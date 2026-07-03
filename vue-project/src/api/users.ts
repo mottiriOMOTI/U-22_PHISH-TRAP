@@ -32,6 +32,16 @@ type ApiErrorBody = {
 }
 
 const CURRENT_USER_STORAGE_KEY = 'phish-trap-current-user'
+const CURRENT_USER_REVALIDATED_AT_STORAGE_KEY = 'phish-trap-current-user-revalidated-at'
+const CURRENT_USER_REVALIDATE_MS = 5 * 60 * 1000
+
+export const CURRENT_USER_CHANGED_EVENT = 'phish-trap-current-user-changed'
+
+function notifyCurrentUserChanged() {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(CURRENT_USER_CHANGED_EVENT))
+  }
+}
 
 function toCurrentUser(user: User): CurrentUser {
   return user
@@ -42,8 +52,10 @@ export function saveCurrentUser(user: User): CurrentUser {
 
   if (typeof localStorage !== 'undefined') {
     localStorage.setItem(CURRENT_USER_STORAGE_KEY, JSON.stringify(currentUser))
+    localStorage.setItem(CURRENT_USER_REVALIDATED_AT_STORAGE_KEY, String(Date.now()))
   }
 
+  notifyCurrentUserChanged()
   return currentUser
 }
 
@@ -88,7 +100,20 @@ export function getCurrentUser(): CurrentUser | null {
 export function clearCurrentUser() {
   if (typeof localStorage !== 'undefined') {
     localStorage.removeItem(CURRENT_USER_STORAGE_KEY)
+    localStorage.removeItem(CURRENT_USER_REVALIDATED_AT_STORAGE_KEY)
   }
+
+  notifyCurrentUserChanged()
+}
+
+export function shouldRevalidateCurrentUser(maxAgeMs = CURRENT_USER_REVALIDATE_MS): boolean {
+  if (typeof localStorage === 'undefined') {
+    return true
+  }
+
+  const lastValidatedAt = Number(localStorage.getItem(CURRENT_USER_REVALIDATED_AT_STORAGE_KEY))
+
+  return !Number.isFinite(lastValidatedAt) || Date.now() - lastValidatedAt > maxAgeMs
 }
 
 export type UpdateCurrentUserProfileInput = {

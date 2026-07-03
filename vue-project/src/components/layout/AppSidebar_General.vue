@@ -50,22 +50,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
-import { clearCurrentUser, fetchCurrentUserById, getCurrentUser } from '@/api/users'
+import { clearCurrentUser, CURRENT_USER_CHANGED_EVENT, getCurrentUser } from '@/api/users'
 
 const route = useRoute()
 const currentUser = ref(getCurrentUser())
 const avatarImageError = ref(false)
-
-watch(
-  () => route.fullPath,
-  () => {
-    void syncCurrentUser()
-  },
-  { immediate: true },
-)
 
 watch(
   () => currentUser.value?.image,
@@ -90,20 +82,20 @@ function handleAvatarImageError() {
   avatarImageError.value = true
 }
 
-async function syncCurrentUser() {
-  const user = getCurrentUser()
-  currentUser.value = user
-
-  if (!user) {
-    return
-  }
-
-  try {
-    currentUser.value = await fetchCurrentUserById(user.id)
-  } catch (error) {
-    console.error(error)
-  }
+function syncCurrentUser() {
+  currentUser.value = getCurrentUser()
 }
+
+onMounted(() => {
+  syncCurrentUser()
+  window.addEventListener(CURRENT_USER_CHANGED_EVENT, syncCurrentUser)
+  window.addEventListener('storage', syncCurrentUser)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener(CURRENT_USER_CHANGED_EVENT, syncCurrentUser)
+  window.removeEventListener('storage', syncCurrentUser)
+})
 
 const navItems = [
   {

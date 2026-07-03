@@ -14,19 +14,13 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 import AuthLoginPage from '@/components/auth/AuthLoginPage.vue'
 import { loginLearner } from '@/api/users'
 
 const errorMessage = ref('')
 const loading = ref(false)
 const router = useRouter()
-const route = useRoute()
-
-function getRedirectPath() {
-  const redirect = route.query.redirect
-  return typeof redirect === 'string' && redirect.startsWith('/') ? redirect : '/mailbox'
-}
 
 async function handleLogin({ email, password }: { email: string; password: string }) {
   loading.value = true
@@ -34,7 +28,7 @@ async function handleLogin({ email, password }: { email: string; password: strin
 
   try {
     await loginLearner(email, password)
-    await router.push(getRedirectPath())
+    await router.push('/mailbox')
   } catch (error) {
     console.error('ログインエラー:', error)
     errorMessage.value =

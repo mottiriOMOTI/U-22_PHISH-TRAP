@@ -4,6 +4,7 @@ import {
   clearCurrentUser,
   fetchCurrentUserById,
   getCurrentUser,
+  shouldRevalidateCurrentUser,
   type user_role,
 } from '@/api/users'
 import Login from '@/pages/General/Login/vue/Login.vue'
@@ -375,10 +376,14 @@ router.beforeEach(async (to) => {
     return redirect
   }
 
-  try {
-    const refreshedUser = await fetchCurrentUserById(storedUser.id)
+  let resolvedUser = storedUser
 
-    if (refreshedUser.role !== requiredRole || refreshedUser.is_active === false) {
+  try {
+    if (shouldRevalidateCurrentUser()) {
+      resolvedUser = await fetchCurrentUserById(storedUser.id)
+    }
+
+    if (resolvedUser.role !== requiredRole || resolvedUser.is_active === false) {
       clearCurrentUser()
       return redirect
     }
