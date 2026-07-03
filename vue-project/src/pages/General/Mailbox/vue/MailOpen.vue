@@ -1,12 +1,12 @@
 <template>
-  <main class="mail-open-page" :aria-busy="loading ? 'true' : 'false'" aria-labelledby="mail-open-title">
+  <main class="mail-open-page" :aria-busy="loading ? 'true' : 'false'">
     <header class="mail-open-hero">
       <button class="back-button" type="button" aria-label="受信トレイへ戻る" title="受信トレイへ戻る" @click="goBack">
         <v-icon icon="mdi-arrow-left" />
       </button>
       <div>
-        <h1 id="mail-open-title">メール確認</h1>
-        <p>内容を確認して、適切な操作を選択してください。</p>
+        <h1>メール確認</h1>
+        <p>内容を確認して適切な操作を選択</p>
       </div>
     </header>
 
@@ -29,22 +29,11 @@
 
     <template v-else-if="mail">
       <section class="mail-open-panel">
-        <div class="action-bar" aria-label="メール操作">
+        <div class="action-bar">
           <button class="action-button action-button--primary" type="button" :disabled="isJudging" @click="judgeAction('reply')">
             <v-icon icon="mdi-reply" />
             <span>返信</span>
           </button>
-<<<<<<< HEAD
-          <button
-            class="action-button action-button--secondary"
-            type="button"
-            :disabled="isJudging"
-            @click="showDeleteWarning"
-          >
-            <v-icon icon="mdi-delete-outline" />
-            <span>削除</span>
-          </button>
-=======
           <button 
   class="action-button action-button--secondary" 
   type="button" 
@@ -54,7 +43,6 @@
   <v-icon icon="mdi-delete-outline" />
   <span>削除</span>
 </button>
->>>>>>> Ishikawa
           <button class="action-button action-button--warning" type="button" :disabled="isJudging" @click="judgeAction('report')">
             <v-icon icon="mdi-alert-octagon-outline" />
             <span>報告</span>
@@ -115,17 +103,10 @@ import DOMPurify from 'dompurify'
 import { fetchMail, type MailDetail } from '@/api/mailApi'
 
 type ActionType = 'link' | 'attachment' | 'reply' | 'delete' | 'report'
-type JudgementState = {
-  mail: any
-  judgedAction: {
-    action: ActionType
-    value?: string
-  }
-  triggerDeath?: boolean
-  triggerSuccess?: boolean
-  triggerSocialDeath?: boolean
-}
 
+const ROUTE_DEATH = '/feareffect_death'
+const ROUTE_FALSE = '/feareffect_false'
+const ROUTE_EXPLANATION = '/explanation'
 const ROUTE_MAILBOX = '/mailbox'
 
 const route = useRoute()
@@ -134,13 +115,8 @@ const router = useRouter()
 const mail = ref<MailDetail | null>(null)
 const loading = ref(true)
 const error = ref<string | null>(null)
-<<<<<<< HEAD
-const isDeathFlag = ref(false)
-const isSocialDeathFlag = ref(false)
-=======
 const isDeathFlag = ref(false) // 💀 死フラグ
 const isSocialDeathFlag = ref(false) // 👔 社会的死フラグ
->>>>>>> Ishikawa
 const isJudging = ref(false)
 const bodyEl = ref<HTMLElement | null>(null)
 
@@ -154,14 +130,14 @@ const senderInitial = computed(() => {
 })
 
 const attachments = computed<string[]>(() => [
-  ...(mail.value?.dangerous_attachments ?? []).map((attachment) => attachment.filename),
-  ...(mail.value?.safe_attachments ?? []).map((attachment) => attachment.filename),
+  ...(mail.value?.dangerous_attachments ?? []).map(a => a.filename),
+  ...(mail.value?.safe_attachments ?? []).map(a => a.filename),
 ])
 
 async function load() {
   const id = route.query.id
   if (typeof id !== 'string' || id.length === 0) {
-    error.value = 'メールIDが指定されていません。'
+    error.value = 'メールIDが指定されていません'
     loading.value = false
     return
   }
@@ -171,7 +147,7 @@ async function load() {
   try {
     mail.value = await fetchMail(id)
   } catch (e) {
-    error.value = e instanceof Error ? e.message : 'メールの取得に失敗しました。'
+    error.value = e instanceof Error ? e.message : 'メールの取得に失敗しました'
   } finally {
     loading.value = false
   }
@@ -192,25 +168,13 @@ function formatDate(iso: string): string {
   })
 }
 
-<<<<<<< HEAD
-function showDeleteWarning() {
-  alert('このトレーニングではメールを削除できません。返信・報告などの判断を選んでください。')
-=======
 // 削除不可の警告を出す関数を追加
 function showDeleteWarning() {
   alert('権限不足：メールを削除することはできません。')
->>>>>>> Ishikawa
 }
 
 function judgeAction(action: ActionType, value?: string) {
   if (isJudging.value || !mail.value) return
-<<<<<<< HEAD
-
-  const m = JSON.parse(JSON.stringify(mail.value))
-
-  isJudging.value = true
-  const stateToPass: JudgementState = { mail: m, judgedAction: { action, value } }
-=======
   
   // 🛠 修正: Proxyオブジェクトを純粋なオブジェクトに変換する
   // JSONの変換を通すことで、Vueの監視対象(Proxy)から完全に切り離します
@@ -218,7 +182,6 @@ function judgeAction(action: ActionType, value?: string) {
 
   isJudging.value = true
   let stateToPass: any = { mail: m }
->>>>>>> Ishikawa
 
   if (m.is_phishing) {
     switch (action) {
@@ -232,18 +195,6 @@ function judgeAction(action: ActionType, value?: string) {
         stateToPass.triggerSuccess = true
         break
     }
-<<<<<<< HEAD
-  } else if (action === 'report') {
-    isSocialDeathFlag.value = true
-    stateToPass.triggerSocialDeath = true
-  } else {
-    stateToPass.triggerSuccess = true
-  }
-
-  router.push({
-    path: ROUTE_MAILBOX,
-    state: stateToPass,
-=======
   } else {
     if (action === 'report') {
       isSocialDeathFlag.value = true
@@ -257,7 +208,6 @@ function judgeAction(action: ActionType, value?: string) {
   router.push({ 
     path: ROUTE_MAILBOX, 
     state: stateToPass 
->>>>>>> Ishikawa
   })
 }
 
