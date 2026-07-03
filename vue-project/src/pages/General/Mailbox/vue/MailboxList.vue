@@ -310,6 +310,7 @@
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { fetchMails, type MailListItem } from '@/api/mailApi'
+import { getCurrentUser } from '@/api/users'
 
 // ==========================================
 // 🚨 バッドエンド（Death）演出系の外部読み込み
@@ -393,7 +394,15 @@ async function load() {
   loading.value = true
   error.value = null
   try {
-    mails.value = await fetchMails()
+    // 1. getCurrentUserを使って、ローカルストレージから瞬時にユーザー情報を取得！
+    const user = getCurrentUser()
+    
+    // 2. ユーザーの現在のシチュエーションを取得（設定されていなければ 'school' をデフォルトにする）
+    const userScenario = user?.current_scenario ?? 'school'
+    
+    // 3. 取得したシチュエーションを条件にして、バックエンドからメールを取得する
+    mails.value = await fetchMails(userScenario)
+
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'メールの取得に失敗しました'
   } finally {
