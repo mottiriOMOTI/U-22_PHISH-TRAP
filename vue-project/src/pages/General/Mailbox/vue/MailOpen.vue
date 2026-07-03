@@ -1,12 +1,12 @@
 <template>
-  <main class="mail-open-page" :aria-busy="loading ? 'true' : 'false'">
+  <main class="mail-open-page" :aria-busy="loading ? 'true' : 'false'" aria-labelledby="mail-open-title">
     <header class="mail-open-hero">
       <button class="back-button" type="button" aria-label="受信トレイへ戻る" title="受信トレイへ戻る" @click="goBack">
         <v-icon icon="mdi-arrow-left" />
       </button>
       <div>
-        <h1>メール確認</h1>
-        <p>内容を確認して適切な操作を選択</p>
+        <h1 id="mail-open-title">メール確認</h1>
+        <p>内容を確認して、適切な操作を選択してください。</p>
       </div>
     </header>
 
@@ -29,20 +29,15 @@
 
     <template v-else-if="mail">
       <section class="mail-open-panel">
-        <div class="action-bar">
+        <div class="action-bar" aria-label="メール操作">
           <button class="action-button action-button--primary" type="button" :disabled="isJudging" @click="judgeAction('reply')">
             <v-icon icon="mdi-reply" />
             <span>返信</span>
           </button>
-          <button 
-  class="action-button action-button--secondary" 
-  type="button" 
-  :disabled="isJudging" 
-  @click="showDeleteWarning"
->
-  <v-icon icon="mdi-delete-outline" />
-  <span>削除</span>
-</button>
+          <button class="action-button action-button--secondary" type="button" :disabled="isJudging" @click="showDeleteWarning">
+            <v-icon icon="mdi-delete-outline" />
+            <span>削除</span>
+          </button>
           <button class="action-button action-button--warning" type="button" :disabled="isJudging" @click="judgeAction('report')">
             <v-icon icon="mdi-alert-octagon-outline" />
             <span>報告</span>
@@ -103,10 +98,17 @@ import DOMPurify from 'dompurify'
 import { fetchMail, type MailDetail } from '@/api/mailApi'
 
 type ActionType = 'link' | 'attachment' | 'reply' | 'delete' | 'report'
+type JudgementState = {
+  mail: MailDetail
+  judgedAction: {
+    action: ActionType
+    value?: string
+  }
+  triggerDeath?: boolean
+  triggerSuccess?: boolean
+  triggerSocialDeath?: boolean
+}
 
-const ROUTE_DEATH = '/feareffect_death'
-const ROUTE_FALSE = '/feareffect_false'
-const ROUTE_EXPLANATION = '/explanation'
 const ROUTE_MAILBOX = '/mailbox'
 
 const route = useRoute()
@@ -115,14 +117,12 @@ const router = useRouter()
 const mail = ref<MailDetail | null>(null)
 const loading = ref(true)
 const error = ref<string | null>(null)
-const isDeathFlag = ref(false) // 💀 死フラグ
-const isSocialDeathFlag = ref(false) // 👔 社会的死フラグ
+const isDeathFlag = ref(false)
+const isSocialDeathFlag = ref(false)
 const isJudging = ref(false)
 const bodyEl = ref<HTMLElement | null>(null)
 
-const sanitizedBody = computed(() =>
-  DOMPurify.sanitize(mail.value?.body ?? ''),
-)
+const sanitizedBody = computed(() => DOMPurify.sanitize(mail.value?.body ?? ''))
 
 const senderInitial = computed(() => {
   const initial = mail.value?.sender_name.trim().charAt(0) || mail.value?.sender_email.trim().charAt(0)
@@ -130,14 +130,14 @@ const senderInitial = computed(() => {
 })
 
 const attachments = computed<string[]>(() => [
-  ...(mail.value?.dangerous_attachments ?? []).map(a => a.filename),
-  ...(mail.value?.safe_attachments ?? []).map(a => a.filename),
+  ...(mail.value?.dangerous_attachments ?? []).map((attachment) => attachment.filename),
+  ...(mail.value?.safe_attachments ?? []).map((attachment) => attachment.filename),
 ])
 
 async function load() {
   const id = route.query.id
   if (typeof id !== 'string' || id.length === 0) {
-    error.value = 'メールIDが指定されていません'
+    error.value = 'メールIDが指定されていません。'
     loading.value = false
     return
   }
@@ -147,7 +147,7 @@ async function load() {
   try {
     mail.value = await fetchMail(id)
   } catch (e) {
-    error.value = e instanceof Error ? e.message : 'メールの取得に失敗しました'
+    error.value = e instanceof Error ? e.message : 'メールの取得に失敗しました。'
   } finally {
     loading.value = false
   }
@@ -168,22 +168,22 @@ function formatDate(iso: string): string {
   })
 }
 
-// 削除不可の警告を出す関数を追加
 function showDeleteWarning() {
-  alert('権限不足：メールを削除することはできません。')
+  alert('このトレーニングではメールを削除できません。返信・報告などの判断を選んでください。')
 }
 
 function judgeAction(action: ActionType, value?: string) {
   if (isJudging.value || !mail.value) return
-  
-  // 🛠 修正: Proxyオブジェクトを純粋なオブジェクトに変換する
-  // JSONの変換を通すことで、Vueの監視対象(Proxy)から完全に切り離します
-  const m = JSON.parse(JSON.stringify(mail.value))
+
+  const mailToPass = JSON.parse(JSON.stringify(mail.value)) as MailDetail
+  const stateToPass: JudgementState = {
+    mail: mailToPass,
+    judgedAction: { action, value },
+  }
 
   isJudging.value = true
-  let stateToPass: any = { mail: m }
 
-  if (m.is_phishing) {
+  if (mailToPass.is_phishing) {
     switch (action) {
       case 'link':
       case 'attachment':
@@ -195,22 +195,18 @@ function judgeAction(action: ActionType, value?: string) {
         stateToPass.triggerSuccess = true
         break
     }
+  } else if (action === 'report') {
+    isSocialDeathFlag.value = true
+    stateToPass.triggerSocialDeath = true
   } else {
-    if (action === 'report') {
-      isSocialDeathFlag.value = true
-      stateToPass.triggerSocialDeath = true
-    } else {
-      stateToPass.triggerSuccess = true
-    }
+    stateToPass.triggerSuccess = true
   }
 
-  // 純粋なオブジェクトになったのでエラーなく遷移できるようになります
-  router.push({ 
-    path: ROUTE_MAILBOX, 
-    state: stateToPass 
+  router.push({
+    path: ROUTE_MAILBOX,
+    state: stateToPass,
   })
 }
-
 
 function handleBodyLinkClick(e: MouseEvent) {
   const target = (e.target as HTMLElement | null)?.closest('a') as HTMLAnchorElement | null
@@ -243,15 +239,15 @@ onBeforeUnmount(() => {
   detachLinkHandler()
 })
 </script>
-
 <style lang="css" scoped>
 .mail-open-page {
   position: relative;
   box-sizing: border-box;
   min-height: 100vh;
+  overflow-x: hidden;
   padding: 18px 22px 14px;
-  background: #172337;
-  color: #ffffff;
+  background: var(--page-bg);
+  color: var(--page-text);
 }
 
 .mail-open-hero {
@@ -267,10 +263,10 @@ onBeforeUnmount(() => {
   height: 42px;
   flex: 0 0 auto;
   place-items: center;
-  border: 1px solid #4d6079;
+  border: 1px solid var(--surface-border);
   border-radius: 50%;
-  background: #111a2f;
-  color: #ffffff;
+  background: var(--surface-bg);
+  color: var(--page-text);
   cursor: pointer;
   transition:
     background-color 160ms ease,
@@ -279,8 +275,8 @@ onBeforeUnmount(() => {
 
 .back-button:hover,
 .back-button:focus-visible {
-  border-color: #45a4ff;
-  background: #1f55ca;
+  border-color: var(--accent-strong);
+  background: var(--sidebar-active-bg);
   outline: none;
 }
 
@@ -301,7 +297,7 @@ onBeforeUnmount(() => {
 .mail-open-panel--loading p,
 .mail-open-panel--message p {
   margin: 0;
-  color: #9fbbe0;
+  color: var(--muted);
 }
 
 .mail-open-hero p {
@@ -312,9 +308,10 @@ onBeforeUnmount(() => {
 .mail-open-panel {
   width: min(100%, 1040px);
   padding: 18px 22px 20px;
-  border: 1px solid #34465f;
-  border-radius: 12px;
-  background: #172337;
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  background: var(--panel-bg);
+  color: var(--page-text);
 }
 
 .mail-open-panel--loading,
@@ -339,15 +336,15 @@ onBeforeUnmount(() => {
   width: 42px;
   height: 42px;
   flex: 0 0 auto;
-  border: 4px solid #26334a;
-  border-top-color: #45a4ff;
+  border: 4px solid var(--toggle-bg);
+  border-top-color: var(--accent-strong);
   border-radius: 50%;
   animation: mail-open-loading 900ms linear infinite;
 }
 
 .mail-open-message-icon {
   flex: 0 0 auto;
-  color: #ff7382;
+  color: var(--danger);
   font-size: 34px;
 }
 
@@ -362,23 +359,28 @@ onBeforeUnmount(() => {
   min-height: 38px;
   margin-left: auto;
   padding: 0 18px;
-  border: 1px solid #4d6079;
+  border: 1px solid var(--surface-border);
   border-radius: 8px;
   background: transparent;
-  color: #ffffff;
+  color: var(--page-text);
   font-size: 14px;
   font-weight: 800;
   cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease;
 }
 
 .secondary-button:hover,
 .secondary-button:focus-visible {
-  background: #111a2f;
+  background: var(--surface-bg);
   outline: none;
 }
 
 .action-bar {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 10px;
   margin-bottom: 18px;
 }
@@ -386,16 +388,20 @@ onBeforeUnmount(() => {
 .action-button {
   display: inline-flex;
   min-height: 40px;
+  min-width: 104px;
   align-items: center;
   justify-content: center;
   gap: 8px;
   padding: 0 16px;
+  border: 1px solid transparent;
   border-radius: 8px;
   font-size: 14px;
   font-weight: 800;
   cursor: pointer;
   transition:
     background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
     opacity 160ms ease;
 }
 
@@ -404,34 +410,42 @@ onBeforeUnmount(() => {
 }
 
 .action-button--primary {
-  border: 0;
-  background: #2265f4;
-  color: #ffffff;
+  border-color: var(--sidebar-active-bg);
+  background: var(--sidebar-active-bg);
+  color: var(--sidebar-active-text);
 }
 
 .action-button--primary:hover:not(:disabled) {
-  background: #1f55ca;
+  background: color-mix(in srgb, var(--sidebar-active-bg) 86%, var(--surface-bg));
 }
 
 .action-button--secondary {
-  border: 1px solid #4d6079;
+  border: 1px solid var(--surface-border);
   background: transparent;
-  color: #ffffff;
+  color: var(--page-text);
 }
 
 .action-button--secondary:hover:not(:disabled) {
-  background: #111a2f;
+  background: var(--surface-bg);
 }
 
 .action-button--warning {
   margin-left: auto;
-  border: 0;
-  background: #ffd400;
-  color: #1f2635;
+  border-color: color-mix(in srgb, var(--danger) 70%, transparent);
+  background: color-mix(in srgb, var(--danger) 14%, var(--panel-bg));
+  color: var(--danger);
 }
 
 .action-button--warning:hover:not(:disabled) {
-  background: #e9bf00;
+  border-color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 24%, var(--panel-bg));
+}
+
+.action-button:focus-visible,
+.attachment-button:focus-visible,
+.secondary-button:focus-visible {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 2px;
 }
 
 .action-button:disabled,
@@ -459,8 +473,8 @@ onBeforeUnmount(() => {
   flex: 0 0 auto;
   place-items: center;
   border-radius: 8px;
-  background: #1c3574;
-  color: #5da2ff;
+  background: color-mix(in srgb, var(--accent-strong) 24%, var(--surface-bg));
+  color: var(--accent-strong);
 }
 
 .mail-title-row__icon :deep(.v-icon) {
@@ -487,7 +501,7 @@ onBeforeUnmount(() => {
   gap: 14px;
   padding: 12px 14px;
   border-radius: 8px;
-  background: #111a2f;
+  background: var(--surface-bg);
 }
 
 .sender-avatar {
@@ -497,7 +511,7 @@ onBeforeUnmount(() => {
   flex: 0 0 auto;
   place-items: center;
   border-radius: 50%;
-  background: #00bf56;
+  background: color-mix(in srgb, var(--success) 86%, var(--surface-bg));
   color: #ffffff;
   font-size: 20px;
   font-weight: 900;
@@ -528,11 +542,13 @@ onBeforeUnmount(() => {
 .mail-body {
   min-height: 220px;
   padding: 22px;
+  border: 1px solid color-mix(in srgb, var(--panel-border) 72%, transparent);
   border-radius: 8px;
-  background: #f8fbff;
-  color: #1e2430;
+  background: var(--surface-bg);
+  color: var(--page-text);
   line-height: 1.7;
-  word-break: break-word;
+  overflow-wrap: anywhere;
+  word-break: normal;
 }
 
 .mail-body :deep(img) {
@@ -541,9 +557,14 @@ onBeforeUnmount(() => {
 }
 
 .mail-body :deep(a) {
-  color: #1976d2;
+  color: var(--accent-strong);
   text-decoration: underline;
+  overflow-wrap: anywhere;
   cursor: pointer;
+}
+
+.mail-body :deep(pre) {
+  white-space: pre-wrap;
 }
 
 .attachment-panel {
@@ -570,8 +591,8 @@ onBeforeUnmount(() => {
   padding: 0 14px;
   border: 1px solid transparent;
   border-radius: 8px;
-  background: #111a2f;
-  color: #ffffff;
+  background: var(--surface-bg);
+  color: var(--page-text);
   cursor: pointer;
   text-align: left;
   transition:
@@ -579,16 +600,20 @@ onBeforeUnmount(() => {
     background-color 160ms ease;
 }
 
-.attachment-button:hover:not(:disabled),
-.attachment-button:focus-visible:not(:disabled) {
-  border-color: #45a4ff;
-  background: #162444;
+.attachment-button:hover:not(:disabled) {
+  border-color: var(--accent-strong);
+  background: color-mix(in srgb, var(--surface-bg) 78%, var(--accent-strong));
   outline: none;
+}
+
+.attachment-button:focus-visible:not(:disabled) {
+  border-color: var(--accent-strong);
+  background: color-mix(in srgb, var(--surface-bg) 78%, var(--accent-strong));
 }
 
 .attachment-button :deep(.v-icon) {
   flex: 0 0 auto;
-  color: #45a4ff;
+  color: var(--accent-strong);
   font-size: 20px;
 }
 
@@ -634,6 +659,11 @@ onBeforeUnmount(() => {
     margin-left: 0;
   }
 
+  .action-button {
+    width: 100%;
+    min-width: 0;
+  }
+
   .mail-title-row {
     align-items: flex-start;
   }
@@ -650,6 +680,12 @@ onBeforeUnmount(() => {
 
   .mail-body {
     padding: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading-icon {
+    animation: none;
   }
 }
 </style>

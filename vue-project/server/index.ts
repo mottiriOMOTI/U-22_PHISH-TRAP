@@ -10,6 +10,7 @@ import scoreroutes from './routes/score'
 import adminStatsRoutes from './routes/adminStats'
 import trainingStatsRoutes from './routes/trainingStats'
 import usersListRoutes from './routes/usersList'
+import settingsRoutes from './routes/settings'
 
 const app = express()
 const port = Number(process.env.API_PORT) || 3000
@@ -62,6 +63,7 @@ app.use('/api/score', scoreroutes)
 app.use('/api/adminStats', adminStatsRoutes)
 app.use('/api/trainingStats', trainingStatsRoutes)
 app.use('/api/usersList', usersListRoutes)
+app.use('/api/settings', settingsRoutes)
 
 app.listen(port, () => {
   console.log('Server started on port', port)

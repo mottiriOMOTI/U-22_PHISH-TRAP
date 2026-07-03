@@ -47,9 +47,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import BaseCard from './BaseCard.vue'
 
-// 🟢 defineProps で親からのデータ（Props）を受け取る形にします
 interface Props {
   type?: 'danger' | 'DangerExplanation' | 'advice' | 'correctiveAction' | 'learningPoint' | string
   title?: string
@@ -67,34 +65,43 @@ const props = withDefaults(defineProps<Props>(), {
   text: '',
   textList: () => [],
   color: 'primary',
-  variant: 'tonal'
+  variant: 'tonal',
 })
 
-// 🟢 カードタイプ別に内部タイトルを指定
 const computedTitle = computed(() => {
   switch (props.type) {
-    case 'danger': return ' メール詳細'
-    case 'DangerExplanation': return ' なぜ危険なのか（解説）'
-    case 'advice': return ' 安全に見破るチェックリスト'
-    case 'correctiveAction': return ' 正しい対処法'
-    case 'learningPoint': return ' 学習のポイント'
-    default: return '情報カード'
+    case 'danger':
+      return 'メール詳細'
+    case 'DangerExplanation':
+      return 'なぜ危険なのか'
+    case 'advice':
+      return '安全に見分けるチェックリスト'
+    case 'correctiveAction':
+      return '正しい対処法'
+    case 'learningPoint':
+      return '学習ポイント'
+    default:
+      return '情報カード'
   }
 })
 
-// 🟢 カードタイプ別にアイコンを指定
 const computedIcon = computed(() => {
   switch (props.type) {
-    case 'danger': return 'mdi-alert-octagon'
-    case 'DangerExplanation': return 'mdi-file-find'
-    case 'advice': return 'mdi-lightbulb-on'
-    case 'correctiveAction': return 'mdi-shield-check'
-    case 'learningPoint': return 'mdi-book-open-page-variant'
-    default: return 'mdi-information'
+    case 'danger':
+      return 'mdi-alert-octagon'
+    case 'DangerExplanation':
+      return 'mdi-file-find'
+    case 'advice':
+      return 'mdi-lightbulb-on'
+    case 'correctiveAction':
+      return 'mdi-shield-check'
+    case 'learningPoint':
+      return 'mdi-book-open-page-variant'
+    default:
+      return 'mdi-information'
   }
 })
 
-// 各種データ型の公開用エクスポート
 export interface DangerCardData {
   id: string
   type: 'danger'
@@ -132,7 +139,7 @@ export interface AdviceCardData {
 export interface CorrectiveActionCardData {
   id: string
   type: 'correctiveAction'
-  Explanation: string[] // 配列型に固定
+  Explanation: string[]
   color?: string
   variant?: 'flat' | 'text' | 'elevated' | 'tonal' | 'outlined' | 'plain'
 }
@@ -145,5 +152,10 @@ export interface LearningPointCardData {
   variant?: 'flat' | 'text' | 'elevated' | 'tonal' | 'outlined' | 'plain'
 }
 
-export type CardItem = DangerCardData | DangerExplanation | AdviceCardData | CorrectiveActionCardData | LearningPointCardData
+export type CardItem =
+  | DangerCardData
+  | DangerExplanation
+  | AdviceCardData
+  | CorrectiveActionCardData
+  | LearningPointCardData
 </script>

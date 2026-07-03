@@ -4,7 +4,9 @@
   position: relative;
   box-sizing: border-box;
   min-height: 100vh;
+  overflow-x: hidden;
   background: var(--page-bg);
+  color: var(--page-text);
 }
 
 .back-button {
@@ -120,12 +122,15 @@
   justify-content: center;
   gap: 8px;
   padding: 0 16px;
+  border: 1px solid transparent;
   border-radius: 8px;
   font-size: 14px;
   font-weight: 800;
   cursor: pointer;
   transition:
     background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
     opacity 160ms ease;
 }
 
@@ -134,13 +139,13 @@
 }
 
 .action-button--primary {
-  border: 0;
-  background: #2265f4;
-  color: #ffffff;
+  border-color: var(--sidebar-active-bg);
+  background: var(--sidebar-active-bg);
+  color: var(--sidebar-active-text);
 }
 
 .action-button--primary:hover:not(:disabled) {
-  background: #1f55ca;
+  background: color-mix(in srgb, var(--sidebar-active-bg) 86%, var(--surface-bg));
 }
 
 .action-button--secondary {
@@ -155,13 +160,21 @@
 
 .action-button--warning {
   margin-left: auto;
-  border: 0;
-  background: #ffd24a;
-  color: #172337;
+  border-color: color-mix(in srgb, var(--danger) 70%, transparent);
+  background: color-mix(in srgb, var(--danger) 14%, var(--panel-bg));
+  color: var(--danger);
 }
 
 .action-button--warning:hover:not(:disabled) {
-  background: #e8bd32;
+  border-color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 24%, var(--panel-bg));
+}
+
+.action-button:focus-visible,
+.attachment-button:focus-visible,
+.secondary-button:focus-visible {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 2px;
 }
 
 .action-button:disabled,
@@ -189,8 +202,8 @@
   flex: 0 0 auto;
   place-items: center;
   border-radius: 8px;
-  background: #1c3574;
-  color: #5da2ff;
+  background: color-mix(in srgb, var(--accent-strong) 24%, var(--surface-bg));
+  color: var(--accent-strong);
 }
 
 .mail-title-row__icon :deep(.v-icon) {
@@ -228,7 +241,7 @@
   flex: 0 0 auto;
   place-items: center;
   border-radius: 50%;
-  background: color-mix(in srgb, var(--success) 84%, #006d4a);
+  background: color-mix(in srgb, var(--success) 86%, var(--surface-bg));
   color: #ffffff;
   font-size: 20px;
   font-weight: 900;
@@ -264,7 +277,8 @@
   background: var(--surface-bg);
   color: var(--page-text);
   line-height: 1.7;
-  word-break: break-word;
+  overflow-wrap: anywhere;
+  word-break: normal;
 }
 
 .mail-body :deep(img) {
@@ -273,9 +287,14 @@
 }
 
 .mail-body :deep(a) {
-  color: #64d6ff;
+  color: var(--accent-strong);
   text-decoration: underline;
+  overflow-wrap: anywhere;
   cursor: pointer;
+}
+
+.mail-body :deep(pre) {
+  white-space: pre-wrap;
 }
 
 .attachment-panel {
@@ -311,11 +330,15 @@
     background-color 160ms ease;
 }
 
-.attachment-button:hover:not(:disabled),
-.attachment-button:focus-visible:not(:disabled) {
+.attachment-button:hover:not(:disabled) {
   border-color: var(--accent-strong);
   background: color-mix(in srgb, var(--accent-strong) 12%, var(--surface-bg));
   outline: none;
+}
+
+.attachment-button:focus-visible:not(:disabled) {
+  border-color: var(--accent-strong);
+  background: color-mix(in srgb, var(--accent-strong) 12%, var(--surface-bg));
 }
 
 .attachment-button :deep(.v-icon) {
@@ -379,5 +402,11 @@
 
   .mail-body {
     padding: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading-icon {
+    animation: none;
   }
 }
