@@ -82,7 +82,7 @@
 
       <div v-else-if="error" class="panel-message panel-message--error" role="alert">
         <span>{{ error }}</span>
-        <button type="button" @click="load">再試行</button>
+        <button type="button" @click="loadOverview">再試行</button>
       </div>
 
       <div v-else-if="users.length === 0" class="empty-state">
@@ -201,11 +201,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, watch } from 'vue'
-import { fetchLearnerCount, type Scenario } from '@/api/adminOverviewApi'
-import { fetchAverageAccuracy } from '@/api/trainingStatsApi'
+import { computed, onMounted, reactive, ref } from 'vue'
+import {
+  fetchAdminOverviewSummary,
+  type AdminOverviewUser,
+  type AverageAccuracies,
+  type LearnerCounts,
+  type Scenario,
+} from '@/api/adminOverviewApi'
 import { createAdminUser, getCurrentUser, validateNewPassword } from '@/api/users'
-import { fetchUsers, type UserListItem } from '@/api/usersListApi'
 
 type Category = 'student' | 'company' | 'general' | 'all'
 type StatusTone = 'success' | 'warning' | 'danger'
@@ -219,7 +223,7 @@ const categoryOptions: Array<{ label: string; value: Category }> = [
   { label: '学生', value: 'student' },
   { label: '一般', value: 'general' },
 ]
-const learnerCounts = ref({
+const learnerCounts = ref<LearnerCounts>({
   total: 0,
   business: 0,
   school: 0,
@@ -228,7 +232,12 @@ const learnerCounts = ref({
 const loadingLearnerCount = ref(true)
 const learnerCountError = ref(false)
 
-const averageAccuracy = ref(0)
+const averageAccuracies = ref<AverageAccuracies>({
+  total: 0,
+  business: 0,
+  school: 0,
+  daily: 0,
+})
 const loadingAccuracy = ref(true)
 const accuracyError = ref(false)
 
@@ -242,43 +251,15 @@ const categoryMap: Record<Category, { label: string; key: keyof typeof learnerCo
 const selectedCategoryLabel = computed(() => categoryMap[selectedCategory.value].label)
 const selectedCategoryCount = computed(() => learnerCounts.value[categoryMap[selectedCategory.value].key])
 const selectedCategoryScenario = computed(() => categoryMap[selectedCategory.value].scenario)
+const averageAccuracy = computed(() => averageAccuracies.value[categoryMap[selectedCategory.value].key])
 
-async function loadLearnerCount() {
-  loadingLearnerCount.value = true
-  learnerCountError.value = false
-
-  try {
-    const [total, business, school, daily] = await Promise.all([
-      fetchLearnerCount(),
-      fetchLearnerCount('business'),
-      fetchLearnerCount('school'),
-      fetchLearnerCount('daily'),
-    ])
-
-    learnerCounts.value = { total, business, school, daily }
-  } catch (error) {
-    learnerCountError.value = true
-    learnerCounts.value = { total: 0, business: 0, school: 0, daily: 0 }
-  } finally {
-    loadingLearnerCount.value = false
-  }
-}
-
-async function loadAccuracy() {
-  loadingAccuracy.value = true
-  accuracyError.value = false
-
-  try {
-    averageAccuracy.value = await fetchAverageAccuracy(selectedCategoryScenario.value)
-  } catch (error) {
-    accuracyError.value = true
-    averageAccuracy.value = 0
-  } finally {
-    loadingAccuracy.value = false
-  }
-}
-
-const users = ref<UserListItem[]>([])
+const allUsers = ref<AdminOverviewUser[]>([])
+const users = computed(() => {
+  const scenario = selectedCategoryScenario.value
+  return scenario
+    ? allUsers.value.filter((user) => user.current_scenario === scenario)
+    : allUsers.value
+})
 const loading = ref(true)
 const error = ref<string | null>(null)
 const adminDialog = ref(false)
@@ -380,21 +361,33 @@ async function submitAdminCreate() {
   }
 }
 
-async function load() {
+async function loadOverview() {
   loading.value = true
+  loadingLearnerCount.value = true
+  loadingAccuracy.value = true
   error.value = null
+  learnerCountError.value = false
+  accuracyError.value = false
 
   try {
-    const scenario = categoryMap[selectedCategory.value].scenario
-
-    users.value = await fetchUsers(scenario)
+    const summary = await fetchAdminOverviewSummary()
+    learnerCounts.value = summary.learnerCounts
+    averageAccuracies.value = summary.averageAccuracies
+    allUsers.value = summary.users
   } catch (e) {
+    learnerCountError.value = true
+    accuracyError.value = true
+    learnerCounts.value = { total: 0, business: 0, school: 0, daily: 0 }
+    averageAccuracies.value = { total: 0, business: 0, school: 0, daily: 0 }
+    allUsers.value = []
     error.value =
       e instanceof Error
         ? e.message
         : 'ユーザーの取得に失敗しました'
   } finally {
     loading.value = false
+    loadingLearnerCount.value = false
+    loadingAccuracy.value = false
   }
 }
 
@@ -402,7 +395,7 @@ function scenarioLabel(s: Scenario): string {
   return scenarioLabelMap[s] ?? s
 }
 
-function scoreRatio(item: UserListItem): number | null {
+function scoreRatio(item: AdminOverviewUser): number | null {
   if (
     item.latest_correct_count === null ||
     item.latest_total_questions === null ||
@@ -414,7 +407,7 @@ function scoreRatio(item: UserListItem): number | null {
   return item.latest_correct_count / item.latest_total_questions
 }
 
-function statusTone(item: UserListItem): StatusTone {
+function statusTone(item: AdminOverviewUser): StatusTone {
   const ratio = scoreRatio(item)
 
   if (ratio === null) return item.is_active ? 'warning' : 'danger'
@@ -424,7 +417,7 @@ function statusTone(item: UserListItem): StatusTone {
   return 'danger'
 }
 
-function statusIcon(item: UserListItem): string | undefined {
+function statusIcon(item: AdminOverviewUser): string | undefined {
   switch (statusTone(item)) {
     case 'success':
       return 'mdi-check-circle-outline'
@@ -435,7 +428,7 @@ function statusIcon(item: UserListItem): string | undefined {
   }
 }
 
-function formatScore(item: UserListItem): string {
+function formatScore(item: AdminOverviewUser): string {
   if (
     item.latest_correct_count === null ||
     item.latest_total_questions === null
@@ -469,16 +462,7 @@ function formatDate(iso: string | null): string {
   })
 }
 
-onMounted(() => {
-  loadLearnerCount()
-  loadAccuracy()
-  load()
-})
-
-watch(selectedCategory, () => {
-  loadAccuracy()
-  load()
-})
+onMounted(loadOverview)
 </script>
 
 <style scoped>
