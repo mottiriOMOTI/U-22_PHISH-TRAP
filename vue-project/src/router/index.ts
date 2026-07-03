@@ -24,8 +24,6 @@ const Setting = () => import('@/pages/General/Main/vue/Setting.vue')
 const MailboxList = () => import('@/pages/General/Mailbox/vue/MailboxList.vue')
 const MailOpen = () => import('@/pages/General/Mailbox/vue/MailOpen.vue')
 
-const FearEffect_Death = () => import('@/pages/General/Mailbox/vue/FearEffect/FearEffect_Death.vue')
-const FearEffect_False = () => import('@/pages/General/Mailbox/vue/FearEffect/FearEffect_False.vue')
 const Explanation = () => import('@/pages/General/Mailbox/vue/FearEffect/Explanation.vue')
 
 const Admin_Login = () => import('@/pages/Admin/Admin_Login.vue')
@@ -48,8 +46,6 @@ const learnerRouteNames = new Set([
   'Setting',
   'MailboxList',
   'MailOpen',
-  'FearEffect_Death',
-  'FearEffect_False',
   'Explanation',
 ])
 
@@ -210,30 +206,15 @@ const router = createRouter({
       }
     },
     {
-      path: '/feareffect_death',
-      name: 'FearEffect_Death',
-      component: FearEffect_Death,
-      meta: {
-        sidebar: null,
-        header: null,
-      }
-    },
-    {
-      path: '/feareffect_false',
-      name: 'FearEffect_False',
-      component: FearEffect_False,
-      meta: {
-        sidebar: null,
-        header: null,
-      }
-    },
-    {
       path: '/explanation',
       name: 'Explanation',
       component: Explanation,
       meta: {
-        sidebar: null,
+        sidebar: 'user',
         header: null,
+        shell: 'dark',
+        fluid: true,
+        flush: true,
       }
     },
     {

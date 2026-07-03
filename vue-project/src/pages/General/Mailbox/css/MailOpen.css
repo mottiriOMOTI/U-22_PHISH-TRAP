@@ -1,5 +1,12 @@
 /* Layout and base components moved to Main.css; keep mailbox-specific elements */
 
+.mail-open-page {
+  position: relative;
+  box-sizing: border-box;
+  min-height: 100vh;
+  background: var(--page-bg);
+}
+
 .back-button {
   display: grid;
   width: 42px;
@@ -33,6 +40,10 @@
 .mail-title-row p,
 .sender-summary span {
   color: var(--muted);
+}
+
+.mail-open-panel {
+  border-radius: 8px;
 }
 
 .mail-open-panel--loading,
@@ -104,6 +115,7 @@
 .action-button {
   display: inline-flex;
   min-height: 40px;
+  min-width: 104px;
   align-items: center;
   justify-content: center;
   gap: 8px;
@@ -144,12 +156,12 @@
 .action-button--warning {
   margin-left: auto;
   border: 0;
-  background: #b88400;
-  color: #ffffff;
+  background: #ffd24a;
+  color: #172337;
 }
 
 .action-button--warning:hover:not(:disabled) {
-  background: #9f7200;
+  background: #e8bd32;
 }
 
 .action-button:disabled,
@@ -216,7 +228,7 @@
   flex: 0 0 auto;
   place-items: center;
   border-radius: 50%;
-  background: #00bf56;
+  background: color-mix(in srgb, var(--success) 84%, #006d4a);
   color: #ffffff;
   font-size: 20px;
   font-weight: 900;
@@ -247,6 +259,7 @@
 .mail-body {
   min-height: 220px;
   padding: 22px;
+  border: 1px solid color-mix(in srgb, var(--panel-border) 72%, transparent);
   border-radius: 8px;
   background: var(--surface-bg);
   color: var(--page-text);
@@ -260,7 +273,7 @@
 }
 
 .mail-body :deep(a) {
-  color: #1976d2;
+  color: #64d6ff;
   text-decoration: underline;
   cursor: pointer;
 }
@@ -307,7 +320,7 @@
 
 .attachment-button :deep(.v-icon) {
   flex: 0 0 auto;
-  color: #45a4ff;
+  color: var(--accent-strong);
   font-size: 20px;
 }
 
@@ -335,17 +348,14 @@
 }
 
 @media (max-width: 640px) {
-  .mail-open-hero {
-    align-items: flex-start;
-  }
-
-  .mail-open-hero h1 {
-    font-size: 28px;
-  }
-
   .action-bar {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .action-button {
+    width: 100%;
+    min-width: 0;
   }
 
   .action-button--warning {

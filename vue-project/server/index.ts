@@ -2,7 +2,6 @@ import 'dotenv/config'
 
 import express from 'express'
 
-import apiroutes from './routes/apiRoutes'
 import supabaseroutes from './routes/supabase'
 import mailroutes from './routes/mail'
 
@@ -53,8 +52,6 @@ app.use((req, res, next) => {
   }
   next()
 })
-
-app.use('/api', apiroutes)
 
 app.use('/api/supabasetest', supabaseroutes)
 
