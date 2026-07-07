@@ -102,6 +102,9 @@ import { useRoute, useRouter } from 'vue-router'
 import DOMPurify from 'dompurify'
 import { fetchMail, type MailDetail } from '@/api/mailApi'
 
+import { getCurrentUser } from '@/api/users'
+import { saveUserAnswer, type ActionType as DBActionType } from '@/api/userAnswers'
+
 type ActionType = 'link' | 'attachment' | 'reply' | 'delete' | 'report'
 
 const ROUTE_DEATH = '/feareffect_death'
@@ -173,15 +176,16 @@ function showDeleteWarning() {
   alert('権限不足：メールを削除することはできません。')
 }
 
-function judgeAction(action: ActionType, value?: string) {
+// 🛠 修正: async関数にしてDB保存を待機できるようにする
+async function judgeAction(action: ActionType, value?: string) {
   if (isJudging.value || !mail.value) return
   
-  // 🛠 修正: Proxyオブジェクトを純粋なオブジェクトに変換する
-  // JSONの変換を通すことで、Vueの監視対象(Proxy)から完全に切り離します
+  // Proxyオブジェクトを純粋なオブジェクトに変換する
   const m = JSON.parse(JSON.stringify(mail.value))
 
   isJudging.value = true
-  let stateToPass: any = { mail: m }
+  let stateToPass: any = { mail: m, judgedAction: action }
+  let isCorrect = false // ✅ 正誤判定用の変数
 
   if (m.is_phishing) {
     switch (action) {
@@ -190,21 +194,52 @@ function judgeAction(action: ActionType, value?: string) {
       case 'reply':
         isDeathFlag.value = true
         stateToPass.triggerDeath = true
+        isCorrect = false // 騙されたので不正解
         break
       case 'report':
         stateToPass.triggerSuccess = true
+        isCorrect = true  // 正しく報告できたので正解
         break
     }
   } else {
     if (action === 'report') {
       isSocialDeathFlag.value = true
       stateToPass.triggerSocialDeath = true
+      isCorrect = false // 正常なメールを誤報告したので不正解
     } else {
       stateToPass.triggerSuccess = true
+      isCorrect = true  // 正常なメールで通常のアクションをしたので正解
     }
   }
 
-  // 純粋なオブジェクトになったのでエラーなく遷移できるようになります
+  // 📝 DB保存用のアクション名にマッピング
+  const actionMap: Record<string, DBActionType> = {
+    'link': 'clicked_link',
+    'attachment': 'downloaded_attachment',
+    'reply': 'replied',
+    'report': 'reported'
+  }
+  
+  const dbAction = actionMap[action]
+  const user = getCurrentUser()
+
+  // 📝 DBへ回答履歴を保存する
+  if (user && dbAction) {
+    try {
+      console.log(`📝 DB保存実行: ユーザー${user.name} が ${dbAction} を実行 (正解: ${isCorrect})`)
+      await saveUserAnswer({
+        user_id: user.id,
+        question_id: m.id,
+        action_type: dbAction,
+        is_correct: isCorrect
+      })
+    } catch (err) {
+      console.error("回答のDB保存に失敗しました:", err)
+      // エラーが出ても画面遷移(ホラー演出)は止めない
+    }
+  }
+
+  // 純粋なオブジェクトになったのでエラーなく遷移
   router.push({ 
     path: ROUTE_MAILBOX, 
     state: stateToPass 

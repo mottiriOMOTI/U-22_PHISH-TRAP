@@ -11,6 +11,7 @@ import scoreroutes from './routes/score'
 import adminStatsRoutes from './routes/adminStats'
 import trainingStatsRoutes from './routes/trainingStats'
 import usersListRoutes from './routes/usersList'
+import userAnswersRoutes from './routes/userAnswers'
 
 const app = express()
 const port = Number(process.env.API_PORT) || 3000
@@ -65,6 +66,7 @@ app.use('/api/score', scoreroutes)
 app.use('/api/adminStats', adminStatsRoutes)
 app.use('/api/trainingStats', trainingStatsRoutes)
 app.use('/api/usersList', usersListRoutes)
+app.use('/api/supabasetest/user-answers', userAnswersRoutes)
 
 app.listen(port, () => {
   console.log('Server started on port', port)
