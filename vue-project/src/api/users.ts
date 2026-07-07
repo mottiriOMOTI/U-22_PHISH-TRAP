@@ -336,15 +336,16 @@ export async function requestPasswordReset(email: string): Promise<PasswordReset
 }
 
 export async function confirmPasswordReset(
-  token: string,
   password: string,
+  accessToken: string,
 ): Promise<PasswordResetConfirmResponse> {
   const res = await fetch(`${API_BASE_URL}/password-reset/confirm`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
     },
-    body: JSON.stringify({ token, password }),
+    body: JSON.stringify({ password }),
   })
 
   if (!res.ok) {
