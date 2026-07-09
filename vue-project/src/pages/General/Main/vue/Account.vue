@@ -208,6 +208,7 @@ try {
   const currentUser = getCurrentUser()
   if (currentUser) {
     applyCurrentUser(currentUser)
+    errorMessage.value = '学習統計の読み込みに失敗しました'
     return
   }
 

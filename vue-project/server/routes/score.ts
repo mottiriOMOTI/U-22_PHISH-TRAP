@@ -1,6 +1,7 @@
 import { Router } from 'express'
 
 import { supabaseAdmin } from '../lib/supabase'
+import { calculateScoreTotals } from '../services/scoreCalculations'
 
 const router = Router()
 
@@ -27,6 +28,7 @@ const CATEGORY_TO_SCENARIO: Record<string, Scenario> = {
   student: 'school',
   general: 'daily',
 }
+const MAX_TRAINING_DURATION_MS = 4 * 60 * 60 * 1000
 
 type UserScoreAccumulator = {
   userId: string
@@ -65,10 +67,30 @@ function isCorrectAnswer(isPhishing: boolean, action: AnswerAction) {
   return isPhishing ? action === 'report' : action !== 'report'
 }
 
+function resolveStartedAt(value: unknown, completedAt: string): string {
+  if (typeof value !== 'string') {
+    return completedAt
+  }
+
+  const startedAtMs = new Date(value).getTime()
+  const completedAtMs = new Date(completedAt).getTime()
+  const durationMs = completedAtMs - startedAtMs
+
+  if (
+    Number.isNaN(startedAtMs) ||
+    durationMs < 0 ||
+    durationMs > MAX_TRAINING_DURATION_MS
+  ) {
+    return completedAt
+  }
+
+  return new Date(startedAtMs).toISOString()
+}
+
 // POST /api/score/answer
 // 1問ごとの回答を保存する。同じユーザー・問題の再回答は既存結果を更新する。
 router.post('/answer', async (req, res) => {
-  const { userId, questionId, action } = req.body ?? {}
+  const { userId, questionId, action, startedAt } = req.body ?? {}
 
   if (
     typeof userId !== 'string' ||
@@ -121,6 +143,7 @@ router.post('/answer', async (req, res) => {
     correct_count: correct ? 1 : 0,
     wrong_count: correct ? 0 : 1,
     score: correct ? 100 : 0,
+    started_at: resolveStartedAt(startedAt, now),
     completed_at: now,
     is_completed: true,
   }
@@ -145,10 +168,7 @@ router.post('/answer', async (req, res) => {
         .maybeSingle()
     : supabaseAdmin
         .from('training_sessions')
-        .insert({
-          ...values,
-          started_at: now,
-        })
+        .insert(values)
         .select('id')
         .maybeSingle()
 
@@ -264,18 +284,22 @@ router.get('/average', async (_req, res) => {
       const scenario = SCENARIOS.has(profile.current_scenario as Scenario)
         ? (profile.current_scenario as Scenario)
         : 'school'
-      const totalQuestions = Math.max(questionCounts[scenario], user.totalQuestions)
-      const totalUnanswered = Math.max(totalQuestions - user.totalCorrect - user.totalWrong, 0)
+      const totals = calculateScoreTotals(
+        user.totalCorrect,
+        user.totalWrong,
+        user.totalQuestions,
+        questionCounts[scenario],
+      )
 
       return {
         userId: user.userId,
         label: formatUserLabel(profile),
         total_correct: user.totalCorrect,
         total_wrong: user.totalWrong,
-        total_unanswered: totalUnanswered,
-        total_questions: totalQuestions,
+        total_unanswered: totals.totalUnanswered,
+        total_questions: totals.totalQuestions,
         session_count: user.sessionCount,
-        accuracy: totalQuestions > 0 ? user.totalCorrect / totalQuestions : 0,
+        accuracy: totals.accuracy,
       }
     })
     .sort((a, b) => b.accuracy - a.accuracy || b.total_questions - a.total_questions)
@@ -372,16 +396,19 @@ router.get('/', async (req, res) => {
   const totalCorrect = sessions.reduce((sum, s) => sum + (s.correct_count ?? 0), 0)
   const totalWrong = sessions.reduce((sum, s) => sum + (s.wrong_count ?? 0), 0)
   const recordedQuestions = sessions.reduce((sum, s) => sum + (s.total_questions ?? 0), 0)
-  const totalQuestions = Math.max(activeQuestionCount ?? 0, recordedQuestions)
-  const totalUnanswered = Math.max(totalQuestions - totalCorrect - totalWrong, 0)
-  const accuracy = totalQuestions > 0 ? totalCorrect / totalQuestions : 0
+  const totals = calculateScoreTotals(
+    totalCorrect,
+    totalWrong,
+    recordedQuestions,
+    activeQuestionCount ?? 0,
+  )
 
   return res.json({
     total_correct: totalCorrect,
     total_wrong: totalWrong,
-    total_unanswered: totalUnanswered,
-    total_questions: totalQuestions,
-    accuracy,
+    total_unanswered: totals.totalUnanswered,
+    total_questions: totals.totalQuestions,
+    accuracy: totals.accuracy,
     session_count: sessions.length,
   })
 })

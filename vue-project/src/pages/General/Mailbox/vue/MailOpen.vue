@@ -128,6 +128,7 @@ const isSocialDeathFlag = ref(false)
 const isJudging = ref(false)
 const scoringError = ref<string | null>(null)
 const bodyEl = ref<HTMLElement | null>(null)
+const trainingStartedAt = ref<string | null>(null)
 
 const sanitizedBody = computed(() => DOMPurify.sanitize(mail.value?.body ?? ''))
 
@@ -151,8 +152,10 @@ async function load() {
 
   loading.value = true
   error.value = null
+  trainingStartedAt.value = null
   try {
     mail.value = await fetchMail(id)
+    trainingStartedAt.value = new Date().toISOString()
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'メールの取得に失敗しました。'
   } finally {
@@ -199,7 +202,12 @@ async function judgeAction(action: AnswerAction, value?: string) {
   }
 
   try {
-    await recordAnswer(currentUser.id, mailToPass.id, action)
+    await recordAnswer(
+      currentUser.id,
+      mailToPass.id,
+      action,
+      trainingStartedAt.value ?? new Date().toISOString(),
+    )
   } catch (e) {
     console.error(e)
     scoringError.value =

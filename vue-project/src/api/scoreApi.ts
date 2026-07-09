@@ -55,11 +55,12 @@ export async function recordAnswer(
   userId: string,
   questionId: string,
   action: AnswerAction,
+  startedAt: string,
 ): Promise<RecordAnswerResult> {
   const res = await fetch(`${API_BASE_URL}/answer`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ userId, questionId, action }),
+    body: JSON.stringify({ userId, questionId, action, startedAt }),
   })
 
   if (!res.ok) {

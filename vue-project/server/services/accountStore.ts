@@ -17,6 +17,13 @@ export type AccountSummary = {
   stats: AccountStats
 }
 
+export class AccountNotFoundError extends Error {
+  constructor() {
+    super('Active learner not found')
+    this.name = 'AccountNotFoundError'
+  }
+}
+
 type UserRow = {
   email: string | null
   created_at: string | null
@@ -42,13 +49,6 @@ const defaultAccount: AccountSummary = {
     totalLearningMinutes: null,
     averageAccuracy: null,
   },
-}
-
-function cloneDefaultAccount(): AccountSummary {
-  return {
-    profile: { ...defaultAccount.profile },
-    stats: { ...defaultAccount.stats },
-  }
 }
 
 function calculateRank(completedTrainings: number, averageAccuracy: number | null): string {
@@ -99,6 +99,10 @@ function calculateAverageAccuracy(sessions: TrainingSessionRow[]): number | null
 }
 
 function calculateTotalLearningMinutes(sessions: TrainingSessionRow[]): number | null {
+  if (sessions.length === 0) {
+    return null
+  }
+
   const totalMilliseconds = sessions.reduce((total, session) => {
     if (!session.started_at || !session.completed_at) {
       return total
@@ -115,21 +119,18 @@ function calculateTotalLearningMinutes(sessions: TrainingSessionRow[]): number |
   }, 0)
 
   if (totalMilliseconds <= 0) {
-    return null
+    return 0
   }
 
-  return Math.round(totalMilliseconds / 60000)
+  return Math.ceil(totalMilliseconds / 60000)
 }
 
-export async function getAccountSummary(userId?: string): Promise<AccountSummary> {
-  if (!userId) {
-    return cloneDefaultAccount()
-  }
-
+export async function getAccountSummary(userId: string): Promise<AccountSummary> {
   const { data: user, error: userError } = await supabaseAdmin
     .from('users')
     .select('email, created_at, is_active')
     .eq('id', userId)
+    .eq('role', 'learner')
     .maybeSingle<UserRow>()
 
   if (userError) {
@@ -137,7 +138,7 @@ export async function getAccountSummary(userId?: string): Promise<AccountSummary
   }
 
   if (!user || user.is_active === false) {
-    return cloneDefaultAccount()
+    throw new AccountNotFoundError()
   }
 
   const { data: sessions, error: sessionsError } = await supabaseAdmin
