@@ -114,6 +114,20 @@
   margin-bottom: 18px;
 }
 
+.scoring-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--danger) 70%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  color: var(--danger);
+  font-size: 14px;
+  font-weight: 700;
+}
+
 .action-button {
   display: inline-flex;
   min-height: 40px;

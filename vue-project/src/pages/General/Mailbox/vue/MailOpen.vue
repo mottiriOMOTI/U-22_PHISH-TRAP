@@ -43,6 +43,10 @@
             <span>報告</span>
           </button>
         </div>
+        <p v-if="scoringError" class="scoring-error" role="alert">
+          <v-icon icon="mdi-alert-circle-outline" />
+          <span>{{ scoringError }}</span>
+        </p>
 
         <header class="mail-detail-header">
           <div class="mail-title-row">
@@ -96,8 +100,10 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import DOMPurify from 'dompurify'
 import { fetchMail, type MailDetail } from '@/api/mailApi'
+import { recordAnswer, type AnswerAction } from '@/api/scoreApi'
+import { getCurrentUser } from '@/api/users'
 
-type ActionType = 'link' | 'attachment' | 'reply' | 'delete' | 'report'
+type ActionType = AnswerAction | 'delete'
 type JudgementState = {
   mail: MailDetail
   judgedAction: {
@@ -120,6 +126,7 @@ const error = ref<string | null>(null)
 const isDeathFlag = ref(false)
 const isSocialDeathFlag = ref(false)
 const isJudging = ref(false)
+const scoringError = ref<string | null>(null)
 const bodyEl = ref<HTMLElement | null>(null)
 
 const sanitizedBody = computed(() => DOMPurify.sanitize(mail.value?.body ?? ''))
@@ -172,7 +179,7 @@ function showDeleteWarning() {
   alert('このトレーニングではメールを削除できません。返信・報告などの判断を選んでください。')
 }
 
-function judgeAction(action: ActionType, value?: string) {
+async function judgeAction(action: AnswerAction, value?: string) {
   if (isJudging.value || !mail.value) return
 
   const mailToPass = JSON.parse(JSON.stringify(mail.value)) as MailDetail
@@ -182,6 +189,24 @@ function judgeAction(action: ActionType, value?: string) {
   }
 
   isJudging.value = true
+  scoringError.value = null
+
+  const currentUser = getCurrentUser()
+  if (!currentUser) {
+    scoringError.value = 'ログイン情報を確認できませんでした。再度ログインしてください。'
+    isJudging.value = false
+    return
+  }
+
+  try {
+    await recordAnswer(currentUser.id, mailToPass.id, action)
+  } catch (e) {
+    console.error(e)
+    scoringError.value =
+      e instanceof Error ? `回答結果を保存できませんでした: ${e.message}` : '回答結果を保存できませんでした。'
+    isJudging.value = false
+    return
+  }
 
   if (mailToPass.is_phishing) {
     switch (action) {

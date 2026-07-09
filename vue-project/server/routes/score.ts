@@ -6,9 +6,26 @@ const router = Router()
 
 type TrainingSessionScore = {
   user_id: string | null
+  scenario: string | null
   correct_count: number | null
   wrong_count: number | null
   total_questions: number | null
+}
+
+type Scenario = 'business' | 'school' | 'daily'
+type AnswerAction = 'link' | 'attachment' | 'reply' | 'report'
+
+const SCENARIOS = new Set<Scenario>(['business', 'school', 'daily'])
+const ACTIONS = new Set<AnswerAction>(['link', 'attachment', 'reply', 'report'])
+const SCENARIO_TO_CATEGORY: Record<Scenario, string> = {
+  business: 'company',
+  school: 'student',
+  daily: 'general',
+}
+const CATEGORY_TO_SCENARIO: Record<string, Scenario> = {
+  company: 'business',
+  student: 'school',
+  general: 'daily',
 }
 
 type UserScoreAccumulator = {
@@ -24,6 +41,7 @@ type ScoreUserProfile = {
   id: string
   name: string | null
   email: string | null
+  current_scenario: string | null
 }
 
 function toScoreCounts(session: TrainingSessionScore) {
@@ -43,11 +61,114 @@ function formatUserLabel(user: ScoreUserProfile) {
   return user.name?.trim() || user.email?.trim() || 'Unknown user'
 }
 
+function isCorrectAnswer(isPhishing: boolean, action: AnswerAction) {
+  return isPhishing ? action === 'report' : action !== 'report'
+}
+
+// POST /api/score/answer
+// 1問ごとの回答を保存する。同じユーザー・問題の再回答は既存結果を更新する。
+router.post('/answer', async (req, res) => {
+  const { userId, questionId, action } = req.body ?? {}
+
+  if (
+    typeof userId !== 'string' ||
+    typeof questionId !== 'string' ||
+    typeof action !== 'string' ||
+    !ACTIONS.has(action as AnswerAction)
+  ) {
+    return res.status(400).json({ error: 'userId, questionId and a valid action are required' })
+  }
+
+  const { data: user, error: userError } = await supabaseAdmin
+    .from('users')
+    .select('id, role, is_active')
+    .eq('id', userId)
+    .maybeSingle()
+
+  if (userError) {
+    return res.status(500).json({ error: userError.message })
+  }
+
+  if (!user || user.role !== 'learner' || user.is_active === false) {
+    return res.status(404).json({ error: 'Active learner not found' })
+  }
+
+  const { data: question, error: questionError } = await supabaseAdmin
+    .from('questions')
+    .select('id, category, is_phishing')
+    .eq('id', questionId)
+    .eq('is_active', true)
+    .eq('is_decoy', false)
+    .maybeSingle()
+
+  if (questionError) {
+    return res.status(500).json({ error: questionError.message })
+  }
+
+  const scenario = question ? CATEGORY_TO_SCENARIO[question.category] : undefined
+
+  if (!question || !scenario) {
+    return res.status(404).json({ error: 'Active training question not found' })
+  }
+
+  const correct = isCorrectAnswer(Boolean(question.is_phishing), action as AnswerAction)
+  const now = new Date().toISOString()
+  const values = {
+    user_id: userId,
+    question_id: questionId,
+    scenario,
+    total_questions: 1,
+    correct_count: correct ? 1 : 0,
+    wrong_count: correct ? 0 : 1,
+    score: correct ? 100 : 0,
+    completed_at: now,
+    is_completed: true,
+  }
+
+  const { data: existing, error: existingError } = await supabaseAdmin
+    .from('training_sessions')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('question_id', questionId)
+    .maybeSingle()
+
+  if (existingError) {
+    return res.status(500).json({ error: existingError.message })
+  }
+
+  const saveQuery = existing
+    ? supabaseAdmin
+        .from('training_sessions')
+        .update(values)
+        .eq('id', existing.id)
+        .select('id')
+        .maybeSingle()
+    : supabaseAdmin
+        .from('training_sessions')
+        .insert({
+          ...values,
+          started_at: now,
+        })
+        .select('id')
+        .maybeSingle()
+
+  const { data: saved, error: saveError } = await saveQuery
+
+  if (saveError || !saved) {
+    return res.status(500).json({ error: saveError?.message ?? 'Failed to save answer' })
+  }
+
+  return res.json({
+    ok: true,
+    is_correct: correct,
+  })
+})
+
 // GET /api/score/average
 router.get('/average', async (_req, res) => {
   const { data, error } = await supabaseAdmin
     .from('training_sessions')
-    .select('user_id, correct_count, wrong_count, total_questions')
+    .select('user_id, scenario, correct_count, wrong_count, total_questions')
     .eq('is_completed', true)
 
   if (error) {
@@ -63,7 +184,7 @@ router.get('/average', async (_req, res) => {
     sessionUserIds.length > 0
       ? await supabaseAdmin
           .from('users')
-          .select('id, name, email')
+          .select('id, name, email, current_scenario')
           .in('id', sessionUserIds)
           .eq('role', 'learner')
           .eq('is_active', true)
@@ -76,11 +197,28 @@ router.get('/average', async (_req, res) => {
   const userProfiles = new Map((scoreUsers ?? []).map((user) => [user.id, user]))
   const users = new Map<string, UserScoreAccumulator>()
 
-  let totalCorrect = 0
-  let totalWrong = 0
-  let totalUnanswered = 0
-  let totalQuestions = 0
-  let sessionCount = 0
+  const { data: activeQuestions, error: questionsError } = await supabaseAdmin
+    .from('questions')
+    .select('category')
+    .eq('is_active', true)
+    .eq('is_decoy', false)
+
+  if (questionsError) {
+    return res.status(500).json({ error: questionsError.message })
+  }
+
+  const questionCounts: Record<Scenario, number> = {
+    business: 0,
+    school: 0,
+    daily: 0,
+  }
+
+  for (const question of activeQuestions ?? []) {
+    const scenario = CATEGORY_TO_SCENARIO[question.category]
+    if (scenario) {
+      questionCounts[scenario] += 1
+    }
+  }
 
   for (const session of sessions) {
     if (!session.user_id) {
@@ -93,13 +231,15 @@ router.get('/average', async (_req, res) => {
       continue
     }
 
-    const counts = toScoreCounts(session)
+    const profileScenario = SCENARIOS.has(profile.current_scenario as Scenario)
+      ? (profile.current_scenario as Scenario)
+      : 'school'
 
-    totalCorrect += counts.correct
-    totalWrong += counts.wrong
-    totalUnanswered += counts.unanswered
-    totalQuestions += counts.total
-    sessionCount += 1
+    if (session.scenario !== profileScenario) {
+      continue
+    }
+
+    const counts = toScoreCounts(session)
 
     const current = users.get(session.user_id) ?? {
       userId: session.user_id,
@@ -119,16 +259,25 @@ router.get('/average', async (_req, res) => {
   }
 
   const userSummaries = Array.from(users.values())
-    .map((user) => ({
-      userId: user.userId,
-      label: formatUserLabel(userProfiles.get(user.userId)!),
-      total_correct: user.totalCorrect,
-      total_wrong: user.totalWrong,
-      total_unanswered: user.totalUnanswered,
-      total_questions: user.totalQuestions,
-      session_count: user.sessionCount,
-      accuracy: user.totalQuestions > 0 ? user.totalCorrect / user.totalQuestions : 0,
-    }))
+    .map((user) => {
+      const profile = userProfiles.get(user.userId)!
+      const scenario = SCENARIOS.has(profile.current_scenario as Scenario)
+        ? (profile.current_scenario as Scenario)
+        : 'school'
+      const totalQuestions = Math.max(questionCounts[scenario], user.totalQuestions)
+      const totalUnanswered = Math.max(totalQuestions - user.totalCorrect - user.totalWrong, 0)
+
+      return {
+        userId: user.userId,
+        label: formatUserLabel(profile),
+        total_correct: user.totalCorrect,
+        total_wrong: user.totalWrong,
+        total_unanswered: totalUnanswered,
+        total_questions: totalQuestions,
+        session_count: user.sessionCount,
+        accuracy: totalQuestions > 0 ? user.totalCorrect / totalQuestions : 0,
+      }
+    })
     .sort((a, b) => b.accuracy - a.accuracy || b.total_questions - a.total_questions)
     .map((user, index) => ({
       rank: index + 1,
@@ -155,6 +304,12 @@ router.get('/average', async (_req, res) => {
     { excellent: 0, good: 0, needs_review: 0 },
   )
 
+  const totalCorrect = userSummaries.reduce((sum, user) => sum + user.total_correct, 0)
+  const totalWrong = userSummaries.reduce((sum, user) => sum + user.total_wrong, 0)
+  const totalUnanswered = userSummaries.reduce((sum, user) => sum + user.total_unanswered, 0)
+  const totalQuestions = userSummaries.reduce((sum, user) => sum + user.total_questions, 0)
+  const sessionCount = userSummaries.reduce((sum, user) => sum + user.session_count, 0)
+
   return res.json({
     total_users: userSummaries.length,
     session_count: sessionCount,
@@ -177,20 +332,47 @@ router.get('/', async (req, res) => {
     return res.status(400).json({ error: 'userId is required' })
   }
 
+  const { data: user, error: userError } = await supabaseAdmin
+    .from('users')
+    .select('current_scenario')
+    .eq('id', userId)
+    .maybeSingle()
+
+  if (userError) {
+    return res.status(500).json({ error: userError.message })
+  }
+
+  const scenario = SCENARIOS.has(user?.current_scenario as Scenario)
+    ? (user!.current_scenario as Scenario)
+    : 'school'
+
   const { data, error } = await supabaseAdmin
     .from('training_sessions')
     .select('correct_count, wrong_count, total_questions')
     .eq('user_id', userId)
+    .eq('scenario', scenario)
     .eq('is_completed', true)
 
   if (error) {
     return res.status(500).json({ error: error.message })
   }
 
+  const { count: activeQuestionCount, error: questionCountError } = await supabaseAdmin
+    .from('questions')
+    .select('id', { count: 'exact', head: true })
+    .eq('category', SCENARIO_TO_CATEGORY[scenario])
+    .eq('is_active', true)
+    .eq('is_decoy', false)
+
+  if (questionCountError) {
+    return res.status(500).json({ error: questionCountError.message })
+  }
+
   const sessions = data ?? []
   const totalCorrect = sessions.reduce((sum, s) => sum + (s.correct_count ?? 0), 0)
   const totalWrong = sessions.reduce((sum, s) => sum + (s.wrong_count ?? 0), 0)
-  const totalQuestions = sessions.reduce((sum, s) => sum + (s.total_questions ?? 0), 0)
+  const recordedQuestions = sessions.reduce((sum, s) => sum + (s.total_questions ?? 0), 0)
+  const totalQuestions = Math.max(activeQuestionCount ?? 0, recordedQuestions)
   const totalUnanswered = Math.max(totalQuestions - totalCorrect - totalWrong, 0)
   const accuracy = totalQuestions > 0 ? totalCorrect / totalQuestions : 0
 
