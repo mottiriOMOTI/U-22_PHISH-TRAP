@@ -184,7 +184,7 @@ async function judgeAction(action: ActionType, value?: string) {
   const m = JSON.parse(JSON.stringify(mail.value))
 
   isJudging.value = true
-  let stateToPass: any = { mail: m, judgedAction: action }
+  let stateToPass: any = { mail: m, judgedAction: action, justAnswered: true, isCorrect: false }
   let isCorrect = false // ✅ 正誤判定用の変数
 
   if (m.is_phishing) {
@@ -195,10 +195,12 @@ async function judgeAction(action: ActionType, value?: string) {
         isDeathFlag.value = true
         stateToPass.triggerDeath = true
         isCorrect = false // 騙されたので不正解
+        stateToPass.isCorrect = false
         break
       case 'report':
         stateToPass.triggerSuccess = true
         isCorrect = true  // 正しく報告できたので正解
+        stateToPass.isCorrect = true
         break
     }
   } else {
@@ -206,9 +208,11 @@ async function judgeAction(action: ActionType, value?: string) {
       isSocialDeathFlag.value = true
       stateToPass.triggerSocialDeath = true
       isCorrect = false // 正常なメールを誤報告したので不正解
+      stateToPass.isCorrect = false
     } else {
       stateToPass.triggerSuccess = true
       isCorrect = true  // 正常なメールで通常のアクションをしたので正解
+      stateToPass.isCorrect = true
     }
   }
 

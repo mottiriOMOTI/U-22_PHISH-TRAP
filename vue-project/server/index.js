@@ -44,6 +44,7 @@ app.use((req, res, next) => {
     next();
 });
 app.use('/api', apiroutes);
+app.use('/api/supabasetest/user-answers', userAnswersRoutes);
 app.use('/api/supabasetest', supabaseroutes);
 app.use('/api/mail', mailroutes);
 app.use('/api/generate', generateroutes);
@@ -51,7 +52,6 @@ app.use('/api/score', scoreroutes);
 app.use('/api/adminStats', adminStatsRoutes);
 app.use('/api/trainingStats', trainingStatsRoutes);
 app.use('/api/usersList', usersListRoutes);
-app.use('/api/supabasetest/user-answers', userAnswersRoutes);
 app.listen(port, () => {
     console.log('Server started on port', port);
 });

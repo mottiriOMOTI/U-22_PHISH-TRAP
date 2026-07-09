@@ -20,9 +20,34 @@ export type UserAnswerResponse = {
   effect_flag?: boolean
 }
 
+export type UserAnswerSummary = {
+  question_id: string
+  effect_flag: boolean | null
+  is_correct: boolean | null
+}
+
 async function throwApiError(res: Response, fallbackMessage: string): Promise<never> {
   const body = await res.json().catch(() => null)
   throw new Error(body?.error ?? `${fallbackMessage} (${res.status})`)
+}
+
+export async function fetchUserAnswerStates(
+  userId: string,
+  questionIds: string[] = [],
+): Promise<UserAnswerSummary[]> {
+  const params = new URLSearchParams({ user_id: userId })
+
+  if (questionIds.length > 0) {
+    params.set('question_ids', questionIds.join(','))
+  }
+
+  const res = await fetch(`${API_BASE_URL}?${params.toString()}`)
+
+  if (!res.ok) {
+    return throwApiError(res, 'Failed to fetch user answer states')
+  }
+
+  return (await res.json()) as UserAnswerSummary[]
 }
 
 export async function saveUserAnswer(payload: SaveAnswerPayload): Promise<UserAnswerResponse> {

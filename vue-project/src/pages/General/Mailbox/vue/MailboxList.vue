@@ -47,23 +47,60 @@
 
       <!-- メールリスト表示 -->
       <div v-else class="mail-list">
-        <article v-for="mail in mails" :key="mail.id" class="mail-row">
-          <button class="mail-row__button" type="button" @click="openMail(mail.id)">
-            <span class="mail-row__icon">
-              <v-icon icon="mdi-email-outline" />
-            </span>
+        <article
+          v-for="mail in mails"
+          :key="mail.id"
+          class="mail-row"
+          :class="{
+            'mail-row--answered': getMailAnswerState(mail.id).visible,
+            'mail-row--locked': isMailLocked(mail.id),
+            'mail-row--warning': getMailAnswerState(mail.id).effectFlag === true && getMailAnswerState(mail.id).isCorrect !== true,
+            'mail-row--review': getMailAnswerState(mail.id).isCorrect === true,
+            'mail-row--success': getMailAnswerState(mail.id).isCorrect !== true && getMailAnswerState(mail.id).visible && getMailAnswerState(mail.id).effectFlag === false,
+          }"
+        >
+          <div class="mail-row__content-wrap">
+            <button
+              class="mail-row__button"
+              type="button"
+              :disabled="isMailLocked(mail.id)"
+              :aria-disabled="isMailLocked(mail.id) ? 'true' : 'false'"
+              @click="openMail(mail.id)"
+            >
+              <span class="mail-row__icon">
+                <v-icon icon="mdi-email-outline" />
+              </span>
 
-            <span class="mail-row__content">
-              <span class="mail-row__sender">{{ mail.sender_name }}</span>
-              <span class="mail-row__title">{{ mail.title }}</span>
-              <span class="mail-row__preview">{{ preview(mail.body) }}</span>
-            </span>
+              <span class="mail-row__content">
+                <span class="mail-row__sender">{{ mail.sender_name }}</span>
+                <span class="mail-row__title">{{ mail.title }}</span>
+                <span class="mail-row__preview">{{ preview(mail.body) }}</span>
+              </span>
 
-            <span class="mail-row__meta">
-              <span>{{ formatDate(mail.created_at) }}</span>
-              <v-icon icon="mdi-chevron-right" />
-            </span>
-          </button>
+              <span class="mail-row__meta">
+                <span v-if="getMailAnswerState(mail.id).visible" class="mail-row__status" :class="{
+                  'mail-row__status--warning': getMailAnswerState(mail.id).effectFlag === true && getMailAnswerState(mail.id).isCorrect !== true,
+                  'mail-row__status--review': getMailAnswerState(mail.id).isCorrect === true,
+                  'mail-row__status--success': getMailAnswerState(mail.id).isCorrect !== true && getMailAnswerState(mail.id).effectFlag === false,
+                }">
+                  <v-icon :icon="getMailAnswerState(mail.id).isCorrect === true ? (getMailAnswerState(mail.id).effectFlag === true ? 'mdi-book-open-page-variant' : 'mdi-check-circle-outline') : getMailAnswerState(mail.id).effectFlag === true ? 'mdi-alert-circle-outline' : 'mdi-check-circle-outline'" />
+                  <span>{{ getMailAnswerState(mail.id).isCorrect === true ? (getMailAnswerState(mail.id).effectFlag === true ? '復習済み' : '正解') : getMailAnswerState(mail.id).effectFlag === true ? '要注意' : '回答済み' }}</span>
+                </span>
+                <span>{{ formatDate(mail.created_at) }}</span>
+                <v-icon icon="mdi-chevron-right" />
+              </span>
+            </button>
+
+            <button
+              v-if="getMailAnswerState(mail.id).visible"
+              class="mail-row__action"
+              type="button"
+              @click.stop="openExplanation(mail)"
+            >
+              <v-icon icon="mdi-book-open-page-variant" />
+              <span>解説</span>
+            </button>
+          </div>
         </article>
       </div>
     </section>
@@ -307,10 +344,11 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { fetchMails, type MailListItem } from '@/api/mailApi'
+import { fetchMails, fetchQuestionExplanation, type MailListItem } from '@/api/mailApi'
 import { getCurrentUser } from '@/api/users'
+import { fetchUserAnswerStates } from '@/api/userAnswers'
 
 // ==========================================
 // 🚨 バッドエンド（Death）演出系の外部読み込み
@@ -345,6 +383,201 @@ const router = useRouter()
 const mails = ref<MailListItem[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
+
+type MailAnswerState = {
+  answered: boolean
+  effectFlag: boolean | null
+  isCorrect: boolean | null
+  visible: boolean
+  locked: boolean
+}
+
+type IncomingMailboxState = {
+  justAnswered?: boolean
+  isCorrect?: boolean
+  mail?: {
+    id?: unknown
+  }
+}
+
+const answerStateMap = ref<Record<string, MailAnswerState>>({})
+const pendingRevealTimers = new Map<string, number>()
+const correctRevealDelayMs = 2500
+
+function clearPendingRevealTimers() {
+  for (const timer of pendingRevealTimers.values()) {
+    window.clearTimeout(timer)
+  }
+  pendingRevealTimers.clear()
+}
+
+function normalizeMailAnswerState(state: MailAnswerState): MailAnswerState {
+  return {
+    ...state,
+    locked: state.answered === true && state.visible === false,
+  }
+}
+
+function setMailAnswerState(questionId: string, patch: Partial<MailAnswerState>) {
+  answerStateMap.value = {
+    ...answerStateMap.value,
+    [questionId]: normalizeMailAnswerState({
+      ...(answerStateMap.value[questionId] ?? { answered: false, effectFlag: null, isCorrect: null, visible: false, locked: false }),
+      ...patch,
+    }),
+  }
+}
+
+function scheduleCorrectReveal(questionId: string) {
+  if (!questionId) return
+
+  const existing = answerStateMap.value[questionId]
+  if (!existing || !existing.answered || existing.isCorrect !== true || existing.visible || existing.locked !== true) return
+
+  const existingTimer = pendingRevealTimers.get(questionId)
+  if (existingTimer) window.clearTimeout(existingTimer)
+
+  const timer = window.setTimeout(() => {
+    setMailAnswerState(questionId, { visible: true })
+    pendingRevealTimers.delete(questionId)
+  }, correctRevealDelayMs)
+
+  pendingRevealTimers.set(questionId, timer)
+}
+
+function getIncomingMailboxState(): IncomingMailboxState | null {
+  const routeState = (router.currentRoute.value as unknown as { state?: unknown }).state
+  if (routeState && typeof routeState === 'object') {
+    return routeState as IncomingMailboxState
+  }
+
+  const rawState = window.history.state as unknown
+  const nestedState = typeof rawState === 'object' && rawState !== null && 'usr' in rawState
+    ? (rawState as { usr?: unknown }).usr
+    : undefined
+
+  if (nestedState && typeof nestedState === 'object') {
+    return nestedState as IncomingMailboxState
+  }
+
+  return rawState && typeof rawState === 'object'
+    ? (rawState as IncomingMailboxState)
+    : null
+}
+
+function clearPendingAnswerState() {
+  const currentState = window.history.state as Record<string, unknown> | undefined
+  const nextState = currentState && typeof currentState === 'object' ? { ...currentState } : {}
+
+  if (nextState.usr && typeof nextState.usr === 'object') {
+    const nestedState = { ...(nextState.usr as Record<string, unknown>) }
+    delete nestedState.justAnswered
+    delete nestedState.isCorrect
+    delete nestedState.mail
+    nextState.usr = nestedState
+  }
+
+  delete nextState.justAnswered
+  delete nextState.isCorrect
+  delete nextState.mail
+
+  window.history.replaceState(nextState, '')
+}
+
+function getPendingAnswerState() {
+  const incomingState = getIncomingMailboxState()
+  if (!incomingState?.justAnswered) {
+    return null
+  }
+
+  const mail = incomingState.mail
+  const questionId = mail && typeof mail === 'object' && 'id' in mail ? mail.id : undefined
+  if (typeof questionId !== 'string') {
+    clearPendingAnswerState()
+    return null
+  }
+
+  clearPendingAnswerState()
+
+  return {
+    questionId,
+    isCorrect: incomingState.isCorrect === true,
+  }
+}
+
+async function hydrateAnsweredMailStates(questionIds: string[], pendingAnswer?: { questionId: string; isCorrect: boolean } | null) {
+  const user = getCurrentUser()
+  const userId = user?.id
+
+  if (!userId || questionIds.length === 0) {
+    answerStateMap.value = {}
+    return
+  }
+
+  try {
+    const rows = await fetchUserAnswerStates(userId, questionIds)
+
+    const nextState: Record<string, MailAnswerState> = {}
+
+    for (const questionId of questionIds) {
+      nextState[questionId] = { answered: false, effectFlag: null, isCorrect: null, visible: false, locked: false }
+    }
+
+    if (pendingAnswer?.questionId) {
+      const pendingQuestionId = pendingAnswer.questionId
+      nextState[pendingQuestionId] = normalizeMailAnswerState({
+        answered: true,
+        effectFlag: null,
+        isCorrect: pendingAnswer.isCorrect,
+        visible: false,
+        locked: true,
+      })
+    }
+
+    for (const item of rows) {
+      const questionId = item.question_id
+      if (!questionId || questionId === pendingAnswer?.questionId) continue
+
+      const isCorrect = typeof item.is_correct === 'boolean' ? item.is_correct : null
+      const effectFlag = typeof item.effect_flag === 'boolean' ? item.effect_flag : null
+      const visible = true
+
+      nextState[questionId] = normalizeMailAnswerState({
+        answered: true,
+        effectFlag,
+        isCorrect,
+        visible,
+        locked: false,
+      })
+    }
+
+    answerStateMap.value = nextState
+
+    for (const [questionId, state] of Object.entries(answerStateMap.value)) {
+      if (state.answered && state.isCorrect === true && state.visible === false && state.locked === true) {
+        scheduleCorrectReveal(questionId)
+      }
+    }
+  } catch (error) {
+    console.error('回答状態の取得に失敗しました:', error)
+    answerStateMap.value = {}
+  }
+}
+
+async function activateIncorrectEffectFlag(questionId: string | undefined) {
+  if (!questionId) return
+
+  setMailAnswerState(questionId, { answered: true, effectFlag: null, isCorrect: false, visible: false })
+  setMailAnswerState(questionId, { answered: true, effectFlag: true, isCorrect: false, visible: true })
+}
+
+function getMailAnswerState(mailId: string): MailAnswerState {
+  return answerStateMap.value[mailId] ?? { answered: false, effectFlag: null, isCorrect: null, visible: false, locked: false }
+}
+
+function isMailLocked(mailId: string): boolean {
+  return getMailAnswerState(mailId).locked === true
+}
 
 // 状態記憶用キャッシュ
 const currentMailState = ref<any>(null)
@@ -396,12 +629,14 @@ async function load() {
   try {
     // 1. getCurrentUserを使って、ローカルストレージから瞬時にユーザー情報を取得！
     const user = getCurrentUser()
-    
+
     // 2. ユーザーの現在のシチュエーションを取得（設定されていなければ 'school' をデフォルトにする）
     const userScenario = user?.current_scenario ?? 'school'
-    
+
     // 3. 取得したシチュエーションを条件にして、バックエンドからメールを取得する
     mails.value = await fetchMails(userScenario)
+    const pendingAnswer = getPendingAnswerState()
+    await hydrateAnsweredMailStates(mails.value.map((mail) => mail.id), pendingAnswer)
 
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'メールの取得に失敗しました'
@@ -488,6 +723,7 @@ const startFalseSequence = (state: any, scenarioType: SituationType = 'business'
   setTimeout(() => {
     // 最後に暗転を入れ、演出の締めくくりを演出してから遷移
     showBlackout.value = true;
+    void activateIncorrectEffectFlag(state?.mail?.id ?? state?.id);
     isSystemLocked.value = false; // ロックを解除
     setTimeout(() => {
       handleFalseEnd(state);
@@ -532,18 +768,7 @@ function checkDeathSequence() {
   const scenarioType = categoryToScenario(category)
 
   // ✨ 正解時：遅延なしですぐに解説ページへ遷移
-  if (state.triggerSuccess) {
-    router.push({
-      path: '/explanation',
-      state: {
-        mail: state.mail,
-        isCorrect: state.isCorrect ?? true,
-        judgedAction: state.judgedAction,
-        category
-      }
-    });
-    return;
-  }
+  
 
   // 🔥 タイマー完了後にこのページへ戻ってきた場合（即時発火フラグ）
   if (state.isTimeUpReady) {
@@ -609,7 +834,29 @@ function checkDeathSequence() {
 // startBadEndSequence と startFalseSequence の引数型も更新
 
 function openMail(id: string) {
+  if (isMailLocked(id)) {
+    return
+  }
+
   router.push({ name: 'MailOpen', query: { id } })
+}
+
+async function openExplanation(mail: MailListItem) {
+  try {
+    const explanation = await fetchQuestionExplanation(mail.id)
+    router.push({
+      path: '/explanation',
+      state: {
+        mail: {
+          ...mail,
+          question_explanations: explanation,
+        },
+        isCorrect: false,
+      },
+    })
+  } catch (error) {
+    console.error('解説の取得に失敗しました:', error)
+  }
 }
 
 function preview(body: string): string {
@@ -631,6 +878,10 @@ function formatDate(iso: string): string {
 onMounted(() => {
   checkDeathSequence()
   load()
+})
+
+onBeforeUnmount(() => {
+  clearPendingRevealTimers()
 })
 </script>
 
@@ -707,6 +958,35 @@ onMounted(() => {
 
 .mail-row {
   min-width: 0;
+}
+
+.mail-row__content-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mail-row--answered .mail-row__button {
+  border-color: rgba(69, 164, 255, 0.4);
+  box-shadow: inset 0 0 0 1px rgba(69, 164, 255, 0.22);
+}
+
+.mail-row--locked .mail-row__button {
+  opacity: 0.58;
+  filter: grayscale(0.28);
+  cursor: not-allowed;
+}
+
+.mail-row--warning .mail-row__button {
+  background: linear-gradient(90deg, rgba(255, 115, 130, 0.18), rgba(17, 26, 47, 0.96));
+}
+
+.mail-row--review .mail-row__button {
+  background: linear-gradient(90deg, rgba(60, 190, 126, 0.16), rgba(17, 26, 47, 0.96));
+}
+
+.mail-row--success .mail-row__button {
+  background: linear-gradient(90deg, rgba(60, 190, 126, 0.16), rgba(17, 26, 47, 0.96));
 }
 
 .mail-row__button {
@@ -788,6 +1068,54 @@ onMounted(() => {
   font-size: 12px;
   line-height: 1.2;
   white-space: nowrap;
+}
+
+.mail-row__action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid rgba(69, 164, 255, 0.4);
+  border-radius: 999px;
+  background: rgba(69, 164, 255, 0.16);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.mail-row__action:hover,
+.mail-row__action:focus-visible {
+  background: rgba(69, 164, 255, 0.25);
+  outline: none;
+}
+
+.mail-row__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(69, 164, 255, 0.14);
+  color: #9fd4ff;
+  font-weight: 700;
+}
+
+.mail-row__status--warning {
+  background: rgba(255, 115, 130, 0.16);
+  color: #ffb2bd;
+}
+
+.mail-row__status--review {
+  background: rgba(60, 190, 126, 0.16);
+  color: #b9f2cf;
+}
+
+.mail-row__status--success {
+  background: rgba(60, 190, 126, 0.16);
+  color: #b9f2cf;
 }
 
 .mail-row__meta :deep(.v-icon) {

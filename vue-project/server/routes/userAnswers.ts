@@ -116,6 +116,37 @@ async function updateTrainingSession(userId: string, isCorrect: boolean, previou
   }
 }
 
+router.get('/', async (req, res) => {
+  const userId = typeof req.query.user_id === 'string' ? req.query.user_id.trim() : ''
+  const rawQuestionIds = req.query.question_ids
+  const questionIds = Array.isArray(rawQuestionIds)
+    ? rawQuestionIds.filter((value): value is string => typeof value === 'string' && value.trim().length > 0).map((value) => value.trim())
+    : typeof rawQuestionIds === 'string'
+      ? rawQuestionIds.split(',').map((value) => value.trim()).filter(Boolean)
+      : []
+
+  if (!isRequiredString(userId)) {
+    return res.status(400).json({ error: 'user_id is required' })
+  }
+
+  let query = supabaseAdmin
+    .from('user_answers')
+    .select('question_id, effect_flag, is_correct')
+    .eq('user_id', userId)
+
+  if (questionIds.length > 0) {
+    query = query.in('question_id', questionIds)
+  }
+
+  const { data, error } = await query
+
+  if (error) {
+    return res.status(500).json({ error: error.message })
+  }
+
+  return res.json(data ?? [])
+})
+
 router.post('/', async (req, res) => {
   const { user_id, question_id, action_type, is_correct } = req.body ?? {}
 
