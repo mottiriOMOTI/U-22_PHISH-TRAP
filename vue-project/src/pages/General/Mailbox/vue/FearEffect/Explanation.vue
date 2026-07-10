@@ -104,6 +104,8 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { fetchQuestionExplanation, type QuestionExplanation } from '@/api/mailApi'
+import { getCurrentUser } from '@/api/users'
+import { markEffectAsPlayed } from '@/api/userAnswers'
 
 type ExplanationMail = {
   id: string
@@ -301,6 +303,17 @@ async function initializeExplanation() {
     } catch (error) {
       console.error(error)
       explanation.value = null
+    }
+  }
+
+  if (!isCorrect.value && mail.id) {
+    const currentUser = getCurrentUser()
+    if (currentUser) {
+      try {
+        await markEffectAsPlayed(mail.id, currentUser.id)
+      } catch (error) {
+        console.error('復習済み状態の保存に失敗しました:', error)
+      }
     }
   }
 

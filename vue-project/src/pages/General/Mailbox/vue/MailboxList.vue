@@ -54,9 +54,9 @@
           :class="{
             'mail-row--answered': getMailAnswerState(mail.id).visible,
             'mail-row--locked': isMailLocked(mail.id),
-            'mail-row--warning': getMailAnswerState(mail.id).effectFlag === true && getMailAnswerState(mail.id).isCorrect !== true,
-            'mail-row--review': getMailAnswerState(mail.id).isCorrect === true,
-            'mail-row--success': getMailAnswerState(mail.id).isCorrect !== true && getMailAnswerState(mail.id).visible && getMailAnswerState(mail.id).effectFlag === false,
+            'mail-row--warning': getMailAnswerState(mail.id).isCorrect === false && getMailAnswerState(mail.id).effectFlag !== true,
+            'mail-row--review': getMailAnswerState(mail.id).isCorrect === false && getMailAnswerState(mail.id).effectFlag === true,
+            'mail-row--success': getMailAnswerState(mail.id).isCorrect === true,
           }"
         >
           <div class="mail-row__content-wrap">
@@ -79,12 +79,12 @@
 
               <span class="mail-row__meta">
                 <span v-if="getMailAnswerState(mail.id).visible" class="mail-row__status" :class="{
-                  'mail-row__status--warning': getMailAnswerState(mail.id).effectFlag === true && getMailAnswerState(mail.id).isCorrect !== true,
-                  'mail-row__status--review': getMailAnswerState(mail.id).isCorrect === true,
-                  'mail-row__status--success': getMailAnswerState(mail.id).isCorrect !== true && getMailAnswerState(mail.id).effectFlag === false,
+                  'mail-row__status--warning': getMailAnswerState(mail.id).isCorrect === false && getMailAnswerState(mail.id).effectFlag !== true,
+                  'mail-row__status--review': getMailAnswerState(mail.id).isCorrect === false && getMailAnswerState(mail.id).effectFlag === true,
+                  'mail-row__status--success': getMailAnswerState(mail.id).isCorrect === true,
                 }">
-                  <v-icon :icon="getMailAnswerState(mail.id).isCorrect === true ? (getMailAnswerState(mail.id).effectFlag === true ? 'mdi-book-open-page-variant' : 'mdi-check-circle-outline') : getMailAnswerState(mail.id).effectFlag === true ? 'mdi-alert-circle-outline' : 'mdi-check-circle-outline'" />
-                  <span>{{ getMailAnswerState(mail.id).isCorrect === true ? (getMailAnswerState(mail.id).effectFlag === true ? '復習済み' : '正解') : getMailAnswerState(mail.id).effectFlag === true ? '要注意' : '回答済み' }}</span>
+                  <v-icon :icon="getMailAnswerState(mail.id).isCorrect === true ? 'mdi-check-circle-outline' : getMailAnswerState(mail.id).effectFlag === true ? 'mdi-book-open-page-variant' : 'mdi-close-circle-outline'" />
+                  <span>{{ getMailAnswerState(mail.id).isCorrect === true ? '正解' : getMailAnswerState(mail.id).effectFlag === true ? '復習済み' : '不正解' }}</span>
                 </span>
                 <span>{{ formatDate(mail.created_at) }}</span>
                 <v-icon icon="mdi-chevron-right" />
@@ -349,6 +349,7 @@ import { useRouter } from 'vue-router'
 import { fetchMails, fetchQuestionExplanation, type MailListItem } from '@/api/mailApi'
 import { getCurrentUser } from '@/api/users'
 import { fetchUserAnswerStates, type UserAnswerSummary } from '@/api/userAnswers'
+import { fetchAppSettings } from '@/api/settings'
 
 // ==========================================
 // 🚨 バッドエンド（Death）演出系の外部読み込み
@@ -401,6 +402,7 @@ type IncomingMailboxState = {
 }
 
 const answerStateMap = ref<Record<string, MailAnswerState>>({})
+const fearEffectEnabled = ref(true)
 const pendingRevealTimers = new Map<string, number>()
 const correctRevealDelayMs = 2500
 
@@ -529,12 +531,14 @@ async function hydrateAnsweredMailStates(
 
     if (pendingAnswer?.questionId) {
       const pendingQuestionId = pendingAnswer.questionId
+      const showIncorrectResultWithoutEffect =
+        pendingAnswer.isCorrect === false && !fearEffectEnabled.value
       nextState[pendingQuestionId] = normalizeMailAnswerState({
         answered: true,
         effectFlag: null,
         isCorrect: pendingAnswer.isCorrect,
-        visible: false,
-        locked: true,
+        visible: showIncorrectResultWithoutEffect,
+        locked: !showIncorrectResultWithoutEffect,
       })
     }
 
@@ -639,10 +643,15 @@ async function load() {
     const userScenario = user?.current_scenario ?? 'school'
 
     // 3. 取得したシチュエーションを条件にして、バックエンドからメールを取得する
-    const [mailRows, answerRows] = await Promise.all([
+    const [mailRows, answerRows, appSettings] = await Promise.all([
       fetchMails(userScenario),
       user?.id ? fetchUserAnswerStates(user.id) : Promise.resolve([]),
+      fetchAppSettings().catch((settingsError) => {
+        console.error('恐怖演出設定の取得に失敗しました:', settingsError)
+        return null
+      }),
     ])
+    fearEffectEnabled.value = appSettings?.fearEffectEnabled !== false
     mails.value = mailRows
     const pendingAnswer = getPendingAnswerState()
     await hydrateAnsweredMailStates(
@@ -881,7 +890,7 @@ async function openExplanation(mail: MailListItem) {
           ...mail,
           question_explanations: explanation,
         },
-        isCorrect: false,
+        isCorrect: getMailAnswerState(mail.id).isCorrect === true,
       },
     })
   } catch (error) {
@@ -905,9 +914,26 @@ function formatDate(iso: string): string {
   })
 }
 
-onMounted(() => {
-  checkDeathSequence()
-  load()
+onMounted(async () => {
+  await load()
+
+  if (fearEffectEnabled.value) {
+    checkDeathSequence()
+    return
+  }
+
+  replaceHistoryState({
+    triggerDeath: false,
+    triggerSocialDeath: false,
+    isTimeUpReady: false,
+  })
+
+  if ((window as any).__deathSequenceTimer) {
+    clearTimeout((window as any).__deathSequenceTimer)
+    ;(window as any).__deathSequenceTimer = null
+  }
+
+  resetAllEffects()
 })
 
 onBeforeUnmount(() => {

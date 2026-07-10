@@ -182,6 +182,7 @@ async function judgeAction(action: ActionType, value?: string) {
   const m = JSON.parse(JSON.stringify(mail.value))
 
   isJudging.value = true
+  scoringError.value = null
   let stateToPass: any = { mail: m, judgedAction: action, justAnswered: true, isCorrect: false }
   let isCorrect = false // ✅ 正誤判定用の変数
 
@@ -226,19 +227,39 @@ async function judgeAction(action: ActionType, value?: string) {
   const dbAction = actionMap[action]
    const user = getCurrentUser()
 
-  // 📝 DBへ回答履歴を保存する
-  if (user && dbAction) {
-    try {
-      console.log(`📝 DB保存実行: ユーザー${user.name} が ${dbAction} を実行 (正解: ${isCorrect})`)
-      await saveUserAnswer({
+  if (!user || !dbAction) {
+    scoringError.value = 'ログイン情報を確認できませんでした。再度ログインしてください。'
+    isJudging.value = false
+    return
+  }
+
+  // 📝 スコアと回答済み状態を同時に保存する
+  {
+    const [scoreResult, answerResult] = await Promise.allSettled([
+      recordAnswer(
+        user.id,
+        m.id,
+        action as AnswerAction,
+        trainingStartedAt.value ?? new Date().toISOString(),
+      ),
+      saveUserAnswer({
         user_id: user.id,
         question_id: m.id,
         action_type: dbAction,
-        is_correct: isCorrect
-      })
-    } catch (err) {
-      console.error("回答のDB保存に失敗しました:", err)
-      // エラーが出ても画面遷移(ホラー演出)は止めない
+        is_correct: isCorrect,
+      }),
+    ])
+
+    if (scoreResult.status === 'rejected') {
+      console.error('スコアのDB保存に失敗しました:', scoreResult.reason)
+      scoringError.value = 'スコアを保存できませんでした。もう一度お試しください。'
+      isJudging.value = false
+      return
+    }
+
+    if (answerResult.status === 'rejected') {
+      console.error('回答状態のDB保存に失敗しました:', answerResult.reason)
+      // スコアは保存済みなので、従来どおり画面遷移は継続する。
     }
   }
 

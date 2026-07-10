@@ -166,6 +166,7 @@ router.post('/', async (req, res) => {
     action_type,
     is_correct,
     answered_at: new Date().toISOString(),
+    effect_flag: false,
   }
   const normalizedUserId = user_id.trim()
   const normalizedQuestionId = question_id.trim()
@@ -211,7 +212,6 @@ router.post('/', async (req, res) => {
       user_id: normalizedUserId,
       question_id: normalizedQuestionId,
       ...answerPayload,
-      effect_flag: !is_correct,
     })
     .select()
     .single()
