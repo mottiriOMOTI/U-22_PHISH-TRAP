@@ -2,7 +2,7 @@
   "settings": {
     "soundEnabled": true,
     "notificationsEnabled": true,
-    "fearEffectEnabled": false,
+    "fearEffectEnabled": true,
     "themeColor": 0,
     "autoGenerateEnabled": true,
     "dataCollectionEnabled": true
