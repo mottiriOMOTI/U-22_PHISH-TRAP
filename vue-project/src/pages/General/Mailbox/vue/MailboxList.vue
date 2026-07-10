@@ -351,6 +351,9 @@ import { getCurrentUser } from '@/api/users'
 import { fetchUserAnswerStates, type UserAnswerSummary } from '@/api/userAnswers'
 import { fetchAppSettings } from '@/api/settings'
 
+import { useSound } from '@/components/Effect_comp/useSound'
+const { playSound } = useSound()
+
 // ==========================================
 // 🚨 バッドエンド（Death）演出系の外部読み込み
 // ==========================================
@@ -609,6 +612,7 @@ const showLockMessage = ref(false);
 
 const handleLockClick = () => {
   if (isSystemLocked.value) {
+    playSound('/sounds/pop.wav')
     showLockMessage.value = true;
   }
 };
@@ -736,9 +740,17 @@ const startFalseSequence = (state: any, scenarioType: SituationType = 'business'
 
   // 演出シーケンスを開始
   triggerFalseNotification(notifications, scenarioType, 1);
+  playSound('/sounds/pop.wav')
+  
   setTimeout(() => triggerChatEffectByTag(scenarioType), 1000 * delayFactor);
+  setTimeout(() => playSound('/sounds/message.wav'), 1000 * delayFactor);
+
   setTimeout(() => triggerFalseNotification(notifications, scenarioType, 2), 2500 * delayFactor);
+  setTimeout(() => playSound('/sounds/pop.wav'), 4000 * delayFactor);
+
   setTimeout(() => triggerCallEffect(scenarioType), 4000 * delayFactor);
+
+  setTimeout(() => playSound('/sounds/Ring.wav'), 4000 * delayFactor);
 
   // 演出終了後に確実に遷移するためのシーケンス終了監視
   setTimeout(() => {
