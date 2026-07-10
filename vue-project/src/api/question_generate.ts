@@ -1,3 +1,5 @@
+import { invalidateMailListCache } from '@/api/mailApi'
+
 const API_BASE = import.meta.env.VITE_API_URL ?? ''
 const API_BASE_URL = `${API_BASE}/api/generate`
 
@@ -99,5 +101,6 @@ export async function saveGeneratedQuestion(
     return throwApiError(res, 'Failed to save generated question')
   }
 
+  invalidateMailListCache()
   return await res.json()
 }

@@ -45,12 +45,18 @@ async function throwApiError(res: Response, fallbackMessage: string): Promise<ne
   throw new Error(body?.error ?? fallbackMessage)
 }
 
-export async function fetchScore(userId: string): Promise<ScoreSummary> {
-  const existingRequest = pendingScoreRequests.get(userId)
+export async function fetchScore(
+  userId: string,
+  scenario?: ScoreScenario,
+): Promise<ScoreSummary> {
+  const requestKey = `${userId}:${scenario ?? 'current'}`
+  const existingRequest = pendingScoreRequests.get(requestKey)
   if (existingRequest) return existingRequest
 
   const request = (async () => {
-    const res = await fetch(`${API_BASE_URL}?userId=${encodeURIComponent(userId)}`)
+    const params = new URLSearchParams({ userId })
+    if (scenario) params.set('scenario', scenario)
+    const res = await fetch(`${API_BASE_URL}?${params.toString()}`)
 
     if (!res.ok) {
       return throwApiError(res, 'Failed to fetch score')
@@ -59,11 +65,11 @@ export async function fetchScore(userId: string): Promise<ScoreSummary> {
     return await res.json()
   })()
 
-  pendingScoreRequests.set(userId, request)
+  pendingScoreRequests.set(requestKey, request)
   try {
     return await request
   } finally {
-    pendingScoreRequests.delete(userId)
+    pendingScoreRequests.delete(requestKey)
   }
 }
 

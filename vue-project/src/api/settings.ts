@@ -1,3 +1,5 @@
+import { invalidateUserAnswerStateCache } from '@/api/userAnswers'
+
 const API_BASE = import.meta.env.VITE_API_URL ?? ''
 
 export type ThemeColor = 0 | 1 | 2
@@ -99,6 +101,7 @@ export async function resetLearningHistory(
   }
 
   const result = (await res.json()) as ResetLearningHistoryResponse
+  invalidateUserAnswerStateCache(userId)
 
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent(LEARNING_HISTORY_RESET_EVENT, { detail: { scenario } }))

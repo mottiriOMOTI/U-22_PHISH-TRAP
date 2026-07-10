@@ -209,13 +209,19 @@ router.get('/average', async (req, res) => {
     questionsQuery = questionsQuery.eq('category', SCENARIO_TO_CATEGORY[requestedScenario])
   }
 
-  const [sessionsResult, questionsResult] = await Promise.all([
+  const [sessionsResult, questionsResult, usersResult] = await Promise.all([
     sessionsQuery,
     questionsQuery,
+    supabaseAdmin
+      .from('users')
+      .select('id, name, email, current_scenario')
+      .eq('role', 'learner')
+      .eq('is_active', true),
   ])
 
   const { data, error } = sessionsResult
   const { data: activeQuestions, error: questionsError } = questionsResult
+  const { data: scoreUsers, error: usersError } = usersResult
 
   if (error) {
     return res.status(500).json({ error: error.message })
@@ -226,20 +232,6 @@ router.get('/average', async (req, res) => {
   }
 
   const sessions = data ?? []
-  const sessionUserIds = Array.from(
-    new Set(sessions.map((session) => session.user_id).filter((userId): userId is string => Boolean(userId))),
-  )
-
-  const { data: scoreUsers, error: usersError } =
-    sessionUserIds.length > 0
-      ? await supabaseAdmin
-          .from('users')
-          .select('id, name, email, current_scenario')
-          .in('id', sessionUserIds)
-          .eq('role', 'learner')
-          .eq('is_active', true)
-      : { data: [], error: null }
-
   if (usersError) {
     return res.status(500).json({ error: usersError.message })
   }
@@ -378,24 +370,34 @@ router.get('/average', async (req, res) => {
 // GET /api/score?userId=xxx  → 完了済みセッションの合計スコア
 router.get('/', async (req, res) => {
   const userId = req.query.userId as string | undefined
+  const requestedScenario =
+    typeof req.query.scenario === 'string' ? (req.query.scenario as Scenario) : undefined
 
   if (!userId) {
     return res.status(400).json({ error: 'userId is required' })
   }
 
-  const { data: user, error: userError } = await supabaseAdmin
-    .from('users')
-    .select('current_scenario')
-    .eq('id', userId)
-    .maybeSingle()
-
-  if (userError) {
-    return res.status(500).json({ error: userError.message })
+  if (requestedScenario && !SCENARIOS.has(requestedScenario)) {
+    return res.status(400).json({ error: 'scenario is invalid' })
   }
 
-  const scenario = SCENARIOS.has(user?.current_scenario as Scenario)
-    ? (user!.current_scenario as Scenario)
-    : 'school'
+  let scenario = requestedScenario
+
+  if (!scenario) {
+    const { data: user, error: userError } = await supabaseAdmin
+      .from('users')
+      .select('current_scenario')
+      .eq('id', userId)
+      .maybeSingle()
+
+    if (userError) {
+      return res.status(500).json({ error: userError.message })
+    }
+
+    scenario = SCENARIOS.has(user?.current_scenario as Scenario)
+      ? (user!.current_scenario as Scenario)
+      : 'school'
+  }
 
   const [sessionsResult, questionCountResult] = await Promise.all([
     supabaseAdmin

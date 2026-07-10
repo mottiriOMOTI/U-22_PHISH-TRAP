@@ -1,5 +1,9 @@
 const API_BASE = import.meta.env.VITE_API_URL ?? ''
 const API_BASE_URL = `${API_BASE}/api/mail`
+const MAIL_LIST_CACHE_TTL_MS = 30_000
+
+const mailListCache = new Map<string, { expiresAt: number; data: MailListItem[] }>()
+const pendingMailListRequests = new Map<string, Promise<MailListItem[]>>()
 
 export type Scenario = 'business' | 'school' | 'daily'
 export type Category = 'student' | 'company' | 'general'
@@ -76,14 +80,39 @@ async function throwApiError(res: Response, fallbackMessage: string): Promise<ne
 }
 
 export async function fetchMails(scenario?: Scenario): Promise<MailListItem[]> {
+  const cacheKey = scenario ?? 'all'
+  const cached = mailListCache.get(cacheKey)
+  if (cached && cached.expiresAt > Date.now()) return cached.data
+
+  const pending = pendingMailListRequests.get(cacheKey)
+  if (pending) return pending
+
   const url = scenario ? `${API_BASE_URL}?scenario=${scenario}` : API_BASE_URL
-  const res = await fetch(url)
+  const request = (async () => {
+    const res = await fetch(url)
 
-  if (!res.ok) {
-    return throwApiError(res, 'Failed to fetch mails')
+    if (!res.ok) {
+      return throwApiError(res, 'Failed to fetch mails')
+    }
+
+    const data = (await res.json()) as MailListItem[]
+    mailListCache.set(cacheKey, {
+      expiresAt: Date.now() + MAIL_LIST_CACHE_TTL_MS,
+      data,
+    })
+    return data
+  })()
+
+  pendingMailListRequests.set(cacheKey, request)
+  try {
+    return await request
+  } finally {
+    pendingMailListRequests.delete(cacheKey)
   }
+}
 
-  return await res.json()
+export function invalidateMailListCache(): void {
+  mailListCache.clear()
 }
 
 export async function fetchMail(id: string): Promise<MailDetail> {
@@ -110,6 +139,7 @@ export async function updateMailQuestion(
     return throwApiError(res, 'Failed to update mail')
   }
 
+  invalidateMailListCache()
   return await res.json()
 }
 
@@ -121,6 +151,8 @@ export async function deleteMailQuestion(id: string): Promise<void> {
   if (!res.ok) {
     return throwApiError(res, 'Failed to delete mail')
   }
+
+  invalidateMailListCache()
 }
 
 export async function fetchQuestionExplanation(

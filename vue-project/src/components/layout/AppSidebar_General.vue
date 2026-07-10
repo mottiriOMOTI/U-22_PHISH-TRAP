@@ -102,7 +102,10 @@ async function loadSidebarScore() {
   }
 
   try {
-    sidebarScore.value = await fetchScore(currentUser.value.id)
+    sidebarScore.value = await fetchScore(
+      currentUser.value.id,
+      currentUser.value.current_scenario ?? undefined,
+    )
   } catch (error) {
     console.error(error)
     sidebarScore.value = null

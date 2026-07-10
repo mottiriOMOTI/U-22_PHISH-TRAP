@@ -341,20 +341,20 @@ async function load() {
   loading.value = true
   error.value = null
   try {
-    const [scoreResult, averageResult] = await Promise.allSettled([
-      fetchScore(currentUser.value.id),
-      fetchAverageScoreStats(),
-    ])
+    const averageRequest = fetchAverageScoreStats()
+    score.value = await fetchScore(
+      currentUser.value.id,
+      currentUser.value.current_scenario ?? undefined,
+    )
 
-    if (scoreResult.status === 'rejected') throw scoreResult.reason
-    score.value = scoreResult.value
-
-    if (averageResult.status === 'fulfilled') {
-      averageStats.value = averageResult.value
-    } else {
-      console.error(averageResult.reason)
-      averageStats.value = null
-    }
+    void averageRequest
+      .then((nextAverageStats) => {
+        averageStats.value = nextAverageStats
+      })
+      .catch((averageError) => {
+        console.error(averageError)
+        averageStats.value = null
+      })
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'スコアの取得に失敗しました'
   } finally {
