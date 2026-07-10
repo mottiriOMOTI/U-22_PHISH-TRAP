@@ -1,7 +1,6 @@
 <template>
   <v-app>
     <component :is="sidebarComponent" />
-    <component :is="headerComponent" />
     <NotifyCenter />
 
     <v-main
@@ -49,16 +48,6 @@ import AppSidebarAdmin from './components/layout/AppSidebar_Admin.vue'
 import AppSidebarGeneral from './components/layout/AppSidebar_General.vue'
 import NotifyCenter from './components/ui/NotifyCenter.vue'
 import { applyThemeColor, DEFAULT_THEME_COLOR } from './lib/themeColor'
-
-import HeaderAccount from './components/layout/userHeader/Header_Account.vue'
-import HeaderMailboxList from './components/layout/userHeader/Header_MailboxList.vue'
-import HeaderScore from './components/layout/userHeader/Header_Score.vue'
-import HeaderSetting from './components/layout/userHeader/Header_Setting.vue'
-import HeaderSituation from './components/layout/userHeader/Header_Situation.vue'
-
-import HeaderAdminMakequestion from './components/layout/adminHeader/Header_Admin_Makequestion.vue'
-import HeaderAdminQuestionList from './components/layout/adminHeader/Header_Admin_QuestionList.vue'
-import HeaderAdminSetting from './components/layout/adminHeader/Header_Admin_Setting.vue'
 
 const route = useRoute()
 const mobileMediaQuery = '(max-width: 760px)'
@@ -190,29 +179,6 @@ function syncMobileShell() {
 
   isMobileShell.value = window.matchMedia(mobileMediaQuery).matches
 }
-
-const headerComponent = computed(() => {
-  switch (route.meta.header) {
-    case 'situation':
-      return HeaderSituation
-    case 'account':
-      return HeaderAccount
-    case 'score':
-      return HeaderScore
-    case 'setting':
-      return HeaderSetting
-    case 'mailboxList':
-      return HeaderMailboxList
-    case 'admin_makequestion':
-      return HeaderAdminMakequestion
-    case 'admin_setting':
-      return HeaderAdminSetting
-    case 'admin_questionList':
-      return HeaderAdminQuestionList
-    default:
-      return null
-  }
-})
 
 onMounted(() => {
   loadThemeColor()

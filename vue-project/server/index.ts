@@ -2,7 +2,6 @@ import 'dotenv/config'
 
 import express from 'express'
 
-import apiroutes from './routes/apiRoutes'
 import supabaseroutes from './routes/supabase'
 import mailroutes from './routes/mail'
 
@@ -11,6 +10,9 @@ import scoreroutes from './routes/score'
 import adminStatsRoutes from './routes/adminStats'
 import trainingStatsRoutes from './routes/trainingStats'
 import usersListRoutes from './routes/usersList'
+import settingsRoutes from './routes/settings'
+import accountRoutes from './routes/account'
+
 import userAnswersRoutes from './routes/userAnswers'
 
 const app = express()
@@ -55,7 +57,6 @@ app.use((req, res, next) => {
   next()
 })
 
-app.use('/api', apiroutes)
 
 app.use('/api/supabasetest/user-answers', userAnswersRoutes)
 
@@ -68,6 +69,8 @@ app.use('/api/score', scoreroutes)
 app.use('/api/adminStats', adminStatsRoutes)
 app.use('/api/trainingStats', trainingStatsRoutes)
 app.use('/api/usersList', usersListRoutes)
+app.use('/api/settings', settingsRoutes)
+app.use('/api/account', accountRoutes)
 
 app.listen(port, () => {
   console.log('Server started on port', port)

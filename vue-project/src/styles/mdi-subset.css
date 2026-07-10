@@ -1,0 +1,127 @@
+/* Keep this list in sync with mdi-* usages in src and Vuetify's mdi aliases. */
+@font-face {
+  font-family: "Material Design Icons";
+  src: url("../../node_modules/@mdi/font/fonts/materialdesignicons-webfont.woff2?v=7.4.47") format("woff2");
+  font-weight: normal;
+  font-style: normal;
+}
+
+.mdi:before,
+.mdi-set {
+  display: inline-block;
+  font: normal normal normal 24px/1 "Material Design Icons";
+  font-size: inherit;
+  text-rendering: auto;
+  line-height: inherit;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.mdi-account::before { content: "\F0004"; }
+.mdi-account-check-outline::before { content: "\F0BE2"; }
+.mdi-account-circle::before { content: "\F0009"; }
+.mdi-account-cog-outline::before { content: "\F1371"; }
+.mdi-account-group-outline::before { content: "\F0B58"; }
+.mdi-account-multiple-outline::before { content: "\F000F"; }
+.mdi-account-outline::before { content: "\F0013"; }
+.mdi-account-search-outline::before { content: "\F0935"; }
+.mdi-alert-circle::before { content: "\F0028"; }
+.mdi-alert-circle-outline::before { content: "\F05D6"; }
+.mdi-alert-octagon-outline::before { content: "\F0CE6"; }
+.mdi-alert-outline::before { content: "\F002A"; }
+.mdi-apple-keyboard-command::before { content: "\F0633"; }
+.mdi-apple-keyboard-control::before { content: "\F0634"; }
+.mdi-apple-keyboard-option::before { content: "\F0635"; }
+.mdi-apple-keyboard-shift::before { content: "\F0636"; }
+.mdi-arrow-down::before { content: "\F0045"; }
+.mdi-arrow-left::before { content: "\F004D"; }
+.mdi-arrow-right::before { content: "\F0054"; }
+.mdi-arrow-up::before { content: "\F005D"; }
+.mdi-auto-fix::before { content: "\F0068"; }
+.mdi-backspace::before { content: "\F006E"; }
+.mdi-bell-outline::before { content: "\F009C"; }
+.mdi-briefcase-outline::before { content: "\F0814"; }
+.mdi-bullseye-arrow::before { content: "\F08C9"; }
+.mdi-cached::before { content: "\F00E8"; }
+.mdi-calendar::before { content: "\F00ED"; }
+.mdi-calendar-outline::before { content: "\F0B67"; }
+.mdi-camera-outline::before { content: "\F0D5D"; }
+.mdi-chart-bar::before { content: "\F0128"; }
+.mdi-check::before { content: "\F012C"; }
+.mdi-check-circle::before { content: "\F05E0"; }
+.mdi-check-circle-outline::before { content: "\F05E1"; }
+.mdi-checkbox-blank-outline::before { content: "\F0131"; }
+.mdi-checkbox-marked::before { content: "\F0132"; }
+.mdi-chevron-down::before { content: "\F0140"; }
+.mdi-chevron-left::before { content: "\F0141"; }
+.mdi-chevron-right::before { content: "\F0142"; }
+.mdi-chevron-up::before { content: "\F0143"; }
+.mdi-circle::before { content: "\F0765"; }
+.mdi-clipboard-check-outline::before { content: "\F08A8"; }
+.mdi-close::before { content: "\F0156"; }
+.mdi-close-circle::before { content: "\F0159"; }
+.mdi-close-circle-outline::before { content: "\F015A"; }
+.mdi-cloud-upload::before { content: "\F0167"; }
+.mdi-cog::before { content: "\F0493"; }
+.mdi-cog-outline::before { content: "\F08BB"; }
+.mdi-compass-outline::before { content: "\F018C"; }
+.mdi-content-save-outline::before { content: "\F0818"; }
+.mdi-database-outline::before { content: "\F1632"; }
+.mdi-delete-outline::before { content: "\F09E7"; }
+.mdi-download-outline::before { content: "\F0B8F"; }
+.mdi-email::before { content: "\F01EE"; }
+.mdi-email-open-outline::before { content: "\F05EF"; }
+.mdi-email-outline::before { content: "\F01F0"; }
+.mdi-email-search-outline::before { content: "\F0962"; }
+.mdi-eye-outline::before { content: "\F06D0"; }
+.mdi-eyedropper::before { content: "\F020A"; }
+.mdi-format-list-bulleted::before { content: "\F0279"; }
+.mdi-fullscreen::before { content: "\F0293"; }
+.mdi-fullscreen-exit::before { content: "\F0294"; }
+.mdi-home::before { content: "\F02DC"; }
+.mdi-home-outline::before { content: "\F06A1"; }
+.mdi-inbox-outline::before { content: "\F1274"; }
+.mdi-information::before { content: "\F02FC"; }
+.mdi-keyboard-return::before { content: "\F0311"; }
+.mdi-keyboard-space::before { content: "\F1050"; }
+.mdi-link-variant::before { content: "\F0339"; }
+.mdi-logout::before { content: "\F0343"; }
+.mdi-magnify::before { content: "\F0349"; }
+.mdi-medal-outline::before { content: "\F1326"; }
+.mdi-menu::before { content: "\F035C"; }
+.mdi-menu-down::before { content: "\F035D"; }
+.mdi-menu-right::before { content: "\F035F"; }
+.mdi-minus::before { content: "\F0374"; }
+.mdi-minus-box::before { content: "\F0375"; }
+.mdi-movie-open-outline::before { content: "\F0FCF"; }
+.mdi-page-first::before { content: "\F0600"; }
+.mdi-page-last::before { content: "\F0601"; }
+.mdi-palette::before { content: "\F03D8"; }
+.mdi-palette-outline::before { content: "\F0E0C"; }
+.mdi-paperclip::before { content: "\F03E2"; }
+.mdi-pause::before { content: "\F03E4"; }
+.mdi-pencil::before { content: "\F03EB"; }
+.mdi-pencil-outline::before { content: "\F0CB6"; }
+.mdi-play::before { content: "\F040A"; }
+.mdi-plus::before { content: "\F0415"; }
+.mdi-podium::before { content: "\F0D25"; }
+.mdi-radiobox-blank::before { content: "\F043D"; }
+.mdi-radiobox-marked::before { content: "\F043E"; }
+.mdi-refresh::before { content: "\F0450"; }
+.mdi-repeat-variant::before { content: "\F0547"; }
+.mdi-reply::before { content: "\F045A"; }
+.mdi-school-outline::before { content: "\F1180"; }
+.mdi-shield-account-outline::before { content: "\F0A12"; }
+.mdi-shield-outline::before { content: "\F0499"; }
+.mdi-square-edit-outline::before { content: "\F090C"; }
+.mdi-star::before { content: "\F04CE"; }
+.mdi-star-half-full::before { content: "\F04D0"; }
+.mdi-star-outline::before { content: "\F04D2"; }
+.mdi-text-box-edit-outline::before { content: "\F1A7D"; }
+.mdi-trash-can-outline::before { content: "\F0A7A"; }
+.mdi-trophy-outline::before { content: "\F053A"; }
+.mdi-unfold-more-horizontal::before { content: "\F054F"; }
+.mdi-volume-high::before { content: "\F057E"; }
+.mdi-volume-low::before { content: "\F057F"; }
+.mdi-volume-medium::before { content: "\F0580"; }
+.mdi-volume-variant-off::before { content: "\F0E08"; }

@@ -5,6 +5,7 @@
         "moduleResolution": "Node",
         "esModuleInterop": true, // ★ import express from 'express' を許可
         "allowSyntheticDefaultImports": true,
+        "noEmit": true,
         "types": [
             "node"
         ],

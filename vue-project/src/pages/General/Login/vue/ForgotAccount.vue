@@ -15,7 +15,7 @@
       <h1>PHISH-TRAP <span>死線</span></h1>
       <p>
         {{
-          resetToken
+          isRecoveryMode
             ? '新しいパスワードを設定します'
             : '登録済みメールアドレスへパスワードリセット案内を送信します'
         }}
@@ -25,20 +25,20 @@
     <section class="auth-card">
       <form
         class="auth-form"
-        @submit.prevent="resetToken ? handleResetPassword() : handleSendResetMail()"
+        @submit.prevent="isRecoveryMode ? handleResetPassword() : handleSendResetMail()"
       >
         <div class="form-heading">
-          <h2>{{ resetToken ? '新しいパスワードを設定' : 'パスワードをお忘れの方' }}</h2>
+          <h2>{{ isRecoveryMode ? '新しいパスワードを設定' : 'パスワードをお忘れの方' }}</h2>
           <p>
             {{
-              resetToken
+              isRecoveryMode
                 ? '安全のため、推測されにくいパスワードを設定してください'
                 : 'アカウントに登録したメールアドレスを入力してください'
             }}
           </p>
         </div>
 
-        <div v-if="!resetToken" class="input-group">
+        <div v-if="!isRecoveryMode" class="input-group">
           <label for="email">メールアドレス</label>
           <input
             id="email"
@@ -90,7 +90,7 @@
         <p v-if="successMessage" class="success-text" role="status">{{ successMessage }}</p>
 
         <button type="submit" :disabled="isSending">
-          {{ isSending ? '処理中...' : resetToken ? 'パスワードを再設定' : 'リセット案内を送信' }}
+          {{ isSending ? '処理中...' : isRecoveryMode ? 'パスワードを再設定' : 'リセット案内を送信' }}
         </button>
       </form>
     </section>
@@ -105,23 +105,77 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
-import { confirmPasswordReset, requestPasswordReset, validateNewPassword } from '@/api/users'
+import {
+  clearCurrentUser,
+  confirmPasswordReset,
+  requestPasswordReset,
+  validateNewPassword,
+} from '@/api/users'
+import { supabase } from '@/lib/supabaseClient'
 
 const email = ref('')
 const newPassword = ref('')
 const newPasswordConfirm = ref('')
 const isSending = ref(false)
+const isRecoveryMode = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
 const route = useRoute()
 const router = useRouter()
+let authSubscription: { unsubscribe: () => void } | null = null
 
-const resetToken = computed(() => {
-  const token = route.query.token
-  return typeof token === 'string' ? token : ''
+function hasSupabaseRecoveryParams() {
+  const hashParams =
+    typeof window === 'undefined'
+      ? new URLSearchParams()
+      : new URLSearchParams(window.location.hash.replace(/^#/, ''))
+
+  return (
+    hashParams.get('type') === 'recovery' ||
+    route.query.type === 'recovery' ||
+    typeof route.query.code === 'string'
+  )
+}
+
+async function restoreRecoverySessionIfNeeded() {
+  if (!hasSupabaseRecoveryParams()) {
+    return
+  }
+
+  isRecoveryMode.value = true
+
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
+
+  if (session || typeof route.query.code !== 'string') {
+    return
+  }
+
+  const { error } = await supabase.auth.exchangeCodeForSession(route.query.code)
+
+  if (error) {
+    console.error(error)
+    errorMessage.value = 'パスワード再設定リンクが無効、または期限切れです。'
+  }
+}
+
+onMounted(() => {
+  const { data } = supabase.auth.onAuthStateChange((event) => {
+    if (event === 'PASSWORD_RECOVERY') {
+      isRecoveryMode.value = true
+    }
+  })
+
+  authSubscription = data.subscription
+  void restoreRecoverySessionIfNeeded()
+})
+
+onBeforeUnmount(() => {
+  authSubscription?.unsubscribe()
 })
 
 async function handleSendResetMail() {
@@ -178,7 +232,24 @@ async function handleResetPassword() {
   isSending.value = true
 
   try {
-    await confirmPasswordReset(resetToken.value, newPassword.value)
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+
+    if (sessionError || !sessionData.session) {
+      throw new Error('パスワード再設定リンクが無効、または期限切れです。')
+    }
+
+    const { error: updateError } = await supabase.auth.updateUser({
+      password: newPassword.value,
+    })
+
+    if (updateError) {
+      throw new Error(updateError.message)
+    }
+
+    await confirmPasswordReset(newPassword.value, sessionData.session.access_token)
+    await supabase.auth.signOut()
+    clearCurrentUser()
+    isRecoveryMode.value = false
     successMessage.value = 'パスワードを再設定しました。新しいパスワードでログインしてください。'
     newPassword.value = ''
     newPasswordConfirm.value = ''

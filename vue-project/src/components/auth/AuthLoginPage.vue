@@ -66,7 +66,7 @@
         </div>
 
         <div v-if="showForgotLink" class="forgot-password-link">
-          <router-link to="/forgotaccount">パスワードを忘れた方はこちら</router-link>
+          <a href="/forgotaccount">パスワードを忘れた方はこちら</a>
         </div>
 
         <p v-if="errorMessage" class="error-text" role="alert">{{ errorMessage }}</p>
@@ -315,8 +315,16 @@ h1 span,
 }
 
 .forgot-password-link a {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
   color: #ffffff;
   font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
 }
 
 button {

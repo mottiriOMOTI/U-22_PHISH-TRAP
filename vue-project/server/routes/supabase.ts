@@ -5,10 +5,7 @@ import type { Request, Response } from 'express'
 
 import { supabaseAdmin } from '../lib/supabase'
 import {
-  createPasswordResetToken,
   hashPassword,
-  hashPasswordResetToken,
-  isValidPasswordResetToken,
   normalizeEmail,
   validatePasswordStrength,
   verifyPassword,
@@ -176,45 +173,119 @@ function getPasswordResetBaseUrl(req: Request) {
   return (origin || 'http://localhost:5173').replace(/\/$/, '')
 }
 
-function createPasswordResetUrl(req: Request, token: string) {
-  const resetUrl = `${getPasswordResetBaseUrl(req)}/forgotaccount?token=${encodeURIComponent(token)}`
-  return resetUrl
+function getPasswordResetRedirectUrl(req: Request) {
+  return `${getPasswordResetBaseUrl(req)}/forgotaccount`
 }
 
-async function deliverPasswordResetLink(req: Request, email: string, token: string) {
-  const resetUrl = createPasswordResetUrl(req, token)
-  const webhookUrl = process.env.PASSWORD_RESET_WEBHOOK_URL?.trim()
+function createTemporaryAuthPassword() {
+  return `${randomUUID()}Aa1!`
+}
 
-  if (webhookUrl) {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    }
-    const webhookSecret = process.env.PASSWORD_RESET_WEBHOOK_SECRET?.trim()
-
-    if (webhookSecret) {
-      headers.Authorization = `Bearer ${webhookSecret}`
-    }
-
-    const response = await fetch(webhookUrl, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ email, resetUrl }),
-      signal: AbortSignal.timeout(5000),
-    })
-
-    if (!response.ok) {
-      throw new Error(`Password reset webhook failed: ${response.status} ${response.statusText}`)
-    }
-
-    return
+function isAuthUserAlreadyExistsError(error: unknown) {
+  if (typeof error !== 'object' || error === null) {
+    return false
   }
 
-  if (process.env.NODE_ENV === 'production' && process.env.LOG_PASSWORD_RESET_LINKS !== 'true') {
-    console.warn('PASSWORD_RESET_WEBHOOK_URL is not configured; password reset link was not sent.')
-    return
+  const message =
+    'message' in error && typeof (error as { message?: unknown }).message === 'string'
+      ? (error as { message: string }).message.toLowerCase()
+      : ''
+
+  return /already|registered|exists/.test(message)
+}
+
+function createAuthUserPayload(
+  user: {
+    id: string
+    email: string
+    name?: string | null
+    role?: string | null
+  },
+  options: { includeAppUserId: boolean },
+) {
+  return {
+    ...(options.includeAppUserId ? { id: user.id } : {}),
+    email: user.email,
+    password: createTemporaryAuthPassword(),
+    email_confirm: true,
+    user_metadata: {
+      app_user_id: user.id,
+      display_name: user.name ?? '',
+      name: user.name ?? '',
+      role: user.role ?? 'learner',
+    },
+    app_metadata: {
+      app_user_id: user.id,
+    },
+  }
+}
+
+async function ensureSupabaseAuthUser(user: {
+  id: string
+  email: string
+  name?: string | null
+  role?: string | null
+}) {
+  const { error } = await supabaseAdmin.auth.admin.createUser(
+    createAuthUserPayload(user, { includeAppUserId: true }),
+  )
+
+  if (!error || isAuthUserAlreadyExistsError(error)) {
+    return { ok: true }
   }
 
-  console.info(`Password reset link for ${email}: ${resetUrl}`)
+  console.error('supabase auth user create with app id error:', error)
+
+  const fallback = await supabaseAdmin.auth.admin.createUser(
+    createAuthUserPayload(user, { includeAppUserId: false }),
+  )
+
+  if (!fallback.error || isAuthUserAlreadyExistsError(fallback.error)) {
+    return { ok: true }
+  }
+
+  return { ok: false, error: fallback.error }
+}
+
+async function sendSupabasePasswordResetEmail(req: Request, email: string) {
+  const { error } = await supabaseAdmin.auth.resetPasswordForEmail(email, {
+    redirectTo: getPasswordResetRedirectUrl(req),
+  })
+
+  if (error) {
+    throw error
+  }
+}
+
+function getBearerToken(req: Request) {
+  const authorization = req.get('authorization')?.trim()
+  const match = authorization?.match(/^Bearer\s+(.+)$/i)
+
+  return match?.[1] ?? null
+}
+
+function getErrorMessage(error: unknown) {
+  if (error instanceof Error) {
+    return error.message
+  }
+
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'message' in error &&
+    typeof (error as { message?: unknown }).message === 'string'
+  ) {
+    return (error as { message: string }).message
+  }
+
+  return 'unknown error'
+}
+
+function shouldExposePasswordResetDeliveryErrors() {
+  return (
+    process.env.NODE_ENV !== 'production' ||
+    process.env.PASSWORD_RESET_EXPOSE_DELIVERY_ERRORS === 'true'
+  )
 }
 
 function sendUnexpectedError(res: Response, error: unknown) {
@@ -599,7 +670,7 @@ router.post('/password-reset/request', async (req, res) => {
 
     const { data: user, error } = await supabaseAdmin
       .from('users')
-      .select('id, email, is_active')
+      .select('id, email, name, role, is_active')
       .eq('email', normalizedEmail)
       .maybeSingle()
 
@@ -609,24 +680,44 @@ router.post('/password-reset/request', async (req, res) => {
     }
 
     if (user && user.is_active !== false) {
-      const resetToken = createPasswordResetToken()
-      const { error: updateError } = await supabaseAdmin
-        .from('users')
-        .update({
-          password_reset_token_hash: resetToken.tokenHash,
-          password_reset_expires_at: resetToken.expiresAt,
-          password_reset_requested_at: new Date().toISOString(),
-          password_reset_used_at: null,
-        })
-        .eq('id', user.id)
+      let authUserEnsureError: unknown = null
 
-      if (updateError) {
-        console.error('password reset token update error:', updateError)
-      } else {
-        try {
-          await deliverPasswordResetLink(req, user.email, resetToken.token)
-        } catch (deliveryError) {
-          console.error('password reset delivery error:', deliveryError)
+      try {
+        const authUserResult = await ensureSupabaseAuthUser(user)
+        if (!authUserResult.ok) {
+          authUserEnsureError = authUserResult.error
+          console.error('supabase auth user ensure error:', authUserResult.error)
+        }
+
+        await sendSupabasePasswordResetEmail(req, user.email)
+
+        if (authUserEnsureError && shouldExposePasswordResetDeliveryErrors()) {
+          return res.status(502).json({
+            error:
+              `Supabase Auth ユーザーの準備に失敗しました。` +
+              `メール送信リクエストは実行しましたが、Auth 側にユーザーが存在しない場合は届きません: ` +
+              getErrorMessage(authUserEnsureError),
+          })
+        }
+
+        const { error: updateError } = await supabaseAdmin
+          .from('users')
+          .update({
+            password_reset_requested_at: new Date().toISOString(),
+            password_reset_used_at: null,
+          })
+          .eq('id', user.id)
+
+        if (updateError) {
+          console.error('password reset audit update error:', updateError)
+        }
+      } catch (deliveryError) {
+        console.error('supabase password reset delivery error:', deliveryError)
+
+        if (shouldExposePasswordResetDeliveryErrors()) {
+          return res.status(502).json({
+            error: `Supabase Auth のメール送信に失敗しました: ${getErrorMessage(deliveryError)}`,
+          })
         }
       }
     }
@@ -639,14 +730,15 @@ router.post('/password-reset/request', async (req, res) => {
 
 router.post('/password-reset/confirm', async (req, res) => {
   try {
-    const { token, password } = req.body ?? {}
+    const { password } = req.body ?? {}
+    const accessToken = getBearerToken(req)
 
     if (
       sendRateLimitIfNeeded(
         req,
         res,
         'password-reset-confirm',
-        isValidPasswordResetToken(token) ? token.slice(0, 12) : getClientIp(req),
+        accessToken ? accessToken.slice(0, 16) : getClientIp(req),
         RESET_CONFIRM_RATE_LIMIT.limit,
         RESET_CONFIRM_RATE_LIMIT.windowMs,
       )
@@ -654,40 +746,38 @@ router.post('/password-reset/confirm', async (req, res) => {
       return
     }
 
-    if (!isValidPasswordResetToken(token) || typeof password !== 'string') {
+    if (!accessToken || typeof password !== 'string') {
       return res.status(400).json({ error: GENERIC_RESET_CONFIRM_ERROR })
     }
 
-    const passwordValidationError = validatePasswordStrength(password)
+    const { data: authData, error: authError } = await supabaseAdmin.auth.getUser(accessToken)
+    const normalizedEmail = normalizeEmail(authData.user?.email)
 
-    if (passwordValidationError) {
-      return res.status(400).json({ error: passwordValidationError })
+    if (authError || !authData.user || !normalizedEmail) {
+      return res.status(400).json({ error: GENERIC_RESET_CONFIRM_ERROR })
     }
 
-    const tokenHash = hashPasswordResetToken(token)
     const { data: user, error } = await supabaseAdmin
       .from('users')
-      .select('id, is_active, password_reset_expires_at, password_reset_used_at')
-      .eq('password_reset_token_hash', tokenHash)
+      .select('id, email, name, is_active')
+      .eq('email', normalizedEmail)
       .maybeSingle()
 
     if (error) {
       return sendAuthServiceError(res, error)
     }
 
-    const expiresAt =
-      typeof user?.password_reset_expires_at === 'string'
-        ? new Date(user.password_reset_expires_at).getTime()
-        : 0
-
-    if (
-      !user ||
-      user.is_active === false ||
-      user.password_reset_used_at ||
-      !expiresAt ||
-      expiresAt <= Date.now()
-    ) {
+    if (!user || user.is_active === false) {
       return res.status(400).json({ error: GENERIC_RESET_CONFIRM_ERROR })
+    }
+
+    const passwordValidationError = validatePasswordStrength(password, {
+      email: user.email,
+      name: user.name,
+    })
+
+    if (passwordValidationError) {
+      return res.status(400).json({ error: passwordValidationError })
     }
 
     const passwordHash = await hashPassword(password)
@@ -696,8 +786,10 @@ router.post('/password-reset/confirm', async (req, res) => {
       .from('users')
       .update({
         password_hash: passwordHash,
+        password_changed_at: now,
         password_reset_token_hash: null,
         password_reset_expires_at: null,
+        password_reset_requested_at: null,
         password_reset_used_at: now,
         failed_login_count: 0,
         locked_until: null,

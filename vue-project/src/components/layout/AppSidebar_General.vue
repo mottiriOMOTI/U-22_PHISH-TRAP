@@ -21,7 +21,7 @@
 
         <div class="score-card">
           <span>スコア</span>
-          <strong>0 / 8</strong>
+          <strong>{{ sidebarScoreLabel }}</strong>
         </div>
       </div>
 
@@ -50,22 +50,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
-import { clearCurrentUser, fetchCurrentUserById, getCurrentUser } from '@/api/users'
+import { clearCurrentUser, CURRENT_USER_CHANGED_EVENT, getCurrentUser } from '@/api/users'
+import { fetchScore, type ScoreSummary } from '@/api/scoreApi'
 
 const route = useRoute()
 const currentUser = ref(getCurrentUser())
+const sidebarScore = ref<ScoreSummary | null>(null)
 const avatarImageError = ref(false)
-
-watch(
-  () => route.fullPath,
-  () => {
-    void syncCurrentUser()
-  },
-  { immediate: true },
-)
 
 watch(
   () => currentUser.value?.image,
@@ -86,24 +80,51 @@ const profileInitial = computed(() => {
   return initial ? initial.toUpperCase() : 'U'
 })
 
+const sidebarScoreLabel = computed(() => {
+  if (!sidebarScore.value) return '-- / --'
+  return `${sidebarScore.value.total_correct} / ${sidebarScore.value.total_questions}`
+})
+
 function handleAvatarImageError() {
   avatarImageError.value = true
 }
 
-async function syncCurrentUser() {
-  const user = getCurrentUser()
-  currentUser.value = user
+function syncCurrentUser() {
+  currentUser.value = getCurrentUser()
+  void loadSidebarScore()
+}
 
-  if (!user) {
+async function loadSidebarScore() {
+  if (!currentUser.value) {
+    sidebarScore.value = null
     return
   }
 
   try {
-    currentUser.value = await fetchCurrentUserById(user.id)
+    sidebarScore.value = await fetchScore(currentUser.value.id)
   } catch (error) {
     console.error(error)
+    sidebarScore.value = null
   }
 }
+
+onMounted(() => {
+  syncCurrentUser()
+  window.addEventListener(CURRENT_USER_CHANGED_EVENT, syncCurrentUser)
+  window.addEventListener('storage', syncCurrentUser)
+})
+
+watch(
+  () => route.fullPath,
+  () => {
+    void loadSidebarScore()
+  },
+)
+
+onBeforeUnmount(() => {
+  window.removeEventListener(CURRENT_USER_CHANGED_EVENT, syncCurrentUser)
+  window.removeEventListener('storage', syncCurrentUser)
+})
 
 const navItems = [
   {
