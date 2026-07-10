@@ -55,6 +55,7 @@ import { useRoute } from 'vue-router'
 
 import { clearCurrentUser, CURRENT_USER_CHANGED_EVENT, getCurrentUser } from '@/api/users'
 import { fetchScore, type ScoreSummary } from '@/api/scoreApi'
+import { LEARNING_HISTORY_RESET_EVENT } from '@/api/settings'
 
 const route = useRoute()
 const currentUser = ref(getCurrentUser())
@@ -112,6 +113,7 @@ onMounted(() => {
   syncCurrentUser()
   window.addEventListener(CURRENT_USER_CHANGED_EVENT, syncCurrentUser)
   window.addEventListener('storage', syncCurrentUser)
+  window.addEventListener(LEARNING_HISTORY_RESET_EVENT, loadSidebarScore)
 })
 
 watch(
@@ -124,6 +126,7 @@ watch(
 onBeforeUnmount(() => {
   window.removeEventListener(CURRENT_USER_CHANGED_EVENT, syncCurrentUser)
   window.removeEventListener('storage', syncCurrentUser)
+  window.removeEventListener(LEARNING_HISTORY_RESET_EVENT, loadSidebarScore)
 })
 
 const navItems = [

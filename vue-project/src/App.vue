@@ -40,16 +40,20 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 
 import { fetchAppSettings } from './api/settings'
-import AppSidebarAdmin from './components/layout/AppSidebar_Admin.vue'
-import AppSidebarGeneral from './components/layout/AppSidebar_General.vue'
 import NotifyCenter from './components/ui/NotifyCenter.vue'
 import { applyThemeColor, DEFAULT_THEME_COLOR } from './lib/themeColor'
 
 const route = useRoute()
+const AppSidebarAdmin = defineAsyncComponent(
+  () => import('./components/layout/AppSidebar_Admin.vue'),
+)
+const AppSidebarGeneral = defineAsyncComponent(
+  () => import('./components/layout/AppSidebar_General.vue'),
+)
 const mobileMediaQuery = '(max-width: 760px)'
 const isMobileShell = ref(false)
 

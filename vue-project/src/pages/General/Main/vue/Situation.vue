@@ -113,7 +113,6 @@ import {
   type SituationOption,
 } from '@/api/situation'
 import {
-  fetchCurrentUserById,
   getCurrentUser,
   updateCurrentUserScenario,
 } from '@/api/users'
@@ -174,13 +173,9 @@ async function loadSituation() {
   try {
     const currentUser = getCurrentUser()
 
-    if (currentUser) {
-      const refreshedUser = await fetchCurrentUserById(currentUser.id)
-
-      if (isSituationId(refreshedUser.current_scenario)) {
-        selectedScenarioId.value = refreshedUser.current_scenario
-        return
-      }
+    if (isSituationId(currentUser?.current_scenario)) {
+      selectedScenarioId.value = currentUser.current_scenario
+      return
     }
 
     const situation = await fetchSituation()

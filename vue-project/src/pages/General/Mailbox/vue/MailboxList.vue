@@ -348,7 +348,7 @@ import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { fetchMails, fetchQuestionExplanation, type MailListItem } from '@/api/mailApi'
 import { getCurrentUser } from '@/api/users'
-import { fetchUserAnswerStates } from '@/api/userAnswers'
+import { fetchUserAnswerStates, type UserAnswerSummary } from '@/api/userAnswers'
 
 // ==========================================
 // 🚨 バッドエンド（Death）演出系の外部読み込み
@@ -505,7 +505,11 @@ function getPendingAnswerState() {
   }
 }
 
-async function hydrateAnsweredMailStates(questionIds: string[], pendingAnswer?: { questionId: string; isCorrect: boolean } | null) {
+async function hydrateAnsweredMailStates(
+  questionIds: string[],
+  pendingAnswer?: { questionId: string; isCorrect: boolean } | null,
+  prefetchedRows?: UserAnswerSummary[],
+) {
   const user = getCurrentUser()
   const userId = user?.id
 
@@ -515,7 +519,7 @@ async function hydrateAnsweredMailStates(questionIds: string[], pendingAnswer?: 
   }
 
   try {
-    const rows = await fetchUserAnswerStates(userId, questionIds)
+    const rows = prefetchedRows ?? await fetchUserAnswerStates(userId, questionIds)
 
     const nextState: Record<string, MailAnswerState> = {}
 
@@ -635,9 +639,17 @@ async function load() {
     const userScenario = user?.current_scenario ?? 'school'
 
     // 3. 取得したシチュエーションを条件にして、バックエンドからメールを取得する
-    mails.value = await fetchMails(userScenario)
+    const [mailRows, answerRows] = await Promise.all([
+      fetchMails(userScenario),
+      user?.id ? fetchUserAnswerStates(user.id) : Promise.resolve([]),
+    ])
+    mails.value = mailRows
     const pendingAnswer = getPendingAnswerState()
-    await hydrateAnsweredMailStates(mails.value.map((mail) => mail.id), pendingAnswer)
+    await hydrateAnsweredMailStates(
+      mails.value.map((mail) => mail.id),
+      pendingAnswer,
+      answerRows,
+    )
 
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'メールの取得に失敗しました'

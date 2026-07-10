@@ -341,11 +341,18 @@ async function load() {
   loading.value = true
   error.value = null
   try {
-    score.value = await fetchScore(currentUser.value.id)
-    try {
-      averageStats.value = await fetchAverageScoreStats()
-    } catch (averageError) {
-      console.error(averageError)
+    const [scoreResult, averageResult] = await Promise.allSettled([
+      fetchScore(currentUser.value.id),
+      fetchAverageScoreStats(),
+    ])
+
+    if (scoreResult.status === 'rejected') throw scoreResult.reason
+    score.value = scoreResult.value
+
+    if (averageResult.status === 'fulfilled') {
+      averageStats.value = averageResult.value
+    } else {
+      console.error(averageResult.reason)
       averageStats.value = null
     }
   } catch (e) {

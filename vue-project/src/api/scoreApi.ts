@@ -36,19 +36,34 @@ export type RecordAnswerResult = {
   is_correct: boolean
 }
 
+const pendingScoreRequests = new Map<string, Promise<ScoreSummary>>()
+let pendingAverageScoreRequest: Promise<AverageScoreSummary> | null = null
+
 async function throwApiError(res: Response, fallbackMessage: string): Promise<never> {
   const body = await res.json().catch(() => null)
   throw new Error(body?.error ?? fallbackMessage)
 }
 
 export async function fetchScore(userId: string): Promise<ScoreSummary> {
-  const res = await fetch(`${API_BASE_URL}?userId=${encodeURIComponent(userId)}`)
+  const existingRequest = pendingScoreRequests.get(userId)
+  if (existingRequest) return existingRequest
 
-  if (!res.ok) {
-    return throwApiError(res, 'Failed to fetch score')
+  const request = (async () => {
+    const res = await fetch(`${API_BASE_URL}?userId=${encodeURIComponent(userId)}`)
+
+    if (!res.ok) {
+      return throwApiError(res, 'Failed to fetch score')
+    }
+
+    return await res.json()
+  })()
+
+  pendingScoreRequests.set(userId, request)
+  try {
+    return await request
+  } finally {
+    pendingScoreRequests.delete(userId)
   }
-
-  return await res.json()
 }
 
 export async function recordAnswer(
@@ -71,11 +86,21 @@ export async function recordAnswer(
 }
 
 export async function fetchAverageScoreStats(): Promise<AverageScoreSummary> {
-  const res = await fetch(`${API_BASE_URL}/average`)
+  if (pendingAverageScoreRequest) return pendingAverageScoreRequest
 
-  if (!res.ok) {
-    return throwApiError(res, 'Failed to fetch average score stats')
+  pendingAverageScoreRequest = (async () => {
+    const res = await fetch(`${API_BASE_URL}/average`)
+
+    if (!res.ok) {
+      return throwApiError(res, 'Failed to fetch average score stats')
+    }
+
+    return await res.json()
+  })()
+
+  try {
+    return await pendingAverageScoreRequest
+  } finally {
+    pendingAverageScoreRequest = null
   }
-
-  return await res.json()
 }

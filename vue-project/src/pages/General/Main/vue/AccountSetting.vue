@@ -173,7 +173,6 @@ import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import {
-  fetchCurrentUserById,
   getCurrentUser,
   updateCurrentUserImage,
   updateCurrentUserPassword,
@@ -369,12 +368,6 @@ async function loadAccountSetting() {
 
   if (user) {
     applyUser(user)
-    try {
-      const refreshedUser = await fetchCurrentUserById(user.id)
-      applyUser(refreshedUser)
-    } catch (error) {
-      console.error(error)
-    }
   } else {
     showError('ログイン中のユーザー情報が見つかりません')
   }

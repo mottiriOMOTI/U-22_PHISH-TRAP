@@ -115,6 +115,13 @@
   padding-bottom: 20px;
 }
 
+.reset-scenario-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
 .reset-button {
   display: flex;
   width: 100%;
@@ -122,7 +129,7 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
-  margin-top: 14px;
+  margin-top: 0;
   border: 2px solid var(--danger);
   border-radius: 8px;
   background: var(--button-bg);
@@ -339,6 +346,10 @@
   }
 
   .theme-selector {
+    grid-template-columns: 1fr;
+  }
+
+  .reset-scenario-list {
     grid-template-columns: 1fr;
   }
 }

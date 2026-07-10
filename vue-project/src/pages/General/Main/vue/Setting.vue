@@ -107,15 +107,19 @@
         <p>学習データの管理</p>
       </div>
 
-      <button
-        class="reset-button"
-        type="button"
-        :disabled="isResetting"
-        @click="handleResetLearningHistory"
-      >
-        <v-icon icon="mdi-trash-can-outline" />
-        <span>{{ isResetting ? 'リセット中...' : '学習履歴をリセット' }}</span>
-      </button>
+      <div class="reset-scenario-list" aria-label="シチュエーション別の学習履歴リセット">
+        <button
+          v-for="scenario in resetScenarios"
+          :key="scenario.id"
+          class="reset-button"
+          type="button"
+          :disabled="isResetting"
+          @click="handleResetLearningHistory(scenario)"
+        >
+          <v-icon :icon="scenario.icon" />
+          <span>{{ resettingScenario === scenario.id ? 'リセット中...' : `${scenario.label}をリセット` }}</span>
+        </button>
+      </div>
     </section>
 
     <p v-if="errorMessage" class="settings-message settings-message--error" role="alert">
@@ -135,14 +139,22 @@ import {
   resetLearningHistory,
   saveAppSettings,
   type AppSettings,
+  type LearningScenario,
 } from '@/api/settings'
 import {
   ensureBrowserNotificationPermission,
   type BrowserNotificationPermissionResult,
 } from '@/lib/notifications'
 import { applyThemeColor, normalizeThemeColor, type ThemeColor } from '@/lib/themeColor'
+import { getCurrentUser } from '@/api/users'
 
 type SettingKey = 'soundEnabled' | 'notificationsEnabled' | 'fearEffectEnabled'
+
+type ResetScenarioOption = {
+  id: LearningScenario
+  label: string
+  icon: string
+}
 
 type SettingItem = {
   key: SettingKey
@@ -214,11 +226,18 @@ const defaultThemeColorOption = themeColorOptions.find((option) => option.value 
 
 const isLoading = ref(true)
 const isResetting = ref(false)
+const resettingScenario = ref<LearningScenario | null>(null)
 const savingKey = ref<SettingKey | null>(null)
 const savingThemeColor = ref(false)
 const isThemeSelectorOpen = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
+
+const resetScenarios: ResetScenarioOption[] = [
+  { id: 'business', label: '会社', icon: 'mdi-briefcase-outline' },
+  { id: 'school', label: '学校', icon: 'mdi-school-outline' },
+  { id: 'daily', label: '日常', icon: 'mdi-home-outline' },
+]
 
 const selectedThemeColorOption = computed<ThemeColorOption>(
   () =>
@@ -338,18 +357,30 @@ async function selectThemeColor(themeColor: ThemeColor) {
   }
 }
 
-async function handleResetLearningHistory() {
+async function handleResetLearningHistory(scenario: ResetScenarioOption) {
   if (isResetting.value) return
 
+  const currentUser = getCurrentUser()
+  if (!currentUser) {
+    showError('ログイン情報を確認できませんでした。再度ログインしてください。')
+    return
+  }
+
+  if (!window.confirm(`${scenario.label}の学習履歴とスコアをリセットします。この操作は取り消せません。`)) {
+    return
+  }
+
   isResetting.value = true
+  resettingScenario.value = scenario.id
   try {
-    await resetLearningHistory()
-    showSuccess('学習履歴をリセットしました')
+    await resetLearningHistory(currentUser.id, scenario.id)
+    showSuccess(`${scenario.label}の学習履歴をリセットしました`)
   } catch (error) {
     console.error(error)
     showError('学習履歴のリセットに失敗しました')
   } finally {
     isResetting.value = false
+    resettingScenario.value = null
   }
 }
 

@@ -186,13 +186,27 @@ router.post('/answer', async (req, res) => {
 
 // GET /api/score/average
 router.get('/average', async (_req, res) => {
-  const { data, error } = await supabaseAdmin
-    .from('training_sessions')
-    .select('user_id, scenario, correct_count, wrong_count, total_questions')
-    .eq('is_completed', true)
+  const [sessionsResult, questionsResult] = await Promise.all([
+    supabaseAdmin
+      .from('training_sessions')
+      .select('user_id, scenario, correct_count, wrong_count, total_questions')
+      .eq('is_completed', true),
+    supabaseAdmin
+      .from('questions')
+      .select('category')
+      .eq('is_active', true)
+      .eq('is_decoy', false),
+  ])
+
+  const { data, error } = sessionsResult
+  const { data: activeQuestions, error: questionsError } = questionsResult
 
   if (error) {
     return res.status(500).json({ error: error.message })
+  }
+
+  if (questionsError) {
+    return res.status(500).json({ error: questionsError.message })
   }
 
   const sessions = data ?? []
@@ -216,16 +230,6 @@ router.get('/average', async (_req, res) => {
 
   const userProfiles = new Map((scoreUsers ?? []).map((user) => [user.id, user]))
   const users = new Map<string, UserScoreAccumulator>()
-
-  const { data: activeQuestions, error: questionsError } = await supabaseAdmin
-    .from('questions')
-    .select('category')
-    .eq('is_active', true)
-    .eq('is_decoy', false)
-
-  if (questionsError) {
-    return res.status(500).json({ error: questionsError.message })
-  }
 
   const questionCounts: Record<Scenario, number> = {
     business: 0,
@@ -255,7 +259,10 @@ router.get('/average', async (_req, res) => {
       ? (profile.current_scenario as Scenario)
       : 'school'
 
-    if (session.scenario !== profileScenario) {
+    // マージ前に作成された回答には scenario が入っていないため、
+    // それらまで除外すると既存ユーザーのスコアが突然 0 件になる。
+    // scenario が保存されている回答だけを現在のシナリオで絞り込む。
+    if (session.scenario && session.scenario !== profileScenario) {
       continue
     }
 
@@ -370,23 +377,28 @@ router.get('/', async (req, res) => {
     ? (user!.current_scenario as Scenario)
     : 'school'
 
-  const { data, error } = await supabaseAdmin
-    .from('training_sessions')
-    .select('correct_count, wrong_count, total_questions')
-    .eq('user_id', userId)
-    .eq('scenario', scenario)
-    .eq('is_completed', true)
+  const [sessionsResult, questionCountResult] = await Promise.all([
+    supabaseAdmin
+      .from('training_sessions')
+      .select('correct_count, wrong_count, total_questions')
+      .eq('user_id', userId)
+      // 旧回答（scenario が null）も引き続きスコアに反映する。
+      .or(`scenario.eq.${scenario},scenario.is.null`)
+      .eq('is_completed', true),
+    supabaseAdmin
+      .from('questions')
+      .select('id', { count: 'exact', head: true })
+      .eq('category', SCENARIO_TO_CATEGORY[scenario])
+      .eq('is_active', true)
+      .eq('is_decoy', false),
+  ])
+
+  const { data, error } = sessionsResult
+  const { count: activeQuestionCount, error: questionCountError } = questionCountResult
 
   if (error) {
     return res.status(500).json({ error: error.message })
   }
-
-  const { count: activeQuestionCount, error: questionCountError } = await supabaseAdmin
-    .from('questions')
-    .select('id', { count: 'exact', head: true })
-    .eq('category', SCENARIO_TO_CATEGORY[scenario])
-    .eq('is_active', true)
-    .eq('is_decoy', false)
 
   if (questionCountError) {
     return res.status(500).json({ error: questionCountError.message })

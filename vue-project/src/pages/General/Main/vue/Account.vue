@@ -91,7 +91,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 
 import { fetchAccountSummary, type AccountSummary } from '@/api/account'
-import { fetchCurrentUserById, getCurrentUser, type CurrentUser } from '@/api/users'
+import { getCurrentUser, type CurrentUser } from '@/api/users'
 
 type AccountView = AccountSummary & {
 profile: AccountSummary['profile'] & {
@@ -185,18 +185,9 @@ try {
 
   if (currentUser) {
     applyCurrentUser(currentUser)
-    let resolvedUser = currentUser
-
-    try {
-      resolvedUser = await fetchCurrentUserById(currentUser.id)
-      applyCurrentUser(resolvedUser)
-    } catch (error) {
-      console.error(error)
-    }
-
-    const nextAccount = await fetchAccountSummary(resolvedUser.id)
+    const nextAccount = await fetchAccountSummary(currentUser.id)
     applyAccountSummary(nextAccount)
-    applyCurrentUser(resolvedUser)
+    applyCurrentUser(currentUser)
     return
   }
 

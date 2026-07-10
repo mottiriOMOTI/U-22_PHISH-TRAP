@@ -25,16 +25,12 @@ describe('mergeMailAnswerState', () => {
     const mails = [createMail('q1'), createMail('q2')]
     const answers: UserAnswerSummary[] = [
       {
-        user_id: 'user-1',
         question_id: 'q1',
-        action_type: 'ignored',
         is_correct: false,
         effect_flag: true,
       },
       {
-        user_id: 'user-1',
         question_id: 'q2',
-        action_type: 'reported',
         is_correct: true,
         effect_flag: false,
       },
@@ -42,9 +38,9 @@ describe('mergeMailAnswerState', () => {
 
     const merged = mergeMailAnswerState(mails, answers)
 
-    expect(merged[0].isAnswered).toBe(true)
-    expect(merged[0].answerEffectFlag).toBe(true)
-    expect(merged[1].isAnswered).toBe(true)
-    expect(merged[1].answerEffectFlag).toBe(false)
+    expect(merged).toMatchObject([
+      { id: 'q1', isAnswered: true, answerEffectFlag: true },
+      { id: 'q2', isAnswered: true, answerEffectFlag: false },
+    ])
   })
 })
