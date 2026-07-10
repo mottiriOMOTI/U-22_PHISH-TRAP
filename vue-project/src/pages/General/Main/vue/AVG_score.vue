@@ -8,6 +8,21 @@
     </div>
 </header>
 
+<nav class="avg-scenario-tabs" aria-label="集計するシチュエーション">
+    <button
+    v-for="scenario in scenarios"
+    :key="scenario.id"
+    type="button"
+    :class="['avg-scenario-tab', { 'avg-scenario-tab--active': selectedScenario === scenario.id }]"
+    :aria-pressed="selectedScenario === scenario.id"
+    :disabled="loading"
+    @click="load(scenario.id)"
+    >
+    <v-icon :icon="scenario.icon" />
+    <span>{{ scenario.label }}</span>
+    </button>
+</nav>
+
 <section v-if="loading" class="avg-score-panel avg-score-panel--message" aria-label="統計読み込み中">
     <span class="avg-loading-icon" />
     <div>
@@ -22,7 +37,7 @@
     <h2>統計を読み込めませんでした</h2>
     <p>{{ error }}</p>
     </div>
-    <button class="avg-secondary-button" type="button" @click="load">
+    <button class="avg-secondary-button" type="button" @click="load()">
     <v-icon icon="mdi-refresh" />
     <span>再試行</span>
     </button>
@@ -161,7 +176,12 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { fetchAverageScoreStats, type AverageScoreSummary } from '@/api/scoreApi'
+import {
+fetchAverageScoreStats,
+type AverageScoreSummary,
+type ScoreScenario,
+} from '@/api/scoreApi'
+import { getCurrentUser } from '@/api/users'
 
 type AnswerSegment = {
 key: string
@@ -174,6 +194,17 @@ className: string
 const stats = ref<AverageScoreSummary | null>(null)
 const loading = ref(true)
 const error = ref<string | null>(null)
+const currentScenario = getCurrentUser()?.current_scenario
+const selectedScenario = ref<ScoreScenario>(
+currentScenario === 'business' || currentScenario === 'daily' ? currentScenario : 'school',
+)
+let loadVersion = 0
+
+const scenarios: Array<{ id: ScoreScenario; label: string; icon: string }> = [
+{ id: 'business', label: '会社', icon: 'mdi-briefcase-outline' },
+{ id: 'school', label: '学校', icon: 'mdi-school-outline' },
+{ id: 'daily', label: '日常', icon: 'mdi-home-outline' },
+]
 
 const numberFormatter = new Intl.NumberFormat('ja-JP')
 
@@ -233,16 +264,21 @@ function formatAccuracy(value: number) {
 return `${toPercent(value)}%`
 }
 
-async function load() {
+async function load(scenario: ScoreScenario = selectedScenario.value) {
+selectedScenario.value = scenario
+const version = ++loadVersion
 loading.value = true
 error.value = null
 
 try {
-stats.value = await fetchAverageScoreStats()
+const nextStats = await fetchAverageScoreStats(scenario)
+if (version === loadVersion) stats.value = nextStats
 } catch (e) {
+if (version === loadVersion) {
 error.value = e instanceof Error ? e.message : '統計データの取得に失敗しました'
+}
 } finally {
-loading.value = false
+if (version === loadVersion) loading.value = false
 }
 }
 
@@ -252,4 +288,3 @@ onMounted(load)
 
 <style src="../../Main.css"></style>
 <style lang="css" scoped src="../css/AVG_score.css"></style>
-

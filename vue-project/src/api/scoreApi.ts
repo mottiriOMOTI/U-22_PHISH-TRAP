@@ -30,6 +30,7 @@ export type AverageScoreSummary = ScoreSummary & {
 }
 
 export type AnswerAction = 'link' | 'attachment' | 'reply' | 'report'
+export type ScoreScenario = 'business' | 'school' | 'daily'
 
 export type RecordAnswerResult = {
   ok: true
@@ -37,7 +38,7 @@ export type RecordAnswerResult = {
 }
 
 const pendingScoreRequests = new Map<string, Promise<ScoreSummary>>()
-let pendingAverageScoreRequest: Promise<AverageScoreSummary> | null = null
+const pendingAverageScoreRequests = new Map<string, Promise<AverageScoreSummary>>()
 
 async function throwApiError(res: Response, fallbackMessage: string): Promise<never> {
   const body = await res.json().catch(() => null)
@@ -85,11 +86,16 @@ export async function recordAnswer(
   return await res.json()
 }
 
-export async function fetchAverageScoreStats(): Promise<AverageScoreSummary> {
-  if (pendingAverageScoreRequest) return pendingAverageScoreRequest
+export async function fetchAverageScoreStats(
+  scenario?: ScoreScenario,
+): Promise<AverageScoreSummary> {
+  const requestKey = scenario ?? 'current'
+  const existingRequest = pendingAverageScoreRequests.get(requestKey)
+  if (existingRequest) return existingRequest
 
-  pendingAverageScoreRequest = (async () => {
-    const res = await fetch(`${API_BASE_URL}/average`)
+  const request = (async () => {
+    const params = scenario ? `?scenario=${encodeURIComponent(scenario)}` : ''
+    const res = await fetch(`${API_BASE_URL}/average${params}`)
 
     if (!res.ok) {
       return throwApiError(res, 'Failed to fetch average score stats')
@@ -98,9 +104,10 @@ export async function fetchAverageScoreStats(): Promise<AverageScoreSummary> {
     return await res.json()
   })()
 
+  pendingAverageScoreRequests.set(requestKey, request)
   try {
-    return await pendingAverageScoreRequest
+    return await request
   } finally {
-    pendingAverageScoreRequest = null
+    pendingAverageScoreRequests.delete(requestKey)
   }
 }

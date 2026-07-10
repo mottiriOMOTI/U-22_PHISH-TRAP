@@ -185,17 +185,33 @@ router.post('/answer', async (req, res) => {
 })
 
 // GET /api/score/average
-router.get('/average', async (_req, res) => {
+router.get('/average', async (req, res) => {
+  const requestedScenario =
+    typeof req.query.scenario === 'string' ? (req.query.scenario as Scenario) : undefined
+
+  if (requestedScenario && !SCENARIOS.has(requestedScenario)) {
+    return res.status(400).json({ error: 'scenario is invalid' })
+  }
+
+  let sessionsQuery = supabaseAdmin
+    .from('training_sessions')
+    .select('user_id, scenario, correct_count, wrong_count, total_questions')
+    .eq('is_completed', true)
+
+  let questionsQuery = supabaseAdmin
+    .from('questions')
+    .select('category')
+    .eq('is_active', true)
+    .eq('is_decoy', false)
+
+  if (requestedScenario) {
+    sessionsQuery = sessionsQuery.eq('scenario', requestedScenario)
+    questionsQuery = questionsQuery.eq('category', SCENARIO_TO_CATEGORY[requestedScenario])
+  }
+
   const [sessionsResult, questionsResult] = await Promise.all([
-    supabaseAdmin
-      .from('training_sessions')
-      .select('user_id, scenario, correct_count, wrong_count, total_questions')
-      .eq('is_completed', true),
-    supabaseAdmin
-      .from('questions')
-      .select('category')
-      .eq('is_active', true)
-      .eq('is_decoy', false),
+    sessionsQuery,
+    questionsQuery,
   ])
 
   const { data, error } = sessionsResult
@@ -255,9 +271,11 @@ router.get('/average', async (_req, res) => {
       continue
     }
 
-    const profileScenario = SCENARIOS.has(profile.current_scenario as Scenario)
-      ? (profile.current_scenario as Scenario)
-      : 'school'
+    const profileScenario = requestedScenario ?? (
+      SCENARIOS.has(profile.current_scenario as Scenario)
+        ? (profile.current_scenario as Scenario)
+        : 'school'
+    )
 
     // マージ前に作成された回答には scenario が入っていないため、
     // それらまで除外すると既存ユーザーのスコアが突然 0 件になる。
@@ -288,9 +306,11 @@ router.get('/average', async (_req, res) => {
   const userSummaries = Array.from(users.values())
     .map((user) => {
       const profile = userProfiles.get(user.userId)!
-      const scenario = SCENARIOS.has(profile.current_scenario as Scenario)
-        ? (profile.current_scenario as Scenario)
-        : 'school'
+      const scenario = requestedScenario ?? (
+        SCENARIOS.has(profile.current_scenario as Scenario)
+          ? (profile.current_scenario as Scenario)
+          : 'school'
+      )
       const totals = calculateScoreTotals(
         user.totalCorrect,
         user.totalWrong,

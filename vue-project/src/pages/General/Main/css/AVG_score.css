@@ -1,5 +1,39 @@
 /* Keep only score-specific layout and widgets; general page/hero/panel handled by Main.css */
 
+.avg-scenario-tabs {
+  display: grid;
+  width: min(100%, 1120px);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 22px;
+}
+
+.avg-scenario-tab {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  background: var(--surface-bg);
+  color: var(--page-text);
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.avg-scenario-tab:hover:not(:disabled),
+.avg-scenario-tab--active {
+  border-color: var(--accent-strong);
+  background: var(--sidebar-active-bg);
+}
+
+.avg-scenario-tab:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
 .avg-stat-grid {
   display: grid;
   width: min(100%, 1120px);
@@ -272,6 +306,10 @@
 }
 
 @media (max-width: 640px) {
+  .avg-scenario-tabs {
+    grid-template-columns: 1fr;
+  }
+
   .avg-score-hero h1 {
     font-size: 30px;
   }
