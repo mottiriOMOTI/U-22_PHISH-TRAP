@@ -693,8 +693,11 @@ const startBadEndSequence = (state: any, scenarioType: SituationType = 'business
   console.log(`💀 バッドエンド演出開始: ${scenarioType} (強度: ${profile.intensity})`);
   
   setTimeout(() => { triggerNotificationEffect(notifications, scenarioType, 1) }, 500);
+  setTimeout(() => { playSound('/sounds/huamima.wmp3') }, 500);
   setTimeout(() => { triggerNotificationEffect(notifications, scenarioType, 2) }, 1500);
+  setTimeout(() => { playSound('/sounds/erro.mp3') }, 1500);
   setTimeout(() => { triggerEncryptEffect(scenarioType) }, 2500);
+  setTimeout(() => { playSound('/sounds/paypay.mp3') }, 2500);
   setTimeout(() => { 
     resetEncryptEffect();
     triggerNoiseEffect(showNoise);
@@ -704,7 +707,9 @@ const startBadEndSequence = (state: any, scenarioType: SituationType = 'business
     triggerSequenceEffect(
       notifications,
       showNoise,
+      
       () => triggerBsodEffect({ 
+        
         show: showBsod, 
         percent: bsodPercent, 
         isBlackout: showBlackout, 
