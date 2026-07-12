@@ -80,11 +80,11 @@
               <span class="mail-row__meta">
                 <span v-if="getMailAnswerState(mail.id).visible" class="mail-row__status" :class="{
                   'mail-row__status--warning': getMailAnswerState(mail.id).isCorrect === false && getMailAnswerState(mail.id).effectFlag !== true,
-                  'mail-row__status--review': getMailAnswerState(mail.id).isCorrect === false && getMailAnswerState(mail.id).effectFlag === true,
-                  'mail-row__status--success': getMailAnswerState(mail.id).isCorrect === true,
+                  'mail-row__status--review': getMailAnswerState(mail.id).isCorrect === true && getMailAnswerState(mail.id).effectFlag === true,
+                  'mail-row__status--success': getMailAnswerState(mail.id).isCorrect === true
                 }">
                   <v-icon :icon="getMailAnswerState(mail.id).isCorrect === true ? 'mdi-check-circle-outline' : getMailAnswerState(mail.id).effectFlag === true ? 'mdi-book-open-page-variant' : 'mdi-close-circle-outline'" />
-                  <span>{{ getMailAnswerState(mail.id).isCorrect === true ? '正解' : getMailAnswerState(mail.id).effectFlag === true ? '復習済み' : '不正解' }}</span>
+                  <span>{{ getMailAnswerState(mail.id).isCorrect === true ? '正解' : getMailAnswerState(mail.id).effectFlag === true && getMailAnswerState(mail.id).isCorrect === true ? '復習済み' : '不正解' }}</span>
                 </span>
                 <span>{{ formatDate(mail.created_at) }}</span>
                 <v-icon icon="mdi-chevron-right" />
@@ -617,6 +617,20 @@ const handleLockClick = () => {
   }
 };
 
+onMounted(async () => {
+  // 画面マウント時に設定を取得 (ここから追加)
+  try {
+    const settings = await fetchAppSettings()
+    fearEffectEnabled.value = settings.fearEffectEnabled ?? true
+  } catch (error) {
+    console.error('設定の取得に失敗しました', error)
+  }
+  // (ここまで追加)
+
+  checkDeathSequence()
+  load()
+})
+
 const SCENARIO_PROFILES: Record<SituationType, { intensity: 'high' | 'medium' | 'low'; chatType: string; caller: string }> = {
   business: { intensity: 'high', chatType: 'slack', caller: '総務部 佐藤' },
   school: { intensity: 'medium', chatType: 'discord', caller: '担任の先生' },
@@ -645,6 +659,8 @@ async function load() {
 
     // 2. ユーザーの現在のシチュエーションを取得（設定されていなければ 'school' をデフォルトにする）
     const userScenario = user?.current_scenario ?? 'school'
+
+    const currentScenario = (user?.current_scenario ?? 'school') as SituationType
 
     // 3. 取得したシチュエーションを条件にして、バックエンドからメールを取得する
     const [mailRows, answerRows, appSettings] = await Promise.all([
@@ -693,7 +709,7 @@ const startBadEndSequence = (state: any, scenarioType: SituationType = 'business
   console.log(`💀 バッドエンド演出開始: ${scenarioType} (強度: ${profile.intensity})`);
   
   setTimeout(() => { triggerNotificationEffect(notifications, scenarioType, 1) }, 500);
-  setTimeout(() => { playSound('/sounds/huamima.wmp3') }, 500);
+  setTimeout(() => { playSound('/sounds/pop.wav') }, 500);
   setTimeout(() => { triggerNotificationEffect(notifications, scenarioType, 2) }, 1500);
   setTimeout(() => { playSound('/sounds/erro.mp3') }, 1500);
   setTimeout(() => { triggerEncryptEffect(scenarioType) }, 2500);
@@ -832,6 +848,8 @@ function setHistoryState(nextState: Record<string, unknown>) {
   window.history.replaceState(nextState, '')
 }
 
+import { markEffectAsPlayed } from '@/api/userAnswers'
+
 function checkDeathSequence() {
   const state = getHistoryState()
   if (!state) return
@@ -854,8 +872,35 @@ function checkDeathSequence() {
     return
   }
 
+  // 🛡 恐怖演出がOFFの場合のスキップ処理 (ここから追加)
+  if (!fearEffectEnabled.value && (state.triggerDeath || state.triggerSocialDeath || state.isTimeUpReady)) {
+    console.log("🛡 恐怖演出OFF: 演出をスキップして解説へ遷移します");
+    
+    const mailId = state.mailData?.mail?.id || state.mailData?.id || state.mail?.id;
+    const user = getCurrentUser();
+    if (mailId && user?.id) {
+      markEffectAsPlayed(mailId, user.id).catch((err: any) => {
+        console.error("演出フラグのDB更新に失敗しましたが続行します:", err);
+      });
+    }
+
+    // フラグをリセット
+    window.history.replaceState({ ...window.history.state, triggerDeath: false, triggerSocialDeath: false, isTimeUpReady: false }, '');
+
+    // 演出を出さずに即座に解説画面（不正解状態）へ遷移
+    router.push({
+      path: '/explanation',
+      state: {
+        mail: state.mail || state.mailData?.mail,
+        isCorrect: false, 
+        judgedAction: state.judgedAction || state.mailData?.judgedAction,
+        category: category
+      }
+    });
+    return;
+  }
   if (state.triggerDeath || state.triggerSocialDeath) {
-    const delayMs = 5000
+    const delayMs = 10000
     const mode = state.triggerDeath ? 'death' : 'socialDeath'
     const savedMailData = state
     const targetPath = router.currentRoute.value.path
@@ -1183,7 +1228,7 @@ onBeforeUnmount(() => {
 
 .mail-row__status--review {
   background: rgba(60, 190, 126, 0.16);
-  color: #b9f2cf;
+  color: #bfb9f2;
 }
 
 .mail-row__status--success {

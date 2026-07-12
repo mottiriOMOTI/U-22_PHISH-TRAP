@@ -2,15 +2,11 @@
   "settings": {
     "soundEnabled": true,
     "notificationsEnabled": true,
-    "fearEffectEnabled": true,
+    "fearEffectEnabled": false,
     "themeColor": 0,
     "autoGenerateEnabled": true,
     "dataCollectionEnabled": true
   },
   "learningHistory": [],
-<<<<<<< HEAD
-  "lastResetAt": "2026-07-10T01:42:22.632Z"
-=======
   "lastResetAt": "2026-07-10T03:28:55.902Z"
->>>>>>> Ishikawa
 }
